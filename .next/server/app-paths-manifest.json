@@ -1,0 +1,8 @@
+{
+  "/api/rankings/route": "app/api/rankings/route.js",
+  "/api/recommendations/route": "app/api/recommendations/route.js",
+  "/page": "app/page.js",
+  "/recommendations/page": "app/recommendations/page.js",
+  "/articles/page": "app/articles/page.js",
+  "/rankings/page": "app/rankings/page.js"
+}

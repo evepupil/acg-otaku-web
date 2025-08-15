@@ -1,0 +1,370 @@
+/**
+ * 精选预览组件
+ * 展示热门插画作品的预览卡片
+ */
+
+'use client'
+
+import { useState } from 'react'
+import { motion, AnimatePresence } from 'framer-motion'
+import { Heart, Eye, Star, ArrowRight, Clock } from 'lucide-react'
+import Button from './Button'
+import { CardSkeleton } from './Loading'
+import { cn, formatNumber, formatDate } from '../lib/utils'
+import type { Artwork } from '../types'
+
+/**
+ * 精选预览组件属性接口
+ */
+interface FeaturedPreviewProps {
+  /** 自定义类名 */
+  className?: string
+  /** 是否显示加载状态 */
+  loading?: boolean
+  /** 精选作品数据 */
+  artworks?: Artwork[]
+  /** 标题 */
+  title?: string
+  /** 副标题 */
+  subtitle?: string
+}
+
+/**
+ * 模拟精选作品数据
+ */
+const mockArtworks: Artwork[] = [
+  {
+    id: 1,
+    title: '夏日海滩少女',
+    description: '清新的夏日海滩风格插画，展现青春活力',
+    imageUrl: 'https://trae-api-sg.mchost.guru/api/ide/v1/text_to_image?prompt=anime%20girl%20on%20beach%20summer%20style%20beautiful%20art&image_size=portrait_4_3',
+    artist: {
+      id: 1,
+      name: '夏目绘师',
+      avatar: 'https://trae-api-sg.mchost.guru/api/ide/v1/text_to_image?prompt=anime%20artist%20avatar%20cute&image_size=square',
+      followerCount: 15420
+    },
+    stats: {
+      views: 25680,
+      likes: 3420,
+      bookmarks: 1250
+    },
+    tags: ['夏日', '海滩', '少女', '清新'],
+    createdAt: '2024-01-15T10:30:00Z',
+    updatedAt: '2024-01-15T10:30:00Z'
+  },
+  {
+    id: 2,
+    title: '魔法森林的精灵',
+    description: '奇幻风格的森林精灵插画，充满神秘色彩',
+    imageUrl: 'https://trae-api-sg.mchost.guru/api/ide/v1/text_to_image?prompt=fantasy%20forest%20elf%20magical%20beautiful%20anime%20art&image_size=portrait_4_3',
+    artist: {
+      id: 2,
+      name: '森野画师',
+      avatar: 'https://trae-api-sg.mchost.guru/api/ide/v1/text_to_image?prompt=fantasy%20artist%20avatar&image_size=square',
+      followerCount: 28900
+    },
+    stats: {
+      views: 42150,
+      likes: 5680,
+      bookmarks: 2340
+    },
+    tags: ['奇幻', '精灵', '森林', '魔法'],
+    createdAt: '2024-01-14T15:20:00Z',
+    updatedAt: '2024-01-14T15:20:00Z'
+  },
+  {
+    id: 3,
+    title: '都市夜景下的少年',
+    description: '现代都市背景下的少年插画，展现城市的繁华与孤独',
+    imageUrl: 'https://trae-api-sg.mchost.guru/api/ide/v1/text_to_image?prompt=anime%20boy%20city%20night%20neon%20lights%20urban%20art&image_size=portrait_4_3',
+    artist: {
+      id: 3,
+      name: '都市绘者',
+      avatar: 'https://trae-api-sg.mchost.guru/api/ide/v1/text_to_image?prompt=urban%20artist%20avatar%20modern&image_size=square',
+      followerCount: 19750
+    },
+    stats: {
+      views: 31200,
+      likes: 4150,
+      bookmarks: 1890
+    },
+    tags: ['都市', '夜景', '少年', '现代'],
+    createdAt: '2024-01-13T20:45:00Z',
+    updatedAt: '2024-01-13T20:45:00Z'
+  },
+  {
+    id: 4,
+    title: '樱花飞舞的校园',
+    description: '春日校园樱花盛开的美丽场景',
+    imageUrl: 'https://trae-api-sg.mchost.guru/api/ide/v1/text_to_image?prompt=anime%20school%20cherry%20blossoms%20spring%20beautiful%20art&image_size=portrait_4_3',
+    artist: {
+      id: 4,
+      name: '春日画师',
+      avatar: 'https://trae-api-sg.mchost.guru/api/ide/v1/text_to_image?prompt=spring%20artist%20avatar%20cherry%20blossom&image_size=square',
+      followerCount: 22300
+    },
+    stats: {
+      views: 38900,
+      likes: 4920,
+      bookmarks: 2150
+    },
+    tags: ['樱花', '校园', '春日', '青春'],
+    createdAt: '2024-01-12T14:15:00Z',
+    updatedAt: '2024-01-12T14:15:00Z'
+  },
+  {
+    id: 5,
+    title: '星空下的旅行者',
+    description: '在璀璨星空下踏上旅程的冒险者',
+    imageUrl: 'https://trae-api-sg.mchost.guru/api/ide/v1/text_to_image?prompt=anime%20traveler%20starry%20night%20adventure%20beautiful%20art&image_size=portrait_4_3',
+    artist: {
+      id: 5,
+      name: '星野绘师',
+      avatar: 'https://trae-api-sg.mchost.guru/api/ide/v1/text_to_image?prompt=star%20artist%20avatar%20night&image_size=square',
+      followerCount: 31200
+    },
+    stats: {
+      views: 45600,
+      likes: 6200,
+      bookmarks: 2800
+    },
+    tags: ['星空', '旅行', '冒险', '夜晚'],
+    createdAt: '2024-01-11T18:30:00Z',
+    updatedAt: '2024-01-11T18:30:00Z'
+  },
+  {
+    id: 6,
+    title: '古风仕女图',
+    description: '传统古风风格的仕女插画，典雅优美',
+    imageUrl: 'https://trae-api-sg.mchost.guru/api/ide/v1/text_to_image?prompt=traditional%20chinese%20lady%20ancient%20style%20elegant%20art&image_size=portrait_4_3',
+    artist: {
+      id: 6,
+      name: '古风画师',
+      avatar: 'https://trae-api-sg.mchost.guru/api/ide/v1/text_to_image?prompt=traditional%20artist%20avatar%20ancient&image_size=square',
+      followerCount: 18600
+    },
+    stats: {
+      views: 29400,
+      likes: 3850,
+      bookmarks: 1650
+    },
+    tags: ['古风', '仕女', '传统', '典雅'],
+    createdAt: '2024-01-10T16:20:00Z',
+    updatedAt: '2024-01-10T16:20:00Z'
+  }
+]
+
+/**
+ * 作品卡片组件
+ */
+const ArtworkCard = ({ artwork, index }: { artwork: Artwork, index: number }) => {
+  const [isLiked, setIsLiked] = useState(false)
+  const [imageLoaded, setImageLoaded] = useState(false)
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 50 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ delay: index * 0.1, duration: 0.6 }}
+      whileHover={{ y: -8, scale: 1.02 }}
+      className="glass-card overflow-hidden group cursor-pointer"
+    >
+      {/* 作品图片 */}
+      <div className="relative aspect-[3/4] overflow-hidden">
+        <motion.img
+          src={artwork.imageUrl}
+          alt={artwork.title}
+          className={cn(
+            'w-full h-full object-cover transition-all duration-500',
+            'group-hover:scale-110',
+            imageLoaded ? 'opacity-100' : 'opacity-0'
+          )}
+          onLoad={() => setImageLoaded(true)}
+          loading="lazy"
+        />
+        
+        {/* 加载占位符 */}
+        {!imageLoaded && (
+          <div className="absolute inset-0 bg-gradient-to-br from-gray-100 to-gray-200 animate-pulse" />
+        )}
+        
+        {/* 悬浮操作层 */}
+        <motion.div
+          initial={{ opacity: 0 }}
+          whileHover={{ opacity: 1 }}
+          className="absolute inset-0 bg-black/20 backdrop-blur-sm flex items-center justify-center"
+        >
+          <div className="flex space-x-3">
+            <motion.button
+              whileHover={{ scale: 1.1 }}
+              whileTap={{ scale: 0.9 }}
+              onClick={(e) => {
+                e.stopPropagation()
+                setIsLiked(!isLiked)
+              }}
+              className={cn(
+                'w-10 h-10 rounded-full backdrop-blur-md flex items-center justify-center transition-colors',
+                isLiked ? 'bg-red-500 text-white' : 'bg-white/20 text-white hover:bg-white/30'
+              )}
+            >
+              <Heart className={cn('w-5 h-5', isLiked && 'fill-current')} />
+            </motion.button>
+            
+            <motion.button
+              whileHover={{ scale: 1.1 }}
+              whileTap={{ scale: 0.9 }}
+              className="w-10 h-10 rounded-full bg-white/20 backdrop-blur-md text-white hover:bg-white/30 flex items-center justify-center transition-colors"
+            >
+              <Star className="w-5 h-5" />
+            </motion.button>
+          </div>
+        </motion.div>
+        
+        {/* 统计信息 */}
+        <div className="absolute top-3 right-3 flex space-x-2">
+          <div className="glass px-2 py-1 text-xs text-white flex items-center space-x-1">
+            <Eye className="w-3 h-3" />
+            <span>{formatNumber(artwork.stats.views)}</span>
+          </div>
+        </div>
+      </div>
+      
+      {/* 作品信息 */}
+      <div className="p-4">
+        <h3 className="font-semibold text-gray-800 mb-2 line-clamp-1 group-hover:text-pink-600 transition-colors">
+          {artwork.title}
+        </h3>
+        
+        <p className="text-sm text-gray-600 mb-3 line-clamp-2">
+          {artwork.description}
+        </p>
+        
+        {/* 画师信息 */}
+        <div className="flex items-center space-x-3 mb-3">
+          <img
+            src={artwork.artist.avatar}
+            alt={artwork.artist.name}
+            className="w-8 h-8 rounded-full object-cover"
+          />
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-medium text-gray-800 truncate">
+              {artwork.artist.name}
+            </p>
+            <p className="text-xs text-gray-500">
+              {formatNumber(artwork.artist.followerCount || 0)} 关注者
+            </p>
+          </div>
+        </div>
+        
+        {/* 统计和时间 */}
+        <div className="flex items-center justify-between text-xs text-gray-500">
+          <div className="flex items-center space-x-3">
+            <span className="flex items-center space-x-1">
+              <Heart className="w-3 h-3" />
+              <span>{formatNumber(artwork.stats.likes)}</span>
+            </span>
+            <span className="flex items-center space-x-1">
+              <Star className="w-3 h-3" />
+              <span>{formatNumber(artwork.stats.bookmarks)}</span>
+            </span>
+          </div>
+          <span className="flex items-center space-x-1">
+            <Clock className="w-3 h-3" />
+            <span>{formatDate(artwork.createdAt)}</span>
+          </span>
+        </div>
+      </div>
+    </motion.div>
+  )
+}
+
+/**
+ * 主精选预览组件
+ */
+export default function FeaturedPreview({
+  className,
+  loading = false,
+  artworks = mockArtworks,
+  title = '精选作品',
+  subtitle = '发现最受欢迎的插画作品'
+}: FeaturedPreviewProps) {
+  const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid')
+  
+  if (loading) {
+    return (
+      <section className={cn('py-16', className)}>
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-12">
+            <div className="h-8 bg-gray-200 rounded-lg w-48 mx-auto mb-4 animate-pulse" />
+            <div className="h-4 bg-gray-200 rounded w-64 mx-auto animate-pulse" />
+          </div>
+          <CardSkeleton count={6} />
+        </div>
+      </section>
+    )
+  }
+
+  return (
+    <section className={cn('py-16 bg-white/50', className)}>
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        {/* 标题区域 */}
+        <motion.div
+          initial={{ opacity: 0, y: 30 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.6 }}
+          className="text-center mb-12"
+        >
+          <h2 className="text-3xl md:text-4xl font-bold text-gray-800 mb-4">
+            <span className="bg-gradient-to-r from-pink-600 to-purple-600 bg-clip-text text-transparent">
+              {title}
+            </span>
+          </h2>
+          <p className="text-lg text-gray-600 max-w-2xl mx-auto">
+            {subtitle}
+          </p>
+        </motion.div>
+        
+        {/* 作品网格 */}
+        <AnimatePresence mode="wait">
+          <motion.div
+            key={viewMode}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.3 }}
+            className={cn(
+              'grid gap-6 mb-12',
+              viewMode === 'grid' 
+                ? 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4'
+                : 'grid-cols-1 md:grid-cols-2 gap-8'
+            )}
+          >
+            {artworks.slice(0, 8).map((artwork, index) => (
+              <ArtworkCard key={artwork.id} artwork={artwork} index={index} />
+            ))}
+          </motion.div>
+        </AnimatePresence>
+        
+        {/* 查看更多按钮 */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ delay: 0.4, duration: 0.6 }}
+          className="text-center"
+        >
+          <Button
+            size="lg"
+            variant="outline"
+            rightIcon={<ArrowRight className="w-5 h-5" />}
+            className="px-8 py-3"
+          >
+            查看更多作品
+          </Button>
+        </motion.div>
+      </div>
+    </section>
+  )
+}
