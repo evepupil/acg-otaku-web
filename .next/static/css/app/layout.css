@@ -572,25 +572,25 @@ video {
   display: none;
 }
   :root {
-    --background: 0 0% 100%;
+    --background: 120 20% 98%;
     --foreground: 222.2 84% 4.9%;
-    --card: 0 0% 100%;
+    --card: 120 30% 97%;
     --card-foreground: 222.2 84% 4.9%;
-    --popover: 0 0% 100%;
+    --popover: 120 30% 97%;
     --popover-foreground: 222.2 84% 4.9%;
-    --primary: 160 84% 39%;
+    --primary: 140 40% 70%;
     --primary-foreground: 0 0% 98%;
-    --secondary: 210 40% 96%;
+    --secondary: 120 25% 94%;
     --secondary-foreground: 222.2 84% 4.9%;
-    --muted: 210 40% 96%;
+    --muted: 120 25% 94%;
     --muted-foreground: 215.4 16.3% 46.9%;
-    --accent: 160 84% 39%;
+    --accent: 140 40% 70%;
     --accent-foreground: 0 0% 9%;
     --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 210 40% 98%;
-    --border: 214.3 31.8% 91.4%;
-    --input: 214.3 31.8% 91.4%;
-    --ring: 222.2 84% 4.9%;
+    --border: 120 20% 88%;
+    --input: 120 20% 88%;
+    --ring: 140 40% 70%;
     --radius: 0.5rem;
   }
 
@@ -1881,15 +1881,15 @@ video {
 }
 .glass {
   border-width: 1px;
-  border-color: rgb(255 255 255 / 0.2);
-  background-color: rgb(255 255 255 / 0.1);
+  border-color: rgb(220 252 231 / 0.4);
+  background-color: rgb(240 253 244 / 0.3);
   --tw-backdrop-blur: blur(12px);
   backdrop-filter: var(--tw-backdrop-blur) var(--tw-backdrop-brightness) var(--tw-backdrop-contrast) var(--tw-backdrop-grayscale) var(--tw-backdrop-hue-rotate) var(--tw-backdrop-invert) var(--tw-backdrop-opacity) var(--tw-backdrop-saturate) var(--tw-backdrop-sepia);
 }
 .glass-card {
   border-width: 1px;
-  border-color: rgb(255 255 255 / 0.3);
-  background-color: rgb(255 255 255 / 0.2);
+  border-color: rgb(220 252 231 / 0.5);
+  background-color: rgb(240 253 244 / 0.4);
   --tw-shadow: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
   --tw-shadow-colored: 0 20px 25px -5px var(--tw-shadow-color), 0 8px 10px -6px var(--tw-shadow-color);
   box-shadow: var(--tw-ring-offset-shadow, 0 0 #0000), var(--tw-ring-shadow, 0 0 #0000), var(--tw-shadow);
@@ -1898,8 +1898,8 @@ video {
 }
 .glass-nav {
   border-bottom-width: 1px;
-  border-color: rgb(255 255 255 / 0.2);
-  background-color: rgb(255 255 255 / 0.8);
+  border-color: rgb(220 252 231 / 0.3);
+  background-color: rgb(240 253 244 / 0.9);
   --tw-backdrop-blur: blur(24px);
   backdrop-filter: var(--tw-backdrop-blur) var(--tw-backdrop-brightness) var(--tw-backdrop-contrast) var(--tw-backdrop-grayscale) var(--tw-backdrop-hue-rotate) var(--tw-backdrop-invert) var(--tw-backdrop-opacity) var(--tw-backdrop-saturate) var(--tw-backdrop-sepia);
 }
@@ -1914,16 +1914,16 @@ video {
 }
 
 ::-webkit-scrollbar-track {
-  background: rgba(255, 255, 255, 0.1);
+  background: rgba(134, 239, 172, 0.1);
 }
 
 ::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.3);
+  background: rgba(134, 239, 172, 0.4);
   border-radius: 3px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: rgba(255, 255, 255, 0.5);
+  background: rgba(134, 239, 172, 0.6);
 }
 
 /* 平滑滚动 */

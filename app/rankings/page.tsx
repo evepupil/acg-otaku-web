@@ -12,7 +12,6 @@ import Navigation from '../../src/components/Navigation'
 import Footer from '../../src/components/Footer'
 import Button from '@/components/Button'
 import Loading from '@/components/Loading'
-import { getRankingArtworks, Artwork } from '../../src/data/mockData'
 import type { Artwork } from '@/types'
 
 // 排行榜时间周期类型
