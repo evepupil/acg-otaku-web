@@ -12,6 +12,7 @@ import { Calendar, TrendingUp, Eye, Heart, Clock, Filter } from 'lucide-react'
 // import Footer from '../../src/components/Footer'
 import Button from '@/components/Button'
 import Loading from '@/components/Loading'
+import { getProxyImageUrl, extractPidFromUrl, getRecommendedSize } from '@/lib/pixiv-proxy'
 import type { Artwork } from '@/types'
 
 // 排行榜时间周期类型
@@ -63,7 +64,10 @@ function RankingCard({ artwork, rank }: { artwork: Artwork; rank: number }) {
         {/* 作品图片 */}
         <div className="relative aspect-[4/3] overflow-hidden">
           <img
-            src={artwork.imageUrl}
+            src={(() => {
+              const pid = extractPidFromUrl(artwork.imageUrl) || artwork.id.toString()
+              return getProxyImageUrl(pid, getRecommendedSize('card'))
+            })()} 
             alt={artwork.title}
             className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
           />

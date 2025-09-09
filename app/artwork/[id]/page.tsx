@@ -16,6 +16,7 @@ import {
 import Button from '@/components/Button'
 import Loading from '@/components/Loading'
 import { useRouter } from 'next/navigation'
+import { getProxyImageUrl, extractPidFromUrl, getRecommendedSize } from '@/lib/pixiv-proxy'
 import type { Artwork } from '@/types'
 // import type { Artist } from '@/types' // 暂时未使用
 
@@ -158,7 +159,10 @@ function ImageViewer({
         onClick={(e) => e.stopPropagation()}
       >
         <motion.img
-          src={imageUrl}
+          src={(() => {
+            const pid = extractPidFromUrl(imageUrl)
+            return pid ? getProxyImageUrl(pid, getRecommendedSize('fullscreen')) : imageUrl
+          })()} 
           alt={title}
           className="max-w-none max-h-none select-none"
           style={{
@@ -238,7 +242,10 @@ function RelatedArtworks({ artistId, currentArtworkId }: { artistId: number; cur
         >
           <div className="aspect-square relative overflow-hidden">
             <img
-              src={artwork.imageUrl}
+              src={(() => {
+                const pid = extractPidFromUrl(artwork.imageUrl) || artwork.id.toString()
+                return getProxyImageUrl(pid, getRecommendedSize('thumbnail'))
+              })()} 
               alt={artwork.title}
               className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
             />
@@ -467,7 +474,10 @@ export default function ArtworkDetailPage({ params }: { params: Promise<{ id: st
                 )}
                 
                 <img
-                  src={artwork.imageUrl}
+                  src={(() => {
+                    const pid = extractPidFromUrl(artwork.imageUrl) || artwork.id.toString()
+                    return getProxyImageUrl(pid, getRecommendedSize('detail'))
+                  })()} 
                   alt={artwork.title}
                   className={`w-full h-auto ${imageLoaded ? 'opacity-100' : 'opacity-0'}`}
                   onLoad={() => setImageLoaded(true)}
