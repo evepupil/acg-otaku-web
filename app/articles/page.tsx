@@ -7,7 +7,7 @@
 
 import { useState, useEffect, useCallback } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Search, Filter, Clock, Eye, Heart, BookOpen, Calendar, User, Tag, ArrowUpDown, Grid, List } from 'lucide-react'
+import { Search, Clock, Eye, Heart, BookOpen, Grid, List, User, Calendar } from 'lucide-react'
 import Button from '../../src/components/Button'
 import Loading from '../../src/components/Loading'
 import { useDebounce, useInfiniteScroll } from '../../src/hooks'
@@ -316,7 +316,7 @@ export default function ArticlesPage() {
   const [hasMore, setHasMore] = useState(true)
   const [page, setPage] = useState(1)
   const [error, setError] = useState<string | null>(null)
-  const [showFilters, setShowFilters] = useState(false)
+  // const [showFilters, setShowFilters] = useState(false) // 暂时注释，未来可能使用
 
   // 防抖搜索
   const debouncedSearchQuery = useDebounce(searchQuery, 500)
@@ -377,6 +377,7 @@ export default function ArticlesPage() {
       
       setHasMore(data.pagination.hasNext)
     } catch (err) {
+      console.error('获取数据失败:', err)
       setError(err instanceof Error ? err.message : '获取数据失败')
     } finally {
       setLoading(false)

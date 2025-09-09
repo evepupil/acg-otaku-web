@@ -8,14 +8,14 @@
 import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { 
-  Heart, Eye, Share2, Calendar, Tag, User, Clock, 
-  ArrowLeft, Bookmark, MessageCircle, ThumbsUp,
-  ChevronUp, ChevronDown, Copy, Check
+  Heart, Eye, Share2, Calendar, Tag, Clock, 
+  ArrowLeft, Bookmark,
+  ChevronUp, ChevronDown, Copy, Check ,MessageCircle
 } from 'lucide-react'
 import Button from '@/components/Button'
 import Loading from '@/components/Loading'
 import { useRouter } from 'next/navigation'
-import type { Article, Artist } from '@/types'
+import type { Article } from '@/types'
 
 /**
  * 目录组件
@@ -347,7 +347,7 @@ export default function ArticleDetailPage({ params }: { params: { id: string } }
           text: article.excerpt,
           url: window.location.href
         })
-      } catch (error) {
+      } catch {
         console.log('分享取消或失败')
       }
     } else {
@@ -446,7 +446,7 @@ export default function ArticleDetailPage({ params }: { params: { id: string } }
 
   useEffect(() => {
     fetchArticleDetail()
-  }, [params.id])
+  }, [params.id, fetchArticleDetail])
 
   if (loading) {
     return (

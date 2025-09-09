@@ -172,7 +172,7 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
-    const { action, articleId, userId, readProgress } = body
+    const { action, articleId, readProgress } = body
 
     // 验证必要参数
     if (!action || !articleId) {
