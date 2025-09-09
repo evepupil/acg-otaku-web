@@ -33,3 +33,10 @@ pattern = "*/*"
 ip = "127.0.0.1"
 port = 8787
 local_protocol = "http"
+
+# wrangler.toml (wrangler v3.88.0^)
+[observability.logs]
+enabled = true
+
+
+
