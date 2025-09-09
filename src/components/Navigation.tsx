@@ -84,10 +84,10 @@ export default function Navigation() {
                 whileTap={{ scale: 0.95 }}
                 className="w-8 h-8 bg-gradient-to-br from-green-500 to-emerald-600 rounded-lg flex items-center justify-center"
               >
-                <span className="text-white font-bold text-sm">P</span>
+                <span className="text-white font-bold text-sm">萌</span>
               </motion.div>
               <span className="text-xl font-bold bg-gradient-to-r from-green-600 to-emerald-600 bg-clip-text text-transparent">
-                Pixiv Gallery
+                ACG萌图宅
               </span>
             </Link>
 

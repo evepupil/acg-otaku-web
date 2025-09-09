@@ -1,5 +1,6 @@
 {
-  "name": "ranking-pixiv",
+  "name": "acg-moe-gallery",
+  "description": "ACG萌图宅 - 精美二次元插画作品展示平台",
   "private": true,
   "version": "0.0.0",
   "type": "module",

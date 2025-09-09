@@ -25,7 +25,7 @@ const features = [
   {
     icon: TrendingUp,
     title: '实时排行榜',
-    description: '每日更新的热门插画排行',
+    description: '每日更新的热门萌图排行',
     color: 'from-pink-500 to-rose-500'
   },
   {
@@ -37,7 +37,7 @@ const features = [
   {
     icon: Star,
     title: '精品鉴赏',
-    description: '深度解析优秀作品',
+    description: '深度解析二次元优秀作品',
     color: 'from-blue-500 to-cyan-500'
   }
 ]
@@ -155,11 +155,11 @@ export default function HeroSection({ className }: HeroSectionProps) {
           >
             <h1 className="text-4xl md:text-6xl lg:text-7xl font-bold mb-6">
               <span className="bg-gradient-to-r from-emerald-600 to-green-600 bg-clip-text text-transparent">
-                发现最美
+                ACG萌图宅
               </span>
               <br />
               <span className="text-gray-800">
-                插画世界
+                二次元世界
               </span>
             </h1>
             
@@ -169,9 +169,9 @@ export default function HeroSection({ className }: HeroSectionProps) {
               transition={{ delay: 0.3, duration: 0.8 }}
               className="text-xl md:text-2xl text-gray-600 max-w-3xl mx-auto leading-relaxed"
             >
-              探索精选插画作品，发现艺术的无限可能。
+              探索精美二次元插画作品，感受萌系艺术的魅力。
               <br className="hidden md:block" />
-              每日更新排行榜，个性化推荐，深度鉴赏文章。
+              每日更新热门排行，个性化推荐，发现你的专属萌图。
             </motion.p>
           </motion.div>
           

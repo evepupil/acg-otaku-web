@@ -7,9 +7,9 @@ import Footer from '@/components/Footer'
 const inter = Inter({ subsets: ['latin'] })
 
 export const metadata: Metadata = {
-  title: 'Pixiv插画鉴赏网站',
-  description: '发现最美的插画作品，探索艺术的无限可能',
-  keywords: ['插画', 'pixiv', '艺术', '鉴赏', '排行榜', '推荐'],
+  title: 'ACG萌图宅 - 精美二次元插画作品展示平台',
+  description: '发现最萌最美的二次元插画作品，探索ACG艺术的无限魅力',
+  keywords: ['ACG', '萌图', '二次元', '插画', '动漫', '艺术', '鉴赏', '排行榜', '推荐'],
 }
 
 export default function RootLayout({
