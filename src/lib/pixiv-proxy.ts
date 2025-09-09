@@ -6,7 +6,7 @@
 /**
  * 代理服务域名
  */
-const PROXY_DOMAIN = 'pixiv-proxy.acgotaku.com'
+const PROXY_DOMAIN = 'pixivproxy.acgotaku.com'
 
 /**
  * 图片尺寸类型
@@ -20,7 +20,7 @@ export type ImageSize = 'thumb_mini' | 'small' | 'regular' | 'original'
  * @returns 代理图片 URL
  */
 export function getProxyImageUrl(pid: string | number, size: ImageSize = 'small'): string {
-  return `https://${PROXY_DOMAIN}/proxy/${pid}?size=${size}`
+  return `https://${PROXY_DOMAIN}/api?action=proxy-image&pid=${pid}&size=${size}`
 }
 
 /**
