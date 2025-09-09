@@ -293,8 +293,15 @@ export class PixivProxy {
            return result;
          }
 
-         // 如果直接代理失败，尝试第三方代理
-         this.logManager.addLog(`直接代理失败，尝试第三方代理服务`, 'warning', this.taskId);
+         // 如果直接代理失败，尝试绕过 Cloudflare 防护
+         this.logManager.addLog(`直接代理失败，尝试绕过 Cloudflare 防护`, 'warning', this.taskId);
+         result = await this.tryBypassCloudflare(imageUrl, size);
+         if (result.success) {
+           return result;
+         }
+
+         // 最后尝试第三方代理
+         this.logManager.addLog(`Cloudflare 绕过失败，尝试第三方代理服务`, 'warning', this.taskId);
          result = await this.tryThirdPartyProxy(imageUrl, size);
          if (result.success) {
            return result;
@@ -372,6 +379,80 @@ export class PixivProxy {
     }
     
     return { success: false, error: '第三方代理访问失败' };
+  }
+
+  /**
+   * 尝试使用不同的代理服务绕过 Cloudflare 防护
+   */
+  private async tryBypassCloudflare(imageUrl: string, size: string): Promise<ProxyImageResult> {
+    const proxyServices = [
+      // 方法1: 使用 i.pixiv.cat 直接代理
+      {
+        name: 'i.pixiv.cat',
+        url: imageUrl.replace('i.pximg.net', 'i.pixiv.cat'),
+        headers: {
+          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+          'Accept': 'image/*,*/*;q=0.8',
+          'Referer': 'https://www.pixiv.net/',
+          'Cache-Control': 'no-cache'
+        }
+      },
+      // 方法2: 使用 pixiv.cat 服务
+      {
+        name: 'pixiv.cat',
+        url: `https://pixiv.cat/${imageUrl.split('/').pop()}`,
+        headers: {
+          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+          'Accept': 'image/*,*/*;q=0.8',
+          'Referer': 'https://www.pixiv.net/'
+        }
+      },
+      // 方法3: 使用不同的 User-Agent
+      {
+        name: 'alternative-ua',
+        url: imageUrl.replace('i.pximg.net', 'i.pixiv.cat'),
+        headers: {
+          'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Safari/605.1.15',
+          'Accept': 'image/*,*/*;q=0.8',
+          'Referer': 'https://www.pixiv.net/',
+          'Accept-Language': 'en-US,en;q=0.9',
+          'Cache-Control': 'no-cache'
+        }
+      }
+    ];
+
+    for (const service of proxyServices) {
+      try {
+        this.logManager.addLog(`尝试 ${service.name} 代理: ${service.url}`, 'info', this.taskId);
+        
+        const response = await fetch(service.url, {
+          headers: service.headers,
+          cf: {
+            cacheTtl: 0,
+            cacheEverything: false
+          }
+        } as CloudflareRequestInit);
+
+        if (response.ok) {
+          const imageBuffer = await response.arrayBuffer();
+          const fileSizeMB = imageBuffer.byteLength / (1024 * 1024);
+          
+          this.logManager.addLog(`${service.name} 代理访问成功，尺寸: ${size}，文件大小: ${fileSizeMB.toFixed(2)}MB`, 'success', this.taskId);
+          
+          return {
+            success: true,
+            imageBuffer,
+            contentType: 'image/jpeg'
+          };
+        } else {
+          this.logManager.addLog(`${service.name} 代理访问失败: HTTP ${response.status}`, 'warning', this.taskId);
+        }
+      } catch (error) {
+        this.logManager.addLog(`${service.name} 代理访问异常: ${error instanceof Error ? error.message : String(error)}`, 'warning', this.taskId);
+      }
+    }
+    
+    return { success: false, error: '所有代理服务都无法访问' };
   }
 
   /**
@@ -483,8 +564,15 @@ export class PixivProxy {
         
         this.logManager.addLog(`代理访问 ${size} 尺寸失败: HTTP ${response.status} ${response.statusText}`, 'error', this.taskId);
         
-        // 针对 403 错误提供具体的解决建议
-        if (response.status === 403) {
+        // 检查是否是 Cloudflare 防护页面
+        if (errorText.includes('Cloudflare') && errorText.includes('Attention Required')) {
+          this.logManager.addLog(`检测到 Cloudflare 防护页面，Ray ID: ${this.extractCloudflareRayId(errorText)}`, 'error', this.taskId);
+          this.logManager.addLog(`Cloudflare 防护原因:`, 'error', this.taskId);
+          this.logManager.addLog(`  1. 请求频率过高被限制`, 'error', this.taskId);
+          this.logManager.addLog(`  2. IP 地址被 Cloudflare 标记为可疑`, 'error', this.taskId);
+          this.logManager.addLog(`  3. 请求模式被识别为自动化工具`, 'error', this.taskId);
+          this.logManager.addLog(`  4. 缺少必要的浏览器指纹信息`, 'error', this.taskId);
+        } else if (response.status === 403) {
           this.logManager.addLog(`403 错误可能原因:`, 'error', this.taskId);
           this.logManager.addLog(`  1. Pixiv 防盗链保护 - 检查 Referer 头`, 'error', this.taskId);
           this.logManager.addLog(`  2. User-Agent 被识别为爬虫`, 'error', this.taskId);
@@ -497,6 +585,14 @@ export class PixivProxy {
     }
     
     return { success: false, error: `尺寸 ${size} 访问失败` };
+  }
+
+  /**
+   * 提取 Cloudflare Ray ID
+   */
+  private extractCloudflareRayId(html: string): string {
+    const rayIdMatch = html.match(/Cloudflare Ray ID: <strong[^>]*>([^<]+)<\/strong>/);
+    return rayIdMatch ? rayIdMatch[1] : 'unknown';
   }
 
   /**
