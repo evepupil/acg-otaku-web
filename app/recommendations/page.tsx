@@ -65,7 +65,7 @@ function RecommendationCard({ artwork, viewMode }: { artwork: Artwork; viewMode:
       <div className="relative">
         {/* 作品图片 */}
         <div className={`relative overflow-hidden ${
-          viewMode === 'grid' ? 'aspect-[3/4]' : 'aspect-auto'
+          viewMode === 'grid' ? 'aspect-[4/3]' : 'aspect-auto'
         }`}>
           {!imageLoaded && (
             <div className="absolute inset-0 bg-gray-200 animate-pulse flex items-center justify-center">
@@ -127,35 +127,33 @@ function RecommendationCard({ artwork, viewMode }: { artwork: Artwork; viewMode:
             {artwork.title}
           </h3>
           
-          <div className="flex items-center space-x-2 text-sm text-gray-600">
-            <img
-              src={artwork.artist.avatar}
-              alt={artwork.artist.name}
-              className="w-6 h-6 rounded-full"
-            />
-            <span className="hover:text-green-600 transition-colors cursor-pointer">
-              {artwork.artist.name}
-            </span>
+          {/* 作者和PID信息 */}
+          <div className="flex items-center justify-between text-sm text-gray-600 mb-3">
+            <div className="flex items-center space-x-2 flex-1 min-w-0">
+              <span className="hover:text-green-600 transition-colors cursor-pointer truncate">
+                @{artwork.artist.name}
+              </span>
+            </div>
+            <div className="flex items-center space-x-2 flex-shrink-0">
+              <span className="font-medium text-green-600">
+                PID {artwork.id}
+              </span>
+            </div>
           </div>
           
-          {/* 标签 */}
-          {artwork.tags && artwork.tags.length > 0 && (
-            <div className="flex flex-wrap gap-1 mt-3">
-              {artwork.tags.slice(0, 3).map((tag) => (
-                <span
-                  key={tag}
-                  className="px-2 py-1 bg-gray-100 text-gray-600 text-xs rounded-full hover:bg-green-100 hover:text-green-600 transition-colors cursor-pointer"
-                >
-                  {tag}
-                </span>
-              ))}
-              {artwork.tags.length > 3 && (
-                <span className="px-2 py-1 bg-gray-100 text-gray-500 text-xs rounded-full">
-                  +{artwork.tags.length - 3}
-                </span>
-              )}
+          <div className="flex items-center justify-between text-sm text-gray-500">
+            <div className="flex items-center space-x-4">
+              <div className="flex items-center space-x-1">
+                <Eye className="w-4 h-4" />
+                <span>{artwork.stats.views.toLocaleString()}</span>
+              </div>
+              <div className="flex items-center space-x-1">
+                <Heart className="w-4 h-4" />
+                <span>{artwork.stats.likes.toLocaleString()}</span>
+              </div>
             </div>
-          )}
+            <span>{new Date(artwork.createdAt).toLocaleDateString()}</span>
+          </div>
         </div>
       </div>
     </motion.div>
@@ -203,12 +201,12 @@ export default function RecommendationsPage() {
       const data = await response.json()
       
       if (append) {
-        setArtworks(prev => [...prev, ...data.data])
+        setArtworks(prev => [...prev, ...data.data.recommendations])
       } else {
-        setArtworks(data.data)
+        setArtworks(data.data.recommendations)
       }
       
-      setHasMore(data.pagination.hasNext)
+      setHasMore(data.data.pagination.page < data.data.pagination.totalPages)
     } catch (err) {
       setError(err instanceof Error ? err.message : '获取数据失败')
     } finally {

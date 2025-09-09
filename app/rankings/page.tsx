@@ -87,23 +87,23 @@ function RankingCard({ artwork, rank }: { artwork: Artwork; rank: number }) {
         
         {/* 作品信息 */}
         <div className="p-4">
-          <h3 className="font-semibold text-gray-800 mb-2 line-clamp-2 group-hover:text-green-600 transition-colors">
-            {artwork.title}
-          </h3>
+          <div className="flex items-center space-x-2 mb-2">
+            <span className="font-medium text-green-600 flex-shrink-0">No. {rank}</span>
+            <h3 className="font-semibold text-gray-800 group-hover:text-green-600 transition-colors truncate">
+              {artwork.title}
+            </h3>
+          </div>
           
-          {/* 排名和作者信息 */}
+          {/* 作者和PID信息 */}
           <div className="flex items-center justify-between text-sm text-gray-600 mb-3">
-            <div className="flex items-center space-x-2">
-              <span className="font-medium text-green-600">No. {rank}</span>
+            <div className="flex items-center space-x-2 flex-1 min-w-0">
+              <span className="hover:text-green-600 transition-colors cursor-pointer truncate">
+                @{artwork.artist.name}
+              </span>
             </div>
-            <div className="flex items-center space-x-2">
-              <img
-                src={artwork.artist.avatar}
-                alt={artwork.artist.name}
-                className="w-5 h-5 rounded-full"
-              />
-              <span className="hover:text-green-600 transition-colors cursor-pointer">
-                @{artwork.artist.name} PID {artwork.id}
+            <div className="flex items-center space-x-2 flex-shrink-0">
+              <span className="font-medium text-green-600">
+                PID {artwork.id}
               </span>
             </div>
           </div>
@@ -154,9 +154,9 @@ export default function RankingsPage() {
         throw new Error('获取排行榜数据失败')
       }
       
-      const data: PaginatedResponse<Artwork> = await response.json()
-      setArtworks(data.data)
-      setTotalPages(data.pagination.totalPages)
+      const response_data = await response.json()
+      setArtworks(response_data.data.rankings)
+      setTotalPages(response_data.data.pagination.totalPages)
     } catch (err) {
       setError(err instanceof Error ? err.message : '获取数据失败')
     } finally {
