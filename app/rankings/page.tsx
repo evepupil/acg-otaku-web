@@ -8,8 +8,8 @@
 import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Calendar, TrendingUp, Eye, Heart, Clock, Filter } from 'lucide-react'
-import Navigation from '../../src/components/Navigation'
-import Footer from '../../src/components/Footer'
+// import Navigation from '../../src/components/Navigation'
+// import Footer from '../../src/components/Footer'
 import Button from '@/components/Button'
 import Loading from '@/components/Loading'
 import type { Artwork } from '@/types'
@@ -17,16 +17,16 @@ import type { Artwork } from '@/types'
 // 排行榜时间周期类型
 type RankingPeriod = 'daily' | 'weekly' | 'monthly'
 
-// 分页响应类型
-type PaginatedResponse<T> = {
-  data: T[]
-  pagination: {
-    page: number
-    limit: number
-    total: number
-    totalPages: number
-  }
-}
+// 分页响应类型 (暂时注释未使用)
+// type PaginatedResponse<T> = {
+//   data: T[]
+//   pagination: {
+//     page: number
+//     limit: number
+//     total: number
+//     totalPages: number
+//   }
+// }
 
 /**
  * 时间维度选项
@@ -186,7 +186,7 @@ export default function RankingsPage() {
   // 初始化数据
   useEffect(() => {
     fetchRankings(period)
-  }, [])
+  }, [period])
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-emerald-50 via-white to-green-50 pt-20">

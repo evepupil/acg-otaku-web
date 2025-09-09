@@ -150,11 +150,16 @@ const Button = forwardRef<HTMLButtonElement, ButtonProps>((
 
   if (animated) {
     const { 
+      // 移除未使用的事件处理器
       onDrag, onDragEnd, onDragStart, 
       onAnimationStart, onAnimationEnd, onAnimationIteration,
       onTransitionEnd, onTransitionStart,
       ...restProps 
     } = props
+    // 忽略未使用的事件处理器
+    void onDrag; void onDragEnd; void onDragStart;
+    void onAnimationStart; void onAnimationEnd; void onAnimationIteration;
+    void onTransitionEnd; void onTransitionStart;
     return (
       <motion.button
         ref={ref}

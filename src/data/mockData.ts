@@ -247,7 +247,8 @@ export const getRandomArtworks = (count: number = 12): Artwork[] => {
  * @param period 时间段
  * @returns 排行榜插画数组
  */
-export const getRankingArtworks = (period: 'daily' | 'weekly' | 'monthly'): Artwork[] => {
+export const getRankingArtworks = (): Artwork[] => {
+  // TODO: 根据时间段返回不同的排行榜数据
   return mockArtworks.slice(0, 10);
 };
 

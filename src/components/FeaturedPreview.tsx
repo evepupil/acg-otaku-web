@@ -289,7 +289,7 @@ export default function FeaturedPreview({
   title = '精选作品',
   subtitle = '发现最受欢迎的插画作品'
 }: FeaturedPreviewProps) {
-  const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid')
+  const [viewMode] = useState<'grid' | 'list'>('grid')
   
   if (loading) {
     return (

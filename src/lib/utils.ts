@@ -70,7 +70,7 @@ export function formatDate(date: string | Date, format: 'short' | 'long' | 'rela
  * @param wait - 等待时间（毫秒）
  * @returns 防抖后的函数
  */
-export function debounce<T extends (...args: any[]) => any>(
+export function debounce<T extends (...args: unknown[]) => unknown>(
   func: T,
   wait: number
 ): (...args: Parameters<T>) => void {
@@ -87,7 +87,7 @@ export function debounce<T extends (...args: any[]) => any>(
  * @param limit - 限制时间（毫秒）
  * @returns 节流后的函数
  */
-export function throttle<T extends (...args: any[]) => any>(
+export function throttle<T extends (...args: unknown[]) => unknown>(
   func: T,
   limit: number
 ): (...args: Parameters<T>) => void {
@@ -125,9 +125,9 @@ export function deepClone<T>(obj: T): T {
   if (obj instanceof Date) return new Date(obj.getTime()) as unknown as T
   if (obj instanceof Array) return obj.map(item => deepClone(item)) as unknown as T
   if (typeof obj === 'object') {
-    const clonedObj = {} as { [key: string]: any }
+    const clonedObj = {} as { [key: string]: unknown }
     for (const key in obj) {
-      if (obj.hasOwnProperty(key)) {
+      if (Object.prototype.hasOwnProperty.call(obj, key)) {
         clonedObj[key] = deepClone(obj[key])
       }
     }
@@ -280,7 +280,7 @@ export async function copyToClipboard(text: string): Promise<boolean> {
   try {
     await navigator.clipboard.writeText(text)
     return true
-  } catch (err) {
+  } catch {
     // 降级方案
     const textArea = document.createElement('textarea')
     textArea.value = text
@@ -292,7 +292,7 @@ export async function copyToClipboard(text: string): Promise<boolean> {
       document.execCommand('copy')
       document.body.removeChild(textArea)
       return true
-    } catch (err) {
+    } catch {
       document.body.removeChild(textArea)
       return false
     }

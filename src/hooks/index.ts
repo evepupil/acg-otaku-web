@@ -4,7 +4,7 @@
  */
 
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react'
-import { debounce, throttle } from '../lib/utils'
+import { throttle } from '../lib/utils'
 
 /**
  * 本地存储Hook
@@ -69,7 +69,7 @@ export function useDebounce<T>(value: T, delay: number): T {
  * @param delay - 延迟时间
  * @returns 节流后的函数
  */
-export function useThrottle<T extends (...args: any[]) => any>(
+export function useThrottle<T extends (...args: unknown[]) => unknown>(
   callback: T,
   delay: number
 ): T {
@@ -214,10 +214,10 @@ export function useKeyPress(
     }
 
     const element = target?.current || document
-    element.addEventListener('keydown', handleKeyPress as any)
+    element.addEventListener('keydown', handleKeyPress as EventListener)
 
     return () => {
-      element.removeEventListener('keydown', handleKeyPress as any)
+      element.removeEventListener('keydown', handleKeyPress as EventListener)
     }
   }, [key, handler, target, preventDefault])
 }

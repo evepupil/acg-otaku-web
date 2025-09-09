@@ -4,7 +4,7 @@
  */
 
 // 基础响应类型
-export interface ApiResponse<T = any> {
+export interface ApiResponse<T = unknown> {
   success: boolean
   data?: T
   error?: string
@@ -134,7 +134,7 @@ export interface UserAction {
   itemType: 'artwork' | 'article'
   userId?: string
   timestamp: string
-  metadata?: Record<string, any>
+  metadata?: Record<string, unknown>
 }
 
 // 导航菜单项类型
@@ -210,7 +210,7 @@ export interface ModalProps extends BaseComponentProps {
 export interface LoadingState {
   isLoading: boolean
   error?: string | null
-  data?: any
+  data?: unknown
 }
 
 // 表单验证类型

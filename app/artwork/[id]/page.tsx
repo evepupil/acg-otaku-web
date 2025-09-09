@@ -5,17 +5,19 @@
 
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback, use } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { 
-  Heart, Eye, Download, Share2, Calendar, Tag, User, 
-  ArrowLeft, ZoomIn, ZoomOut, RotateCw, X, ChevronLeft, 
-  ChevronRight, Bookmark, MessageCircle, ThumbsUp
+  Heart, Eye, Download, Share2, Tag, // Calendar, User,
+  ArrowLeft, ZoomIn, ZoomOut, RotateCw, X, // ChevronLeft, 
+  // ChevronRight, 
+  Bookmark // MessageCircle, ThumbsUp
 } from 'lucide-react'
 import Button from '@/components/Button'
 import Loading from '@/components/Loading'
 import { useRouter } from 'next/navigation'
-import type { Artwork, Artist } from '@/types'
+import type { Artwork } from '@/types'
+// import type { Artist } from '@/types' // 暂时未使用
 
 /**
  * 图片查看器组件
@@ -274,7 +276,8 @@ function RelatedArtworks({ artistId, currentArtworkId }: { artistId: number; cur
 /**
  * 插画详情页组件
  */
-export default function ArtworkDetailPage({ params }: { params: { id: string } }) {
+export default function ArtworkDetailPage({ params }: { params: Promise<{ id: string }> }) {
+  const resolvedParams = use(params)
   const router = useRouter()
   const [artwork, setArtwork] = useState<Artwork | null>(null)
   const [loading, setLoading] = useState(true)
@@ -287,7 +290,7 @@ export default function ArtworkDetailPage({ params }: { params: { id: string } }
   /**
    * 获取插画详情数据
    */
-  const fetchArtworkDetail = async () => {
+  const fetchArtworkDetail = useCallback(async () => {
     try {
       setLoading(true)
       setError(null)
@@ -297,7 +300,7 @@ export default function ArtworkDetailPage({ params }: { params: { id: string } }
       
       // 模拟数据
       const mockArtwork: Artwork = {
-        id: parseInt(params.id),
+        id: parseInt(resolvedParams.id),
         title: '美丽的樱花季节',
         description: '这是一幅描绘春天樱花盛开的美丽插画，充满了温暖和希望的色彩。',
         imageUrl: 'https://trae-api-sg.mchost.guru/api/ide/v1/text_to_image?prompt=beautiful%20cherry%20blossom%20season%20anime%20illustration&image_size=landscape_16_9',
@@ -328,7 +331,7 @@ export default function ArtworkDetailPage({ params }: { params: { id: string } }
     } finally {
       setLoading(false)
     }
-  }
+  }, [resolvedParams.id])
 
   /**
    * 处理点赞
@@ -358,7 +361,7 @@ export default function ArtworkDetailPage({ params }: { params: { id: string } }
           url: window.location.href
         })
       } catch (error) {
-        console.log('分享取消或失败')
+        console.log('分享取消或失败', error)
       }
     } else {
       // 复制链接到剪贴板
@@ -391,7 +394,7 @@ export default function ArtworkDetailPage({ params }: { params: { id: string } }
 
   useEffect(() => {
     fetchArtworkDetail()
-  }, [params.id])
+  }, [resolvedParams.id, fetchArtworkDetail])
 
   if (loading) {
     return (

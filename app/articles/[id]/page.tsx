@@ -5,7 +5,7 @@
 
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, use } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { 
   Heart, Eye, Share2, Calendar, Tag, Clock, 
@@ -203,7 +203,8 @@ function RelatedArticles({ categoryId, currentArticleId }: { categoryId: string;
 /**
  * 文章详情页组件
  */
-export default function ArticleDetailPage({ params }: { params: { id: string } }) {
+export default function ArticleDetailPage({ params }: { params: Promise<{ id: string }> }) {
+  const resolvedParams = use(params)
   const router = useRouter()
   const [article, setArticle] = useState<Article | null>(null)
   const [loading, setLoading] = useState(true)
@@ -225,7 +226,7 @@ export default function ArticleDetailPage({ params }: { params: { id: string } }
       
       // 模拟数据
       const mockArticle: Article = {
-        id: parseInt(params.id),
+        id: parseInt(resolvedParams.id),
         title: '插画创作技巧：如何绘制生动的角色表情',
         excerpt: '本文将详细介绍如何通过观察和练习来提升角色表情的绘制技巧，让你的作品更加生动有趣。',
         content: `# 插画创作技巧：如何绘制生动的角色表情
@@ -446,7 +447,7 @@ export default function ArticleDetailPage({ params }: { params: { id: string } }
 
   useEffect(() => {
     fetchArticleDetail()
-  }, [params.id, fetchArticleDetail])
+  }, [resolvedParams.id, fetchArticleDetail])
 
   if (loading) {
     return (
