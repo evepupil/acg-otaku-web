@@ -151,6 +151,64 @@ async function handleImageProxy(
 }
 
 /**
+ * 处理调试请求
+ * GET /debug/{pid}
+ */
+async function handleDebugRequest(
+  request: Request,
+  env: Env,
+  pid: string
+): Promise<Response> {
+  try {
+    const { searchParams } = parseRequest(request);
+    const taskId = searchParams.get('taskId') || `debug_${Date.now()}`;
+    
+    // 获取 Pixiv 头部信息
+    const headers = getPixivHeaders(request, env);
+    
+    // 检查必要的认证信息
+    if (!headers.cookie) {
+      return createJsonResponse<null>({
+        success: false,
+        error: '缺少 Pixiv Cookie 认证信息',
+        message: '请在请求头中设置 X-Pixiv-Cookie 或在环境变量中配置 PIXIV_COOKIE'
+      }, 401);
+    }
+    
+    // 创建代理实例
+    const proxy = createPixivProxy(headers, undefined, taskId);
+    
+    // 执行调试流程 - 只获取信息，不代理图片
+    const logManager = proxy.getLogManager();
+    
+    // 模拟代理流程但不返回图片
+    await proxy.proxyImage(pid);
+    
+    // 获取所有日志
+    const logs = logManager.getLogs();
+    
+    return createJsonResponse({
+      success: true,
+      data: {
+        pid,
+        taskId,
+        logs,
+        logCount: logs.length,
+        timestamp: new Date().toISOString()
+      },
+      message: `调试信息获取成功，共 ${logs.length} 条日志`
+    });
+  } catch (error) {
+    console.error('调试请求处理异常:', error);
+    return createJsonResponse<null>({
+      success: false,
+      error: error instanceof Error ? error.message : String(error),
+      message: '调试请求处理失败'
+    }, 500);
+  }
+}
+
+/**
  * 处理健康检查请求
  * GET /health
  */
@@ -183,6 +241,19 @@ function handleApiInfo(): Response {
           parameters: {
             pid: '插画 ID',
             size: '图片尺寸 (可选): thumb_mini, small, regular, original',
+            taskId: '任务 ID (可选)'
+          },
+          headers: {
+            'X-Pixiv-Cookie': 'Pixiv Cookie (必需)',
+            'X-Pixiv-User-Agent': 'User Agent (可选)',
+            'X-Pixiv-Referer': 'Referer (可选)',
+            'X-Pixiv-Accept-Language': 'Accept Language (可选)'
+          }
+        },
+        'GET /debug/{pid}': {
+          description: '调试模式 - 返回详细的日志信息而不代理图片',
+          parameters: {
+            pid: '插画 ID',
             taskId: '任务 ID (可选)'
           },
           headers: {
@@ -230,6 +301,11 @@ export default {
         // API 信息
         case pathname === '/api/info':
           return handleApiInfo();
+        
+        // 调试模式 - /debug/{pid}
+        case segments[0] === 'debug' && segments[1] && request.method === 'GET':
+          const debugPid = segments[1];
+          return await handleDebugRequest(request, env, debugPid);
         
         // 图片代理 - /proxy/{pid}
         case segments[0] === 'proxy' && segments[1] && request.method === 'GET':

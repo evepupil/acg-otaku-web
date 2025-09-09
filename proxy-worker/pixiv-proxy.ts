@@ -4,7 +4,8 @@ import {
   PixivIllustInfo,
   ProxyImageResult,
   ILogManager,
-  LogType
+  LogType,
+  CloudflareRequestInit
 } from './types';
 
 /**
@@ -84,24 +85,66 @@ export class PixivProxy {
     try {
       this.logManager.addLog(`获取插画 ${pid} 页面信息`, 'info', this.taskId);
       
-      const response = await fetch(
-        `https://www.pixiv.net/ajax/illust/${pid}/pages?lang=zh`,
-        {
-          headers: this.headers,
-          cf: {
-            // Cloudflare 特定配置
-            cacheTtl: 300, // 缓存 5 分钟
-            cacheEverything: true
-          } as any
+      // 记录请求详情
+      const requestUrl = `https://www.pixiv.net/ajax/illust/${pid}/pages?lang=zh`;
+      this.logManager.addLog(`请求URL: ${requestUrl}`, 'info', this.taskId);
+      this.logManager.addLog(`请求头信息:`, 'info', this.taskId);
+      for (const key in this.headers) {
+        if (this.headers.hasOwnProperty(key)) {
+          this.logManager.addLog(`  ${key}: ${this.headers[key]}`, 'info', this.taskId);
         }
-      );
+      }
+      
+      const response = await fetch(requestUrl, {
+        headers: this.headers,
+        cf: {
+          // Cloudflare 特定配置
+          cacheTtl: 300, // 缓存 5 分钟
+          cacheEverything: true
+        }
+      } as CloudflareRequestInit);
+
+      // 记录响应状态和头部信息
+      this.logManager.addLog(`响应状态: ${response.status} ${response.statusText}`, 'info', this.taskId);
+      this.logManager.addLog(`响应头信息:`, 'info', this.taskId);
+      response.headers.forEach((value, key) => {
+        this.logManager.addLog(`  ${key}: ${value}`, 'info', this.taskId);
+      });
 
       if (!response.ok) {
+        // 尝试读取响应体内容
+        let responseText = '';
+        try {
+          responseText = await response.text();
+          this.logManager.addLog(`响应体内容: ${responseText}`, 'error', this.taskId);
+        } catch (readError) {
+          this.logManager.addLog(`无法读取响应体: ${readError instanceof Error ? readError.message : String(readError)}`, 'error', this.taskId);
+        }
+        
         this.logManager.addLog(`获取插画 ${pid} 页面信息失败: HTTP ${response.status}`, 'error', this.taskId);
         return null;
       }
 
-      const resJson: PixivIllustPagesResponse = await response.json();
+      // 读取响应体
+      const responseText = await response.text();
+      this.logManager.addLog(`响应体长度: ${responseText.length} 字符`, 'info', this.taskId);
+      this.logManager.addLog(`响应体内容: ${responseText}`, 'info', this.taskId);
+
+      let resJson: PixivIllustPagesResponse;
+      try {
+        resJson = JSON.parse(responseText);
+      } catch (parseError) {
+        this.logManager.addLog(`JSON解析失败: ${parseError instanceof Error ? parseError.message : String(parseError)}`, 'error', this.taskId);
+        this.logManager.addLog(`原始响应: ${responseText}`, 'error', this.taskId);
+        return null;
+      }
+      
+      // 记录解析后的JSON结构
+      this.logManager.addLog(`解析后的JSON结构:`, 'info', this.taskId);
+      this.logManager.addLog(`  error: ${resJson.error}`, 'info', this.taskId);
+      this.logManager.addLog(`  message: ${resJson.message || 'N/A'}`, 'info', this.taskId);
+      this.logManager.addLog(`  body存在: ${!!resJson.body}`, 'info', this.taskId);
+      this.logManager.addLog(`  body长度: ${resJson.body ? resJson.body.length : 0}`, 'info', this.taskId);
       
       if (resJson.error === false && resJson.body && resJson.body.length > 0) {
         this.logManager.addLog(`获取插画 ${pid} 页面信息成功，共 ${resJson.body.length} 张图片`, 'info', this.taskId);
@@ -109,17 +152,21 @@ export class PixivProxy {
         // 打印所有可用的图片尺寸和链接
         const urls = resJson.body[0].urls;
         this.logManager.addLog(`插画 ${pid} 可用图片尺寸:`, 'info', this.taskId);
-        Object.entries(urls).forEach(([size, url]) => {
-          this.logManager.addLog(`  ${size}: ${url}`, 'info', this.taskId);
-        });
+        for (const size in urls) {
+          if (urls.hasOwnProperty(size)) {
+            this.logManager.addLog(`  ${size}: ${urls[size as keyof typeof urls]}`, 'info', this.taskId);
+          }
+        }
         
         return resJson;
       } else {
         this.logManager.addLog(`获取插画 ${pid} 页面信息失败或为空`, 'warning', this.taskId);
+        this.logManager.addLog(`错误详情: error=${resJson.error}, message=${resJson.message || 'N/A'}`, 'warning', this.taskId);
         return null;
       }
     } catch (error) {
       this.logManager.addLog(`获取插画 ${pid} 页面信息异常: ${error instanceof Error ? error.message : String(error)}`, 'error', this.taskId);
+      this.logManager.addLog(`异常堆栈: ${error instanceof Error ? error.stack : 'N/A'}`, 'error', this.taskId);
       return null;
     }
   }
@@ -130,23 +177,51 @@ export class PixivProxy {
   private async getArtistName(pid: string): Promise<string | null> {
     try {
       // 使用新的API方法获取插画信息，更加高效
-      const response = await fetch(
-        `https://www.pixiv.net/ajax/illust/${pid}`,
-        {
-          headers: this.headers,
-          cf: {
-            cacheTtl: 300,
-            cacheEverything: true
-          } as any
+      const requestUrl = `https://www.pixiv.net/ajax/illust/${pid}`;
+      this.logManager.addLog(`获取插画 ${pid} 基本信息`, 'info', this.taskId);
+      this.logManager.addLog(`请求URL: ${requestUrl}`, 'info', this.taskId);
+      
+      const response = await fetch(requestUrl, {
+        headers: this.headers,
+        cf: {
+          cacheTtl: 300,
+          cacheEverything: true
         }
-      );
+      } as CloudflareRequestInit);
+
+      this.logManager.addLog(`响应状态: ${response.status} ${response.statusText}`, 'info', this.taskId);
 
       if (!response.ok) {
+        let responseText = '';
+        try {
+          responseText = await response.text();
+          this.logManager.addLog(`响应体内容: ${responseText}`, 'error', this.taskId);
+        } catch (readError) {
+          this.logManager.addLog(`无法读取响应体: ${readError instanceof Error ? readError.message : String(readError)}`, 'error', this.taskId);
+        }
+        
         this.logManager.addLog(`获取插画 ${pid} 信息失败: HTTP ${response.status}`, 'error', this.taskId);
         return null;
       }
 
-      const resJson: PixivIllustInfo = await response.json();
+      const responseText = await response.text();
+      this.logManager.addLog(`响应体长度: ${responseText.length} 字符`, 'info', this.taskId);
+      this.logManager.addLog(`响应体内容: ${responseText}`, 'info', this.taskId);
+
+      let resJson: PixivIllustInfo;
+      try {
+        resJson = JSON.parse(responseText);
+      } catch (parseError) {
+        this.logManager.addLog(`JSON解析失败: ${parseError instanceof Error ? parseError.message : String(parseError)}`, 'error', this.taskId);
+        this.logManager.addLog(`原始响应: ${responseText}`, 'error', this.taskId);
+        return null;
+      }
+      
+      this.logManager.addLog(`解析后的JSON结构:`, 'info', this.taskId);
+      this.logManager.addLog(`  error: ${resJson.error}`, 'info', this.taskId);
+      this.logManager.addLog(`  message: ${resJson.message || 'N/A'}`, 'info', this.taskId);
+      this.logManager.addLog(`  body存在: ${!!resJson.body}`, 'info', this.taskId);
+      this.logManager.addLog(`  userName: ${resJson.body?.userName || 'N/A'}`, 'info', this.taskId);
       
       if (resJson.error === false && resJson.body && resJson.body.userName) {
         const userName = resJson.body.userName;
@@ -155,9 +230,11 @@ export class PixivProxy {
       }
       
       this.logManager.addLog(`未找到插画 ${pid} 的画师名字`, 'warning', this.taskId);
+      this.logManager.addLog(`错误详情: error=${resJson.error}, message=${resJson.message || 'N/A'}`, 'warning', this.taskId);
       return null;
     } catch (error) {
       this.logManager.addLog(`获取画师名字异常: ${error instanceof Error ? error.message : String(error)}`, 'error', this.taskId);
+      this.logManager.addLog(`异常堆栈: ${error instanceof Error ? error.stack : 'N/A'}`, 'error', this.taskId);
       return null;
     }
   }
@@ -239,8 +316,8 @@ export class PixivProxy {
           // 图片缓存时间更长
           cacheTtl: 3600, // 1小时
           cacheEverything: true
-        } as any
-      });
+        }
+      } as CloudflareRequestInit);
 
       if (response.ok) {
         const imageBuffer = await response.arrayBuffer();

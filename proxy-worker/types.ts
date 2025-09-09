@@ -27,6 +27,7 @@ export interface PixivIllustPage {
 export interface PixivIllustPagesResponse {
   body: PixivIllustPage[];
   error: boolean;
+  message?: string;
 }
 
 /**
@@ -55,6 +56,7 @@ export interface PixivIllustInfo {
     }>;
   };
   error: boolean | string;
+  message?: string;
 }
 
 /**
@@ -73,10 +75,22 @@ export interface ProxyImageResult {
 export type LogType = 'info' | 'error' | 'warning' | 'success';
 
 /**
+ * 日志条目
+ */
+export interface LogEntry {
+  message: string;
+  type: LogType;
+  taskId?: string;
+  timestamp: string;
+}
+
+/**
  * 日志管理器接口
  */
 export interface ILogManager {
   addLog(message: string, type: LogType, taskId?: string): void;
+  getLogs(): LogEntry[];
+  clearLogs(): void;
 }
 
 /**
@@ -109,4 +123,14 @@ export interface ApiResponse<T = any> {
 export interface ExecutionContext {
   waitUntil(promise: Promise<any>): void;
   passThroughOnException(): void;
+}
+
+/**
+ * Cloudflare Worker RequestInit 扩展
+ */
+export interface CloudflareRequestInit extends RequestInit {
+  cf?: {
+    cacheTtl?: number;
+    cacheEverything?: boolean;
+  };
 }
