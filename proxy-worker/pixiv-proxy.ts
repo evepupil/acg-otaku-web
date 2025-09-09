@@ -277,21 +277,29 @@ export class PixivProxy {
       
       this.logManager.addLog(`开始代理访问插画 ${pid}，按优先级尝试尺寸: ${imgSizes.join(' → ')}`, 'info', this.taskId);
       
-      for (const size of imgSizes) {
-        const urls = pagesResponse.body[0].urls;
-        const imageUrl = urls[size as keyof typeof urls];
-        if (!imageUrl) {
-          this.logManager.addLog(`插画 ${pid} 的 ${size} 尺寸图片链接不存在，跳过`, 'warning', this.taskId);
-          continue;
-        }
+       for (const size of imgSizes) {
+         const urls = pagesResponse.body[0].urls;
+         const imageUrl = urls[size as keyof typeof urls];
+         if (!imageUrl) {
+           this.logManager.addLog(`插画 ${pid} 的 ${size} 尺寸图片链接不存在，跳过`, 'warning', this.taskId);
+           continue;
+         }
 
-        this.logManager.addLog(`开始代理访问 ${pid} 的 ${size} 尺寸图片: ${imageUrl}`, 'info', this.taskId);
+         this.logManager.addLog(`开始代理访问 ${pid} 的 ${size} 尺寸图片: ${imageUrl}`, 'info', this.taskId);
 
-        const result = await this.tryDownloadImage(imageUrl, size);
-        if (result.success) {
-          return result;
-        }
-      }
+         // 首先尝试直接代理
+         let result = await this.tryDownloadImage(imageUrl, size);
+         if (result.success) {
+           return result;
+         }
+
+         // 如果直接代理失败，尝试第三方代理
+         this.logManager.addLog(`直接代理失败，尝试第三方代理服务`, 'warning', this.taskId);
+         result = await this.tryThirdPartyProxy(imageUrl, size);
+         if (result.success) {
+           return result;
+         }
+       }
 
       return { success: false, error: '所有尺寸的图片都无法访问' };
     } catch (error) {
@@ -302,22 +310,150 @@ export class PixivProxy {
   }
 
   /**
+   * 重写 Pixiv 图片 URL 以绕过防盗链
+   */
+  private rewritePixivImageUrl(imageUrl: string): string {
+    // 如果已经是 i.pixiv.cat 域名，直接返回
+    if (imageUrl.includes('i.pixiv.cat')) {
+      return imageUrl;
+    }
+    
+    // 将 i.pximg.net 替换为 i.pixiv.cat 以绕过防盗链
+    if (imageUrl.includes('i.pximg.net')) {
+      const rewrittenUrl = imageUrl.replace('i.pximg.net', 'i.pixiv.cat');
+      this.logManager.addLog(`重写图片URL: ${imageUrl} -> ${rewrittenUrl}`, 'info', this.taskId);
+      return rewrittenUrl;
+    }
+    
+    return imageUrl;
+  }
+
+  /**
+   * 使用第三方代理服务
+   */
+  private async tryThirdPartyProxy(imageUrl: string, size: string): Promise<ProxyImageResult> {
+    try {
+      // 使用 pixiv.cat 作为备用代理
+      const proxyUrl = `https://pixiv.cat/${imageUrl.split('/').pop()}`;
+      this.logManager.addLog(`尝试第三方代理: ${proxyUrl}`, 'info', this.taskId);
+      
+      const response = await fetch(proxyUrl, {
+        headers: {
+          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+          'Accept': 'image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8',
+          'Accept-Language': 'zh-CN,zh;q=0.9,en;q=0.8',
+          'Referer': 'https://www.pixiv.net/',
+          'Cache-Control': 'no-cache',
+          // 添加 Cookie 认证
+          'Cookie': this.headers.cookie || ''
+        },
+        cf: {
+          cacheTtl: 0,
+          cacheEverything: false
+        }
+      } as CloudflareRequestInit);
+
+      if (response.ok) {
+        const imageBuffer = await response.arrayBuffer();
+        const fileSizeMB = imageBuffer.byteLength / (1024 * 1024);
+        
+        this.logManager.addLog(`第三方代理访问成功，尺寸: ${size}，文件大小: ${fileSizeMB.toFixed(2)}MB`, 'success', this.taskId);
+        
+        return {
+          success: true,
+          imageBuffer,
+          contentType: 'image/jpeg' // pixiv.cat 通常返回 JPEG
+        };
+      } else {
+        this.logManager.addLog(`第三方代理访问失败: HTTP ${response.status}`, 'warning', this.taskId);
+      }
+    } catch (error) {
+      this.logManager.addLog(`第三方代理访问异常: ${error instanceof Error ? error.message : String(error)}`, 'warning', this.taskId);
+    }
+    
+    return { success: false, error: '第三方代理访问失败' };
+  }
+
+  /**
    * 尝试下载指定URL的图片
    */
   private async tryDownloadImage(imageUrl: string, size: string): Promise<ProxyImageResult> {
     try {
+      // 重写 URL 以绕过防盗链
+      const rewrittenUrl = this.rewritePixivImageUrl(imageUrl);
+      this.logManager.addLog(`开始代理访问图片: ${imageUrl}`, 'info', this.taskId);
+      if (rewrittenUrl !== imageUrl) {
+        this.logManager.addLog(`使用重写后的URL: ${rewrittenUrl}`, 'info', this.taskId);
+      }
+      
+      // 构建更完整的请求头，模拟真实浏览器
+      const requestHeaders = {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+        'Accept': 'image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8',
+        'Accept-Language': 'zh-CN,zh;q=0.9,en;q=0.8,ja;q=0.7',
+        'Accept-Encoding': 'gzip, deflate, br',
+        'Referer': 'https://www.pixiv.net/',
+        'Origin': 'https://www.pixiv.net',
+        'Sec-Fetch-Dest': 'image',
+        'Sec-Fetch-Mode': 'no-cors',
+        'Sec-Fetch-Site': 'cross-site',
+        'Cache-Control': 'no-cache',
+        'Pragma': 'no-cache',
+        // 添加 Pixiv 特定的头部
+        'X-Requested-With': 'XMLHttpRequest',
+        'DNT': '1',
+        'Connection': 'keep-alive',
+        'Upgrade-Insecure-Requests': '1',
+        // 添加 Cookie 认证
+        'Cookie': this.headers.cookie || ''
+      };
+
+      this.logManager.addLog(`请求头信息:`, 'info', this.taskId);
+      for (const key in requestHeaders) {
+        if (requestHeaders.hasOwnProperty(key)) {
+          const value = requestHeaders[key as keyof typeof requestHeaders];
+          // 对 Cookie 进行脱敏处理
+          if (key === 'Cookie') {
+            const cookieValue = value as string;
+            if (cookieValue) {
+              // 只显示前20个字符，其余用*代替
+              const maskedCookie = cookieValue.length > 20 
+                ? cookieValue.substring(0, 20) + '...' 
+                : cookieValue;
+              this.logManager.addLog(`  ${key}: ${maskedCookie}`, 'info', this.taskId);
+            } else {
+              this.logManager.addLog(`  ${key}: (空)`, 'warning', this.taskId);
+            }
+          } else {
+            this.logManager.addLog(`  ${key}: ${value}`, 'info', this.taskId);
+          }
+        }
+      }
+
+      // 检查 Cookie 是否有效
+      if (!this.headers.cookie) {
+        this.logManager.addLog(`警告: 没有提供 Pixiv Cookie，可能导致 403 错误`, 'warning', this.taskId);
+      } else {
+        this.logManager.addLog(`Cookie 已提供，长度: ${this.headers.cookie.length} 字符`, 'info', this.taskId);
+      }
+
       // 代理访问图片
-      const response = await fetch(imageUrl, {
-        headers: {
-          ...this.headers,
-          'Referer': 'https://www.pixiv.net/'
-        },
+      const response = await fetch(rewrittenUrl, {
+        method: 'GET',
+        headers: requestHeaders,
         cf: {
-          // 图片缓存时间更长
-          cacheTtl: 3600, // 1小时
-          cacheEverything: true
+          // 禁用缓存以避免 403 错误
+          cacheTtl: 0,
+          cacheEverything: false
         }
       } as CloudflareRequestInit);
+
+      // 记录响应状态和头部信息
+      this.logManager.addLog(`响应状态: ${response.status} ${response.statusText}`, 'info', this.taskId);
+      this.logManager.addLog(`响应头信息:`, 'info', this.taskId);
+      response.headers.forEach((value, key) => {
+        this.logManager.addLog(`  ${key}: ${value}`, 'info', this.taskId);
+      });
 
       if (response.ok) {
         const imageBuffer = await response.arrayBuffer();
@@ -336,7 +472,25 @@ export class PixivProxy {
           contentType
         };
       } else {
-        this.logManager.addLog(`代理访问 ${size} 尺寸失败: HTTP ${response.status}`, 'warning', this.taskId);
+        // 尝试读取错误响应体
+        let errorText = '';
+        try {
+          errorText = await response.text();
+          this.logManager.addLog(`错误响应体: ${errorText}`, 'error', this.taskId);
+        } catch (readError) {
+          this.logManager.addLog(`无法读取错误响应体: ${readError instanceof Error ? readError.message : String(readError)}`, 'error', this.taskId);
+        }
+        
+        this.logManager.addLog(`代理访问 ${size} 尺寸失败: HTTP ${response.status} ${response.statusText}`, 'error', this.taskId);
+        
+        // 针对 403 错误提供具体的解决建议
+        if (response.status === 403) {
+          this.logManager.addLog(`403 错误可能原因:`, 'error', this.taskId);
+          this.logManager.addLog(`  1. Pixiv 防盗链保护 - 检查 Referer 头`, 'error', this.taskId);
+          this.logManager.addLog(`  2. User-Agent 被识别为爬虫`, 'error', this.taskId);
+          this.logManager.addLog(`  3. IP 地址被 Pixiv 封禁`, 'error', this.taskId);
+          this.logManager.addLog(`  4. 图片 URL 已过期或无效`, 'error', this.taskId);
+        }
       }
     } catch (error) {
       this.logManager.addLog(`代理访问 ${size} 尺寸失败: ${error instanceof Error ? error.message : String(error)}`, 'warning', this.taskId);
