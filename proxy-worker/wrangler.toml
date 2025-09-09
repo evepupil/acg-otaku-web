@@ -22,9 +22,7 @@ name = "pixiv-proxy-worker-staging"
 # [secrets]
 # PIXIV_COOKIE = "your_pixiv_cookie_here"
 
-# 限制和配置
-[limits]
-cpu_ms = 50000  # CPU 时间限制（毫秒）
+
 
 # 触发器配置
 [[triggers]]
