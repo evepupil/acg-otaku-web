@@ -1,0 +1,37 @@
+name = "pixiv-proxy-worker"
+main = "index.ts"
+compatibility_date = "2023-12-18"
+compatibility_flags = ["nodejs_compat"]
+
+# Worker 配置
+[env.production]
+name = "pixiv-proxy-worker"
+
+[env.staging]
+name = "pixiv-proxy-worker-staging"
+
+# 环境变量配置（可选）
+# 在 Cloudflare Dashboard 中设置这些变量，或者使用 wrangler secret 命令
+# [vars]
+# PIXIV_USER_AGENT = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+# PIXIV_REFERER = "https://www.pixiv.net/"
+# PIXIV_ACCEPT_LANGUAGE = "zh-CN,zh;q=0.9,en;q=0.8"
+
+# 敏感信息使用 secrets（推荐）
+# 使用命令设置: wrangler secret put PIXIV_COOKIE
+# [secrets]
+# PIXIV_COOKIE = "your_pixiv_cookie_here"
+
+# 限制和配置
+[limits]
+cpu_ms = 50000  # CPU 时间限制（毫秒）
+
+# 触发器配置
+[[triggers]]
+pattern = "*/*"
+
+# 开发环境配置
+[dev]
+ip = "127.0.0.1"
+port = 8787
+local_protocol = "http"
