@@ -169,11 +169,11 @@ function ArticleCard({ article, viewMode }: { article: Article; viewMode: ViewMo
               <div className="flex items-center space-x-4 text-sm text-gray-500">
                 <div className="flex items-center space-x-1">
                   <Eye className="w-4 h-4" />
-                  <span>{article.views.toLocaleString()}</span>
+                  <span>{(article.views || 0).toLocaleString()}</span>
                 </div>
                 <div className="flex items-center space-x-1">
                   <Heart className="w-4 h-4" />
-                  <span>{article.likes.toLocaleString()}</span>
+                  <span>{(article.likes || 0).toLocaleString()}</span>
                 </div>
               </div>
             </div>
@@ -256,17 +256,17 @@ function ArticleCard({ article, viewMode }: { article: Article; viewMode: ViewMo
         <div className="flex items-center justify-between text-sm text-gray-500">
           <div className="flex items-center space-x-2">
             <User className="w-4 h-4" />
-            <span>{article.author.name}</span>
+            <span>{article.author_name}</span>
           </div>
           
           <div className="flex items-center space-x-4">
             <div className="flex items-center space-x-1">
               <Eye className="w-4 h-4" />
-              <span>{article.views.toLocaleString()}</span>
+              <span>{(article.views || 0).toLocaleString()}</span>
             </div>
             <div className="flex items-center space-x-1">
               <Heart className="w-4 h-4" />
-              <span>{article.likes.toLocaleString()}</span>
+              <span>{(article.likes || 0).toLocaleString()}</span>
             </div>
           </div>
         </div>
@@ -370,12 +370,13 @@ export default function ArticlesPage() {
       const data = await response.json()
       
       if (append) {
-        setArticles(prev => [...prev, ...data.data])
+        setArticles(prev => [...prev, ...data.data.articles])
       } else {
-        setArticles(data.data)
+        setArticles(data.data.articles)
       }
       
-      setHasMore(data.pagination.hasNext)
+      // 基于当前页数和总页数判断是否还有更多数据
+      setHasMore(data.data.pagination.page < data.data.pagination.totalPages)
     } catch (err) {
       console.error('获取数据失败:', err)
       setError(err instanceof Error ? err.message : '获取数据失败')

@@ -4,8 +4,9 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server'
+import { getAllArticles, getArticleById, searchArticles } from '../../../src/lib/articles'
 
-// 模拟文章数据
+// 备用模拟文章数据（当真实文章不存在时使用）
 const mockArticles = [
   {
     id: 201,
@@ -93,9 +94,19 @@ export async function GET(request: NextRequest) {
     const category = searchParams.get('category')
     const search = searchParams.get('search')
 
+    // 获取真实文章数据，如果没有则使用mock数据
+    const realArticles = getAllArticles()
+    const allArticles = realArticles.length > 0 ? realArticles : mockArticles
+
     // 如果指定了文章ID，返回单篇文章详情
     if (articleId) {
-      const article = mockArticles.find(item => item.id === parseInt(articleId))
+      let article
+      if (realArticles.length > 0) {
+        article = getArticleById(articleId)
+      } else {
+        article = mockArticles.find(item => item.id === parseInt(articleId))
+      }
+      
       if (!article) {
         return NextResponse.json(
           { error: '文章不存在' },
@@ -108,7 +119,7 @@ export async function GET(request: NextRequest) {
       })
     }
 
-    let filteredArticles = mockArticles
+    let filteredArticles = allArticles
 
     // 分类筛选
     if (category) {
@@ -119,12 +130,18 @@ export async function GET(request: NextRequest) {
 
     // 搜索筛选
     if (search) {
-      const searchLower = search.toLowerCase()
-      filteredArticles = filteredArticles.filter(article => 
-        article.title.toLowerCase().includes(searchLower) ||
-        article.excerpt.toLowerCase().includes(searchLower) ||
-        article.tags.some(tag => tag.toLowerCase().includes(searchLower))
-      )
+      if (realArticles.length > 0) {
+        // 使用真实文章的搜索功能
+        filteredArticles = searchArticles(search)
+      } else {
+        // 使用mock数据的搜索逻辑
+        const searchLower = search.toLowerCase()
+        filteredArticles = filteredArticles.filter(article => 
+          article.title.toLowerCase().includes(searchLower) ||
+          article.excerpt.toLowerCase().includes(searchLower) ||
+          article.tags.some(tag => tag.toLowerCase().includes(searchLower))
+        )
+      }
     }
 
     // 按发布日期排序（最新的在前）
