@@ -3,7 +3,8 @@
 import { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ChevronLeft, ChevronRight, Play, Pause } from 'lucide-react';
-import { Artwork } from '../data/mockData';
+import { useRouter } from 'next/navigation';
+import { Artwork } from '../types';
 
 interface ImageCarouselProps {
   /** 轮播图片数据 */
@@ -34,6 +35,15 @@ export default function ImageCarousel({
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isPlaying, setIsPlaying] = useState(true);
   const [isHovered, setIsHovered] = useState(false);
+  const router = useRouter();
+
+  /**
+   * 处理图片点击事件，跳转到作品详情页面
+   */
+  const handleImageClick = () => {
+    const currentImage = images[currentIndex];
+    router.push(`/artwork/${currentImage.id}`);
+  };
 
   /**
    * 切换到下一张图片
@@ -141,7 +151,7 @@ export default function ImageCarousel({
       </div>
 
       {/* 内容信息覆盖层 */}
-      <div className="absolute inset-0 flex items-center justify-center">
+      <div className="absolute inset-0 flex items-center justify-center cursor-pointer" onClick={handleImageClick}>
         <motion.div 
           initial={{ opacity: 0, y: 50 }}
           animate={{ opacity: 1, y: 0 }}

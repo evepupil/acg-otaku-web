@@ -6,6 +6,7 @@ import ImageCarousel from '../src/components/ImageCarousel';
 import FeaturedPreview from '../src/components/FeaturedPreview';
 import Footer from '../src/components/Footer';
 import { getFeaturedArtworks } from '../src/data/mockData';
+import { transformMockArtworksToType } from '../src/utils/dataTransform';
 
 /**
  * 首页组件
@@ -14,7 +15,8 @@ import { getFeaturedArtworks } from '../src/data/mockData';
  */
 export default function HomePage() {
   // 获取精选插画数据用于轮播
-  const featuredArtworks = getFeaturedArtworks();
+  const mockFeaturedArtworks = getFeaturedArtworks();
+  const featuredArtworks = transformMockArtworksToType(mockFeaturedArtworks);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-white via-gray-50 to-green-50">

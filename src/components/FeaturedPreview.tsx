@@ -8,6 +8,7 @@
 import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Heart, Eye, Star, ArrowRight, Clock } from 'lucide-react'
+import { useRouter } from 'next/navigation'
 import Button from './Button'
 import { CardSkeleton } from './Loading'
 import { cn, formatNumber, formatDate } from '../lib/utils'
@@ -32,7 +33,7 @@ interface FeaturedPreviewProps {
 /**
  * 模拟精选作品数据
  */
-const mockArtworks: Artwork[] = [
+const mockArtworksData = [
   {
     id: 1,
     title: '夏日海滩少女',
@@ -156,11 +157,39 @@ const mockArtworks: Artwork[] = [
 ]
 
 /**
+ * 转换后的精选作品数据
+ */
+const mockArtworks: Artwork[] = mockArtworksData.map(artwork => ({
+  id: parseInt(artwork.id.toString()),
+  title: artwork.title,
+  artist: {
+    id: parseInt(artwork.artist.id.toString()),
+    name: artwork.artist.name,
+    avatar: artwork.artist.avatar,
+    followerCount: artwork.artist.followerCount
+  },
+  imageUrl: artwork.imageUrl,
+  description: artwork.description,
+  tags: artwork.tags,
+  createdAt: artwork.createdAt,
+  updatedAt: artwork.updatedAt,
+  stats: artwork.stats
+}))
+
+/**
  * 作品卡片组件
  */
 const ArtworkCard = ({ artwork, index }: { artwork: Artwork, index: number }) => {
   const [isLiked, setIsLiked] = useState(false)
   const [imageLoaded, setImageLoaded] = useState(false)
+  const router = useRouter()
+
+  /**
+   * 处理卡片点击事件，跳转到作品详情页面
+   */
+  const handleCardClick = () => {
+    router.push(`/artwork/${artwork.id}`)
+  }
 
   return (
     <motion.div
@@ -168,6 +197,7 @@ const ArtworkCard = ({ artwork, index }: { artwork: Artwork, index: number }) =>
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: index * 0.1, duration: 0.6 }}
       whileHover={{ y: -8, scale: 1.02 }}
+      onClick={handleCardClick}
       className="glass-card overflow-hidden group cursor-pointer"
     >
       {/* 作品图片 */}

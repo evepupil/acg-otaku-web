@@ -13,6 +13,7 @@ import { Calendar, TrendingUp, Eye, Heart, Clock, Filter } from 'lucide-react'
 import Button from '@/components/Button'
 import Loading from '@/components/Loading'
 import { getProxyImageUrl, extractPidFromUrl, getRecommendedSize } from '@/lib/pixiv-proxy'
+import { useRouter } from 'next/navigation'
 import type { Artwork } from '@/types'
 
 // 排行榜时间周期类型
@@ -42,13 +43,23 @@ const PERIOD_OPTIONS: { value: RankingPeriod; label: string; icon: React.ReactNo
  * 排行榜作品卡片组件
  */
 function RankingCard({ artwork, rank }: { artwork: Artwork; rank: number }) {
+  const router = useRouter()
+
+  /**
+   * 处理卡片点击，跳转到作品详情页
+   */
+  const handleCardClick = () => {
+    router.push(`/artwork/${artwork.id}`)
+  }
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: -20 }}
       transition={{ duration: 0.3 }}
-      className="glass-card rounded-xl overflow-hidden group hover:shadow-xl transition-all duration-300"
+      className="glass-card rounded-xl overflow-hidden group hover:shadow-xl transition-all duration-300 cursor-pointer"
+      onClick={handleCardClick}
     >
       <div className="relative">
         {/* 排名标识 */}
