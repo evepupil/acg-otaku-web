@@ -14,8 +14,8 @@ import {
 import Button from '@/components/Button'
 import Loading from '@/components/Loading'
 import { useRouter } from 'next/navigation'
-import { mockArtworks } from '@/data/mockData'
-import type { Artwork as MockArtwork } from '@/data/mockData'
+import { extractPidFromUrl, getProxyImageUrl } from '@/lib/pixiv-proxy'
+// 移除直接导入supabase，改为通过API路由获取数据
 
 /**
  * 图片查看器组件
@@ -155,19 +155,18 @@ function ImageViewer({
         onMouseLeave={handleMouseUp}
         onClick={(e) => e.stopPropagation()}
       >
-        <motion.img
-          src={(() => {
-            const pid = extractPidFromUrl(imageUrl)
-            return pid ? getProxyImageUrl(pid, getRecommendedSize('fullscreen')) : imageUrl
-          })()} 
-          alt={title}
-          className="max-w-none max-h-none select-none"
-          style={{
-            transform: `translate(${position.x}px, ${position.y}px) scale(${scale}) rotate(${rotation}deg)`,
-            cursor: isDragging ? 'grabbing' : 'grab'
-          }}
-          drag={false}
-        />
+        {imageUrl && (
+          <motion.img
+            src={imageUrl.includes('pid=') ? imageUrl.replace('size=regular', 'size=original') : imageUrl} 
+            alt={title}
+            className="max-w-none max-h-none select-none"
+            style={{
+              transform: `translate(${position.x}px, ${position.y}px) scale(${scale}) rotate(${rotation}deg)`,
+              cursor: isDragging ? 'grabbing' : 'grab'
+            }}
+            drag={false}
+          />
+        )}
       </div>
     </motion.div>
   )
@@ -181,7 +180,25 @@ function ImageViewer({
 export default function ArtworkDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const resolvedParams = use(params)
   const router = useRouter()
-  const [artwork, setArtwork] = useState<any>(null)
+  const [artwork, setArtwork] = useState<{
+    id: string;
+    pid: string;
+    title: string;
+    imageUrl: string;
+    artist?: {
+      id: number;
+      name: string;
+    };
+    tags: string[];
+    createdAt: string;
+    stats: {
+      views: number;
+      likes: number;
+      bookmarks: number;
+    };
+    dimensions: { width: number; height: number } | null;
+    popularity: number;
+  } | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
@@ -196,41 +213,38 @@ export default function ArtworkDetailPage({ params }: { params: Promise<{ id: st
       setLoading(true)
       setError(null)
       
-      // 模拟API调用延迟
-      await new Promise(resolve => setTimeout(resolve, 500))
+      // 通过API路由获取数据
+      const response = await fetch(`/api/artwork/${resolvedParams.id}`)
+      if (!response.ok) {
+        throw new Error('获取作品详情失败')
+      }
       
-      // 从mockData中查找对应的作品
-      const foundArtwork = mockArtworks.find(artwork => artwork.id === resolvedParams.id)
-      
-      if (!foundArtwork) {
+      const data = await response.json()
+      if (!data.success || !data.data) {
         throw new Error('作品不存在')
       }
       
+      const artworkData = data.data
+      
       // 转换为详情页面需要的格式
-      const artworkDetail: any = {
-        id: parseInt(foundArtwork.id),
-        title: foundArtwork.title,
-        description: foundArtwork.description,
-        imageUrl: foundArtwork.image_url,
-        thumbnailUrl: foundArtwork.thumbnail_url,
-        artist: {
-          id: parseInt(foundArtwork.artist_id.replace('artist_', '')),
-          name: foundArtwork.artist_name,
-          avatar: `https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=100&h=100&fit=crop&crop=face`,
-          bio: `专业插画师，擅长${foundArtwork.tags.slice(0, 2).join('、')}等风格创作`,
-          followerCount: Math.floor(Math.random() * 50000) + 10000,
-          artworkCount: Math.floor(Math.random() * 200) + 50
+      const artworkDetail = {
+        id: artworkData.id,
+        pid: artworkData.pid,
+        title: artworkData.title,
+        imageUrl: artworkData.imageUrl,
+        artist: artworkData.artist || {
+          id: artworkData.authorId ? parseInt(artworkData.authorId) : 0,
+          name: typeof artworkData.artist === 'string' ? artworkData.artist : '未知作者'
         },
-        tags: foundArtwork.tags,
-        createdAt: foundArtwork.created_at,
+        tags: artworkData.tags,
+        createdAt: artworkData.uploadTime || new Date().toISOString(),
         stats: {
-          views: foundArtwork.view_count,
-          likes: foundArtwork.like_count,
-          bookmarks: Math.floor(foundArtwork.like_count * 0.3)
+          views: artworkData.views || 0,
+          likes: artworkData.likes || 0,
+          bookmarks: artworkData.bookmarks || 0
         },
-        dimensions: { width: 1200, height: 1600 },
-        fileSize: '2.5 MB',
-        software: 'Photoshop, SAI'
+        dimensions: null as { width: number; height: number } | null, // 数据库中暂无尺寸信息
+        popularity: artworkData.popularity
       }
       
       setArtwork(artworkDetail)
@@ -316,12 +330,14 @@ export default function ArtworkDetailPage({ params }: { params: Promise<{ id: st
                 </div>
               )}
               
-              <img
-                src={artwork.imageUrl}
-                alt={artwork.title}
-                className={`w-full h-auto ${imageLoaded ? 'opacity-100' : 'opacity-0'}`}
-                onLoad={() => setImageLoaded(true)}
-              />
+              {artwork.imageUrl && (
+                <img
+                  src={artwork.pid ? getProxyImageUrl(artwork.pid, 'regular') : artwork.imageUrl}
+                  alt={artwork.title}
+                  className={`w-full h-auto ${imageLoaded ? 'opacity-100' : 'opacity-0'}`}
+                  onLoad={() => setImageLoaded(true)}
+                />
+              )}
               
               {/* 悬浮提示 */}
               <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors duration-300 flex items-center justify-center">
@@ -354,29 +370,29 @@ export default function ArtworkDetailPage({ params }: { params: Promise<{ id: st
                 <div className="text-sm text-gray-500">作品ID</div>
               </div>
               <div className="text-center">
-                <div className="text-lg font-bold text-gray-800">{artwork.artist.name}</div>
+                <div className="text-lg font-bold text-gray-800">{artwork.artist?.name || '未知作者'}</div>
                 <div className="text-sm text-gray-500">作者</div>
               </div>
               <div className="text-center">
-                <div className="text-lg font-bold text-gray-800">
-                  {artwork.dimensions ? `${artwork.dimensions.width}×${artwork.dimensions.height}` : '未知'}
-                </div>
-                <div className="text-sm text-gray-500">图片尺寸</div>
-              </div>
+                 <div className="text-lg font-bold text-gray-800">
+                   {artwork.popularity ? `${(artwork.popularity * 100).toFixed(1)}%` : '未知'}
+                 </div>
+                 <div className="text-sm text-gray-500">热度</div>
+               </div>
             </div>
             
             {/* 统计信息 */}
             <div className="grid grid-cols-3 gap-4 mb-6">
               <div className="text-center">
-                <div className="text-xl font-bold text-gray-800">{artwork.stats.views.toLocaleString()}</div>
+                <div className="text-xl font-bold text-gray-800">{(artwork.stats?.views || 0).toLocaleString()}</div>
                 <div className="text-sm text-gray-500">浏览量</div>
               </div>
               <div className="text-center">
-                <div className="text-xl font-bold text-gray-800">{artwork.stats.likes.toLocaleString()}</div>
+                <div className="text-xl font-bold text-gray-800">{(artwork.stats?.likes || 0).toLocaleString()}</div>
                 <div className="text-sm text-gray-500">点赞数</div>
               </div>
               <div className="text-center">
-                <div className="text-xl font-bold text-gray-800">{artwork.stats.bookmarks.toLocaleString()}</div>
+                <div className="text-xl font-bold text-gray-800">{(artwork.stats?.bookmarks || 0).toLocaleString()}</div>
                 <div className="text-sm text-gray-500">收藏数</div>
               </div>
             </div>
@@ -403,9 +419,9 @@ export default function ArtworkDetailPage({ params }: { params: Promise<{ id: st
 
       {/* 图片查看器 */}
       <AnimatePresence>
-        {showImageViewer && (
+        {showImageViewer && artwork.pid && (
           <ImageViewer
-            imageUrl={artwork.imageUrl}
+            imageUrl={getProxyImageUrl(artwork.pid, 'regular')}
             title={artwork.title}
             isOpen={showImageViewer}
             onClose={() => setShowImageViewer(false)}

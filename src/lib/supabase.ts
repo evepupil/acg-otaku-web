@@ -5,20 +5,27 @@ import { createClient } from '@supabase/supabase-js'
  * 用于连接爬虫项目的数据库
  */
 
-// 获取环境变量
+// 获取环境变量（仅在服务端使用）
 const supabaseUrl = process.env.SUPABASE_URL!
 const supabaseAnonKey = process.env.SUPABASE_ANON_KEY!
 const supabaseServiceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY!
 
-if (!supabaseUrl || !supabaseAnonKey) {
-  throw new Error('Missing Supabase environment variables')
+// 检查是否在服务端环境
+if (typeof window === 'undefined') {
+  if (!supabaseUrl || !supabaseAnonKey) {
+    throw new Error('Missing Supabase environment variables')
+  }
 }
 
-// 创建Supabase客户端（用于前端，使用匿名密钥）
-export const supabase = createClient(supabaseUrl, supabaseAnonKey)
+// 创建Supabase客户端（仅在服务端使用）
+export const supabase = typeof window === 'undefined' 
+  ? createClient(supabaseUrl, supabaseAnonKey)
+  : null
 
-// 创建Supabase管理客户端（用于服务端，使用服务角色密钥）
-export const supabaseAdmin = createClient(supabaseUrl, supabaseServiceRoleKey)
+// 创建Supabase管理客户端（仅在服务端使用）
+export const supabaseAdmin = typeof window === 'undefined'
+  ? createClient(supabaseUrl, supabaseServiceRoleKey)
+  : null
 
 /**
  * 数据库表类型定义
@@ -70,6 +77,10 @@ export async function getRankings(
   page: number = 1,
   limit: number = 20
 ) {
+  if (!supabaseAdmin) {
+    throw new Error('Supabase client not available')
+  }
+  
   const offset = (page - 1) * limit
   
   const { data: rankings, error: rankingError } = await supabaseAdmin
@@ -143,6 +154,10 @@ export async function getRecommendations(
   page: number = 1,
   limit: number = 10
 ) {
+  if (!supabaseAdmin) {
+    throw new Error('Supabase client not available')
+  }
+  
   const offset = (page - 1) * limit
   
   // 基于热度和随机性获取推荐内容
@@ -206,7 +221,11 @@ export async function getRecommendations(
  * @param pid 插画ID
  * @returns 插画详情
  */
-export async function getArtworkDetail(pid: string) {
+export async function getArtworkById(pid: number) {
+  if (!supabaseAdmin) {
+    throw new Error('Supabase client not available')
+  }
+  
   const { data: pic, error } = await supabaseAdmin
     .from('pic')
     .select('*')
@@ -225,15 +244,55 @@ export async function getArtworkDetail(pid: string) {
     id: parseInt(pic.pid),
     pid: pic.pid,
     title: pic.title || `插画 ${pic.pid}`,
-    artist: pic.author_name || '未知作者',
-    authorId: pic.author_id,
+    artist: {
+      id: parseInt(pic.author_id || '0'),
+      name: pic.author_name || '未知作者',
+      avatar: '',
+      followerCount: 0
+    },
     imageUrl: pic.image_url || pic.wx_url || '',
-    views: pic.view || 0,
-    likes: pic.good || 0,
-    bookmarks: pic.star || 0,
+    stats: {
+      views: pic.view || 0,
+      likes: pic.good || 0,
+      bookmarks: pic.star || 0
+    },
     tags: pic.tag ? pic.tag.split(',').filter(Boolean) : [],
     popularity: pic.popularity,
     uploadTime: pic.upload_time,
-    downloadTime: pic.download_time
+    downloadTime: pic.download_time,
+    createdAt: pic.upload_time || new Date().toISOString(),
+    updatedAt: pic.download_time || new Date().toISOString(),
+    description: pic.title || `插画 ${pic.pid}`
   }
+}
+
+/**
+ * 记录用户行为
+ * @param userId 用户ID
+ * @param artworkId 作品ID
+ * @param action 行为类型
+ */
+export async function recordUserBehavior(
+  userId: string,
+  artworkId: number,
+  action: 'view' | 'like' | 'share'
+) {
+  if (!supabaseAdmin) {
+    throw new Error('Supabase client not available')
+  }
+  
+  const { data, error } = await supabaseAdmin
+    .from('user_behavior')
+    .insert({
+      user_id: userId,
+      artwork_id: artworkId,
+      action,
+      created_at: new Date().toISOString()
+    })
+
+  if (error) {
+    throw new Error(`记录用户行为失败: ${error.message}`)
+  }
+
+  return data
 }

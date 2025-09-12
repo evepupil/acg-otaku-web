@@ -1,12 +1,12 @@
 'use client';
 
+import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import Navigation from '../src/components/Navigation';
 import ImageCarousel from '../src/components/ImageCarousel';
 import FeaturedPreview from '../src/components/FeaturedPreview';
 import Footer from '../src/components/Footer';
-import { getFeaturedArtworks } from '../src/data/mockData';
-import { transformMockArtworksToType } from '../src/utils/dataTransform';
+// 移除直接导入supabase，改为通过API路由获取数据
 
 /**
  * 首页组件
@@ -14,9 +14,24 @@ import { transformMockArtworksToType } from '../src/utils/dataTransform';
  * @returns JSX元素
  */
 export default function HomePage() {
-  // 获取精选插画数据用于轮播
-  const mockFeaturedArtworks = getFeaturedArtworks();
-  const featuredArtworks = transformMockArtworksToType(mockFeaturedArtworks);
+  const [featuredArtworks, setFeaturedArtworks] = useState([]);
+
+  useEffect(() => {
+    const fetchFeaturedArtworks = async () => {
+      try {
+        const response = await fetch('/api/recommendations?page=1&limit=5');
+        if (!response.ok) {
+          throw new Error('获取精选作品失败');
+        }
+        const data = await response.json();
+        setFeaturedArtworks(data.data.recommendations);
+      } catch (error) {
+        console.error('获取精选作品失败:', error);
+      }
+    };
+
+    fetchFeaturedArtworks();
+  }, []);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-white via-gray-50 to-green-50">
