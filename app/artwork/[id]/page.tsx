@@ -14,7 +14,7 @@ import {
 import Button from '@/components/Button'
 import Loading from '@/components/Loading'
 import { useRouter } from 'next/navigation'
-import { extractPidFromUrl, getProxyImageUrl } from '@/lib/pixiv-proxy'
+import {  getProxyImageUrl } from '@/lib/pixiv-proxy'
 // 移除直接导入supabase，改为通过API路由获取数据
 
 /**
@@ -157,7 +157,7 @@ function ImageViewer({
       >
         {imageUrl && (
           <motion.img
-            src={imageUrl.includes('pid=') ? imageUrl.replace('size=regular', 'size=original') : imageUrl} 
+            src={imageUrl} 
             alt={title}
             className="max-w-none max-h-none select-none"
             style={{
@@ -229,7 +229,7 @@ export default function ArtworkDetailPage({ params }: { params: Promise<{ id: st
       // 转换为详情页面需要的格式
       const artworkDetail = {
         id: artworkData.id,
-        pid: artworkData.pid,
+        pid: artworkData.pid || artworkData.id.toString(), // 确保pid有值
         title: artworkData.title,
         imageUrl: artworkData.imageUrl,
         artist: artworkData.artist || {
@@ -330,9 +330,10 @@ export default function ArtworkDetailPage({ params }: { params: Promise<{ id: st
                 </div>
               )}
               
-              {artwork.imageUrl && (
+              
+              {artwork.pid && (
                 <img
-                  src={artwork.pid ? getProxyImageUrl(artwork.pid, 'regular') : artwork.imageUrl}
+                  src={getProxyImageUrl(artwork.pid, 'regular')}
                   alt={artwork.title}
                   className={`w-full h-auto ${imageLoaded ? 'opacity-100' : 'opacity-0'}`}
                   onLoad={() => setImageLoaded(true)}
@@ -421,7 +422,7 @@ export default function ArtworkDetailPage({ params }: { params: Promise<{ id: st
       <AnimatePresence>
         {showImageViewer && artwork.pid && (
           <ImageViewer
-            imageUrl={getProxyImageUrl(artwork.pid, 'regular')}
+            imageUrl={getProxyImageUrl(artwork.pid, 'original')}
             title={artwork.title}
             isOpen={showImageViewer}
             onClose={() => setShowImageViewer(false)}
