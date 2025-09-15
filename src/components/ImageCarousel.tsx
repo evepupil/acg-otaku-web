@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { ChevronLeft, ChevronRight, Play, Pause } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { Artwork } from '../types';
+import { getProxyImageUrl } from '../lib/pixiv-proxy';
 
 interface ImageCarouselProps {
   /** 轮播图片数据 */
@@ -139,7 +140,7 @@ export default function ImageCarousel({
             className="absolute inset-0"
           >
             <img
-              src={currentImage.image_url}
+              src={currentImage.id ? getProxyImageUrl(currentImage.id.toString(), 'original') : currentImage.imageUrl}
               alt={currentImage.title}
               className="w-full h-full object-cover"
               loading="lazy"
@@ -174,16 +175,7 @@ export default function ImageCarousel({
             transition={{ delay: 0.7, duration: 0.6 }}
             className="text-xl md:text-2xl mb-6 drop-shadow-lg"
           >
-            by {currentImage.artist_name}
-          </motion.p>
-          <motion.p 
-            key={`desc-${currentIndex}`}
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.9, duration: 0.6 }}
-            className="text-lg md:text-xl opacity-90 drop-shadow-lg max-w-2xl mx-auto"
-          >
-            {currentImage.description}
+            by {typeof currentImage.artist === 'object' ? currentImage.artist.name : currentImage.artist}
           </motion.p>
         </motion.div>
       </div>

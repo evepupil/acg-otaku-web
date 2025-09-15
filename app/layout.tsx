@@ -9,7 +9,7 @@ const inter = Inter({ subsets: ['latin'] })
 export const metadata: Metadata = {
   title: {
     default: 'ACG萌图宅 - 二次元插画作品展示平台',
-    template: ' | ACG萌图宅'
+    template: '%s | ACG萌图宅'
   },
   description: '发现最萌最美的二次元插画作品，探索ACG艺术的无限魅力。每日更新Pixiv热门排行榜，汇聚优质二次元艺术作品。',
   keywords: ['ACG', '萌图', '二次元', '插画', '动漫', '艺术', '鉴赏', '排行榜', '推荐', 'Pixiv', '萝莉', '黑丝'],

@@ -49,8 +49,8 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
     }
   }
 
-  const title = `${artwork.title} - ${artwork.artist || '未知作者'}`
-  const description = `欣赏由 ${artwork.artist || '未知作者'} 创作的精美插画《${artwork.title}》。${artwork.tags ? `标签：${artwork.tags.join(', ')}。` : ''}在ACG萌图宅发现更多优质二次元艺术作品。`
+  const title = `${artwork.title} - ${artwork.artist?.name || '未知作者'}`
+  const description = `欣赏由 ${artwork.artist?.name || '未知作者'} 创作的精美插画《${artwork.title}》。${artwork.tags ? `标签：${artwork.tags.join(', ')}。` : ''}在ACG萌图宅发现更多优质二次元艺术作品。`
   const imageUrl = artwork.imageUrl || '/og-image.jpg'
   const canonicalUrl = `https://acgotaku.com/artwork/${artwork.pid || resolvedParams.id}`
 
