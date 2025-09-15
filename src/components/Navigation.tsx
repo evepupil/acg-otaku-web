@@ -9,7 +9,7 @@ import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Menu, X, Home, TrendingUp, Heart, BookOpen } from 'lucide-react'
+import { Menu, X, Home, TrendingUp, Heart, BookOpen, Search } from 'lucide-react'
 import { cn } from '../lib/utils'
 import { useBreakpoint, useScrollPosition } from '../hooks'
 
@@ -30,6 +30,7 @@ const navItems: NavItem[] = [
   { href: '/rankings', label: '排行榜', icon: TrendingUp },
   { href: '/recommendations', label: '推荐', icon: Heart },
   { href: '/articles', label: '鉴赏', icon: BookOpen },
+  { href: '/search', label: '搜图', icon: Search },
 ]
 
 /**
