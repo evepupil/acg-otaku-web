@@ -1,0 +1,36 @@
+# Robots.txt for Pixiv Ranking Website
+# 允许所有搜索引擎爬虫访问
+User-agent: *
+Allow: /
+
+# 禁止访问API路由（避免爬虫消耗API配额）
+Disallow: /api/
+
+# 禁止访问私有或临时文件
+Disallow: /_next/
+Disallow: /static/
+
+# 站点地图位置
+Sitemap: https://ranking-pixiv.vercel.app/sitemap.xml
+
+# 爬取延迟（建议间隔1秒，避免对服务器造成过大压力）
+Crawl-delay: 1
+
+# 针对特定搜索引擎的优化设置
+# Google
+User-agent: Googlebot
+Allow: /
+Disallow: /api/
+Crawl-delay: 1
+
+# Bing
+User-agent: Bingbot
+Allow: /
+Disallow: /api/
+Crawl-delay: 1
+
+# Baidu（百度）
+User-agent: Baiduspider
+Allow: /
+Disallow: /api/
+Crawl-delay: 2

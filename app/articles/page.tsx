@@ -324,7 +324,7 @@ export default function ArticlesPage() {
   /**
    * 获取文章数据
    */
-  const fetchArticles = async (params: {
+  const fetchArticles = useCallback(async (params: {
     search?: string
     category?: ArticleCategory | 'all'
     sort?: SortOption
@@ -384,7 +384,7 @@ export default function ArticlesPage() {
       setLoading(false)
       setLoadingMore(false)
     }
-  }
+  }, [debouncedSearchQuery, category, sortBy])
 
   /**
    * 处理搜索
@@ -424,7 +424,7 @@ export default function ArticlesPage() {
       setPage(nextPage)
       await fetchArticles({ page: nextPage, append: true })
     }
-  }, [page, loadingMore, hasMore, debouncedSearchQuery, category, sortBy])
+  }, [page, loadingMore, hasMore, fetchArticles])
 
   // 无限滚动
   useInfiniteScroll(loadMore, hasMore && !loadingMore)
@@ -436,12 +436,12 @@ export default function ArticlesPage() {
       setHasMore(true)
       fetchArticles({ search: debouncedSearchQuery, page: 1 })
     }
-  }, [debouncedSearchQuery])
+  }, [debouncedSearchQuery, fetchArticles])
 
   // 初始化数据
   useEffect(() => {
     fetchArticles()
-  }, [])
+  }, [fetchArticles])
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-emerald-50 via-white to-green-50 pt-20">
