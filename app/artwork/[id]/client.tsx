@@ -252,9 +252,9 @@ export default function ArtworkDetailClient({ params }: { params: Promise<{ id: 
         tags: artworkData.tags,
         createdAt: artworkData.uploadTime || new Date().toISOString(),
         stats: {
-          views: artworkData.views || 0,
-          likes: artworkData.likes || 0,
-          bookmarks: artworkData.bookmarks || 0
+          views: artworkData.stats?.views || 0,
+          likes: artworkData.stats?.likes || 0,
+          bookmarks: artworkData.stats?.bookmarks || 0
         },
         dimensions: null as { width: number; height: number } | null, // 数据库中暂无尺寸信息
         popularity: artworkData.popularity

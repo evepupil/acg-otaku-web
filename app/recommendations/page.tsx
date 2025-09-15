@@ -12,6 +12,7 @@ import Button from '../../src/components/Button'
 import Loading from '../../src/components/Loading'
 import { useInfiniteScroll } from '../../src/hooks'
 import { getProxyImageUrl, extractPidFromUrl, getRecommendedSize } from '../../src/lib/pixiv-proxy'
+import { useRouter } from 'next/navigation'
 import type { Artwork } from '../../src/types'
 
 
@@ -25,8 +26,16 @@ type ViewMode = 'grid' | 'masonry'
  * 推荐作品卡片组件
  */
 function RecommendationCard({ artwork, viewMode }: { artwork: Artwork; viewMode: ViewMode }) {
+  const router = useRouter()
   const [imageLoaded, setImageLoaded] = useState(false)
   const [liked, setLiked] = useState(false)
+
+  /**
+   * 处理卡片点击，跳转到作品详情页
+   */
+  const handleCardClick = () => {
+    router.push(`/artwork/${artwork.id}`)
+  }
 
   /**
    * 处理点赞操作
@@ -62,6 +71,7 @@ function RecommendationCard({ artwork, viewMode }: { artwork: Artwork; viewMode:
         glass-card rounded-xl overflow-hidden group cursor-pointer hover:shadow-xl transition-all duration-300
         ${viewMode === 'masonry' ? 'break-inside-avoid mb-4' : ''}
       `}
+      onClick={handleCardClick}
     >
       <div className="relative">
         {/* 作品图片 */}
