@@ -43,7 +43,7 @@ interface SauceNAOResponse {
     short_remaining: number
     status: number
     results_requested: number
-    index: Record<string, any>
+    index: Record<string, unknown>
     search_depth: string
     minimum_similarity: number
     query_image_display: string
@@ -127,7 +127,7 @@ export async function POST(request: NextRequest) {
       }
       
       // 提取作者
-      let author = data.member_name || data.creator
+      const author = data.member_name || data.creator
       
       // 提取来源
       let source = result.header.index_name
@@ -213,7 +213,7 @@ export async function GET() {
         long: '每24小时100次'
       }
     })
-  } catch (error) {
+  } catch {
     return NextResponse.json(
       { error: '获取账户信息失败' },
       { status: 500 }
