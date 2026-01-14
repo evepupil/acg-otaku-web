@@ -1,9 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getRecommendations } from '@/lib/supabase'
+import { getRecommendations } from '@/lib/turso'
 
 /**
  * 推荐插画数据接口
- * 支持分页筛选，从Supabase数据库获取真实数据
+ * 支持分页筛选，从Turso数据库获取真实数据
  */
 
 /**
@@ -17,7 +17,7 @@ export async function GET(request: NextRequest) {
     const page = parseInt(searchParams.get('page') || '1')
     const limit = parseInt(searchParams.get('limit') || '12')
 
-    // 从Supabase数据库获取推荐数据
+    // 从Turso数据库获取推荐数据
     const { recommendations, total } = await getRecommendations(page, limit)
 
     return NextResponse.json({

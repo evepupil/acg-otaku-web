@@ -1,10 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getRankings } from '@/lib/supabase'
+import { getRankings } from '@/lib/turso'
 
 /**
  * 排行榜数据接口
  * 支持每日、每周、每月排行榜查询
- * 从Supabase数据库获取真实数据
+ * 从Turso数据库获取真实数据
  */
 
 /**
@@ -27,7 +27,7 @@ export async function GET(request: NextRequest) {
       )
     }
 
-    // 从Supabase数据库获取排行榜数据
+    // 从Turso数据库获取排行榜数据
     const { artworks, total } = await getRankings(
       period as 'daily' | 'weekly' | 'monthly',
       page,

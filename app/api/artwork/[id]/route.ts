@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getArtworkById } from '@/lib/supabase'
+import { getArtworkById } from '@/lib/turso'
 
 /**
  * 获取单个作品详情的API路由
