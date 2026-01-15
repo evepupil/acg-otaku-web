@@ -6,6 +6,10 @@ import { getRecommendations } from '@/lib/turso'
  * 支持分页筛选，从Turso数据库获取真实数据
  */
 
+// 强制动态渲染，禁用缓存，确保每次请求都返回新的随机数据
+export const dynamic = 'force-dynamic'
+export const revalidate = 0
+
 /**
  * GET请求处理函数 - 获取推荐插画数据
  * @param request - Next.js请求对象
@@ -20,7 +24,8 @@ export async function GET(request: NextRequest) {
     // 从Turso数据库获取推荐数据
     const { recommendations, total } = await getRecommendations(page, limit)
 
-    return NextResponse.json({
+    // 创建响应并设置缓存控制头，禁止缓存
+    const response = NextResponse.json({
       success: true,
       data: {
         recommendations: recommendations,
@@ -32,6 +37,13 @@ export async function GET(request: NextRequest) {
         }
       }
     })
+
+    // 禁用所有缓存，确保每次请求都获取新数据
+    response.headers.set('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate')
+    response.headers.set('Pragma', 'no-cache')
+    response.headers.set('Expires', '0')
+
+    return response
   } catch (error) {
     console.error('获取推荐数据失败:', error)
     return NextResponse.json(

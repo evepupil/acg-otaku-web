@@ -13,17 +13,6 @@
 export type ImageSize = 'thumb_mini' | 'small' | 'regular' | 'original'
 
 /**
- * 尺寸降级顺序映射
- * 当请求的尺寸不存在时，按此顺序尝试其他尺寸
- */
-const SIZE_FALLBACK_ORDER: Record<ImageSize, ImageSize[]> = {
-  thumb_mini: ['thumb_mini', 'small', 'regular', 'original'],
-  small: ['small', 'regular', 'original', 'thumb_mini'],
-  regular: ['regular', 'original', 'small', 'thumb_mini'],
-  original: ['original', 'regular', 'small', 'thumb_mini']
-}
-
-/**
  * 获取 B2 存储桶域名
  * @returns B2 存储桶 URL
  */
@@ -40,11 +29,35 @@ function getProxyServer(): string {
 }
 
 /**
+ * 从路径中提取尺寸信息
+ * 支持格式：xxx/original.png, xxx_original.png, xxx_p0_original.png 等
+ * @param path 图片路径
+ * @returns 尺寸名称或 null
+ */
+function extractSizeFromPath(path: string): ImageSize | null {
+  const sizes: ImageSize[] = ['original', 'regular', 'small', 'thumb_mini']
+  const lowerPath = path.toLowerCase()
+
+  for (const size of sizes) {
+    // 匹配多种格式：/original.png, _original.png, -original.png
+    if (lowerPath.includes(`/${size}.`) ||
+        lowerPath.includes(`_${size}.`) ||
+        lowerPath.includes(`-${size}.`) ||
+        lowerPath.endsWith(`${size}.png`) ||
+        lowerPath.endsWith(`${size}.jpg`) ||
+        lowerPath.endsWith(`${size}.webp`)) {
+      return size
+    }
+  }
+  return null
+}
+
+/**
  * 从 image_path 中解析指定尺寸的路径
  * image_path 格式为 JSON 数组字符串，如：
  * '["pixiv/123_Artist/456/original.png","pixiv/123_Artist/456/regular.png"]'
  *
- * 支持尺寸降级：如果请求的尺寸不存在，会尝试其他可用尺寸
+ * 不进行降级：只返回精确匹配的尺寸，找不到则返回 null
  *
  * @param imagePath - 数据库中的 image_path 字段值（JSON 数组字符串）
  * @param size - 目标尺寸
@@ -53,30 +66,19 @@ function getProxyServer(): string {
 function parseImagePath(imagePath: string | undefined | null, size: ImageSize): string | null {
   if (!imagePath) return null
 
-  // 获取该尺寸的降级顺序
-  const fallbackSizes = SIZE_FALLBACK_ORDER[size] || [size]
-
   try {
     // 解析 JSON 数组
     const paths: string[] = JSON.parse(imagePath)
 
     if (!Array.isArray(paths) || paths.length === 0) return null
 
-    // 按降级顺序尝试查找可用尺寸
-    for (const targetSize of fallbackSizes) {
-      const targetSuffix = `${targetSize}.png`
-
-      for (const path of paths) {
-        const trimmedPath = path.trim()
-        if (trimmedPath.endsWith(targetSuffix)) {
-          return trimmedPath
-        }
+    // 查找精确匹配的尺寸
+    for (const path of paths) {
+      const trimmedPath = path.trim()
+      const pathSize = extractSizeFromPath(trimmedPath)
+      if (pathSize === size) {
+        return trimmedPath
       }
-    }
-
-    // 如果所有尺寸都找不到，返回数组中的第一个路径
-    if (paths.length > 0) {
-      return paths[0].trim()
     }
 
     return null
@@ -84,21 +86,12 @@ function parseImagePath(imagePath: string | undefined | null, size: ImageSize): 
     // JSON 解析失败，尝试旧格式（冒号分隔）
     const paths = imagePath.split(':')
 
-    // 按降级顺序尝试查找可用尺寸
-    for (const targetSize of fallbackSizes) {
-      const targetSuffix = `${targetSize}.png`
-
-      for (const path of paths) {
-        const trimmedPath = path.trim()
-        if (trimmedPath.endsWith(targetSuffix)) {
-          return trimmedPath
-        }
+    for (const path of paths) {
+      const trimmedPath = path.trim()
+      const pathSize = extractSizeFromPath(trimmedPath)
+      if (pathSize === size) {
+        return trimmedPath
       }
-    }
-
-    // 如果所有尺寸都找不到，返回数组中的第一个路径
-    if (paths.length > 0) {
-      return paths[0].trim()
     }
 
     return null
