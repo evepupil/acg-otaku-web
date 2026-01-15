@@ -188,8 +188,11 @@ export default function RecommendationsPage() {
 
   /**
    * 获取推荐数据
+   * @param selectedPage 页码
+   * @param append 是否追加到现有列表
+   * @param forceRefresh 是否强制刷新（绕过缓存）
    */
-  const fetchRecommendations = async (selectedPage: number = 1, append: boolean = false) => {
+  const fetchRecommendations = async (selectedPage: number = 1, append: boolean = false, forceRefresh: boolean = false) => {
     try {
       if (selectedPage === 1) {
         setLoading(true)
@@ -197,12 +200,17 @@ export default function RecommendationsPage() {
         setLoadingMore(true)
       }
       setError(null)
-      
+
       const params = new URLSearchParams({
         page: selectedPage.toString(),
         limit: '20'
       })
-      
+
+      // 添加时间戳参数防止浏览器缓存，确保"换一批"功能正常工作
+      if (forceRefresh) {
+        params.append('_t', Date.now().toString())
+      }
+
       const response = await fetch(`/api/recommendations?${params}`)
       
       if (!response.ok) {
@@ -252,16 +260,15 @@ export default function RecommendationsPage() {
 
   /**
    * 换一批推荐
+   * 使用 forceRefresh 参数确保每次都获取新的随机数据
    */
   const handleChangeBatch = async () => {
     setChangingBatch(true)
     setPage(1)
     setHasMore(true)
-    
-    // 模拟换一批的延迟效果
-    await new Promise(resolve => setTimeout(resolve, 800))
-    
-    await fetchRecommendations(1, false)
+
+    // 调用 fetchRecommendations 时传入 forceRefresh=true，确保绕过缓存
+    await fetchRecommendations(1, false, true)
     setChangingBatch(false)
   }
 
