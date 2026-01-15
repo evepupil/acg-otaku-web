@@ -180,19 +180,19 @@ export async function getRecommendations(
   limit: number = 10
 ) {
   const client = getTursoClient()
-  const offset = (page - 1) * limit
 
-  // 基于热度获取推荐内容，获取更多用于随机打乱
+  // 使用 SQLite 的 RANDOM() 函数实现真正的随机推荐
+  // 每次调用都会返回不同的随机结果，支持"换一批"功能
   const picsResult = await client.execute({
     sql: `
       SELECT * FROM pic
       WHERE popularity >= 0.3
         AND title IS NOT NULL
         AND author_name IS NOT NULL
-      ORDER BY popularity DESC
-      LIMIT ? OFFSET ?
+      ORDER BY RANDOM()
+      LIMIT ?
     `,
-    args: [limit * 2, offset]
+    args: [limit]
   })
 
   if (!picsResult.rows || picsResult.rows.length === 0) {
@@ -220,10 +220,7 @@ export async function getRecommendations(
     size: row.size as number | undefined
   }))
 
-  // 随机打乱并取指定数量
-  const shuffled = pics.sort(() => Math.random() - 0.5).slice(0, limit)
-
-  const recommendations = shuffled.map(pic => ({
+  const recommendations = pics.map(pic => ({
     id: parseInt(pic.pid),
     title: pic.title || `插画 ${pic.pid}`,
     artist: {
