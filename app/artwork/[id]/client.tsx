@@ -14,7 +14,7 @@ import {
 import Button from '@/components/Button'
 import Loading from '@/components/Loading'
 import { useRouter } from 'next/navigation'
-import { getProxyImageUrl } from '@/lib/pixiv-proxy'
+import { getImageUrl } from '@/lib/pixiv-proxy'
 
 /**
  * 图片查看器组件
@@ -198,6 +198,7 @@ export default function ArtworkDetailClient({ params }: { params: Promise<{ id: 
     pid: string;
     title: string;
     imageUrl: string;
+    imagePath: string;  // B2 存储桶图片路径
     artist?: {
       id: number;
       name: string;
@@ -245,6 +246,7 @@ export default function ArtworkDetailClient({ params }: { params: Promise<{ id: 
         pid: artworkData.pid || artworkData.id.toString(), // 确保pid有值
         title: artworkData.title,
         imageUrl: artworkData.imageUrl,
+        imagePath: artworkData.imagePath || '',  // 添加 imagePath
         artist: artworkData.artist || {
           id: artworkData.authorId ? parseInt(artworkData.authorId) : 0,
           name: typeof artworkData.artist === 'string' ? artworkData.artist : '未知作者'
@@ -354,7 +356,7 @@ export default function ArtworkDetailClient({ params }: { params: Promise<{ id: 
               <div className="relative aspect-square bg-gray-100 flex items-center justify-center">
                 {artwork.pid ? (
                   <motion.img
-                    src={getProxyImageUrl(artwork.pid, 'original')}
+                    src={getImageUrl(artwork.pid, 'original', artwork.imagePath)}
                     alt={artwork.title}
                     className="w-full h-full object-contain cursor-zoom-in"
                     onLoad={handleImageLoad}
@@ -462,7 +464,7 @@ export default function ArtworkDetailClient({ params }: { params: Promise<{ id: 
 
       {/* 图片查看器 */}
       <ImageViewer
-        imageUrl={artwork.pid ? getProxyImageUrl(artwork.pid, 'original') : ''}
+        imageUrl={artwork.pid ? getImageUrl(artwork.pid, 'original', artwork.imagePath) : ''}
         title={artwork.title}
         isOpen={showImageViewer}
         onClose={() => setShowImageViewer(false)}

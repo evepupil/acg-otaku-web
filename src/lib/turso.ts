@@ -91,6 +91,7 @@ function transformPicToArtwork(pic: DatabasePic, rank?: number) {
       avatar: generateAvatarUrl()
     },
     imageUrl: pic.image_url || pic.wx_url || '',
+    imagePath: pic.image_path || '',  // 添加 imagePath 字段用于 B2 存储桶访问
     tags: pic.tag ? pic.tag.split(',').filter(Boolean) : [],
     createdAt: pic.upload_time || new Date().toISOString(),
     ...(rank !== undefined && { rank }),
@@ -231,6 +232,7 @@ export async function getRecommendations(
       avatar: generateAvatarUrl()
     },
     imageUrl: pic.image_url || pic.wx_url || '',
+    imagePath: pic.image_path || '',  // 添加 imagePath 字段用于 B2 存储桶访问
     tags: pic.tag ? pic.tag.split(',').filter(Boolean) : [],
     createdAt: pic.upload_time || new Date().toISOString(),
     description: `热度: ${(pic.popularity * 100).toFixed(1)}%`,
@@ -307,6 +309,7 @@ export async function getArtworkById(pid: number) {
       followerCount: 0
     },
     imageUrl: pic.image_url || pic.wx_url || '',
+    imagePath: pic.image_path || '',  // 添加 imagePath 字段用于 B2 存储桶访问
     stats: {
       views: pic.view || 0,
       likes: pic.good || 0,

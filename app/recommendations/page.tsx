@@ -11,7 +11,7 @@ import { Heart, Eye, Sparkles, Filter, RefreshCw, Grid, List } from 'lucide-reac
 import Button from '../../src/components/Button'
 import Loading from '../../src/components/Loading'
 import { useInfiniteScroll } from '../../src/hooks'
-import { getProxyImageUrl, extractPidFromUrl, getRecommendedSize } from '../../src/lib/pixiv-proxy'
+import { getImageUrl, getRecommendedSize } from '../../src/lib/pixiv-proxy'
 import { useRouter } from 'next/navigation'
 import type { Artwork } from '../../src/types'
 
@@ -85,10 +85,7 @@ function RecommendationCard({ artwork, viewMode }: { artwork: Artwork; viewMode:
           )}
           
           <img
-            src={(() => {
-              const pid = extractPidFromUrl(artwork.imageUrl) || artwork.id.toString()
-              return getProxyImageUrl(pid, getRecommendedSize('card'))
-            })()} 
+            src={getImageUrl(artwork.id.toString(), getRecommendedSize('card'), artwork.imagePath)}
             alt={artwork.title}
             className={`
               w-full h-full object-cover group-hover:scale-105 transition-transform duration-300

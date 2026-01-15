@@ -25,6 +25,7 @@ export interface Artwork {
   title: string
   artist: Artist
   imageUrl: string
+  imagePath?: string  // B2 存储桶图片路径，用于优先访问
   thumbnailUrl?: string
   description?: string
   tags: string[]

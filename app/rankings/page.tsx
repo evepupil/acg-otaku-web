@@ -12,7 +12,7 @@ import { Calendar, TrendingUp, Eye, Heart, Clock, Filter } from 'lucide-react'
 // import Footer from '../../src/components/Footer'
 import Button from '@/components/Button'
 import Loading from '@/components/Loading'
-import { getProxyImageUrl, extractPidFromUrl, getRecommendedSize } from '@/lib/pixiv-proxy'
+import { getImageUrl, getRecommendedSize } from '@/lib/pixiv-proxy'
 import { useRouter } from 'next/navigation'
 import type { Artwork } from '@/types'
 
@@ -75,10 +75,7 @@ function RankingCard({ artwork, rank }: { artwork: Artwork; rank: number }) {
         {/* 作品图片 */}
         <div className="relative aspect-[4/3] overflow-hidden">
           <img
-            src={(() => {
-              const pid = extractPidFromUrl(artwork.imageUrl) || artwork.id.toString()
-              return getProxyImageUrl(pid, getRecommendedSize('card'))
-            })()} 
+            src={getImageUrl(artwork.id.toString(), getRecommendedSize('card'), artwork.imagePath)}
             alt={artwork.title}
             className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
           />

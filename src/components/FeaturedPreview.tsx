@@ -12,6 +12,7 @@ import { useRouter } from 'next/navigation'
 import Button from './Button'
 import { CardSkeleton } from './Loading'
 import { cn, formatNumber, formatDate } from '../lib/utils'
+import { getImageUrl } from '../lib/pixiv-proxy'
 import type { Artwork } from '../types'
 
 /**
@@ -59,7 +60,7 @@ const ArtworkCard = ({ artwork, index }: { artwork: Artwork, index: number }) =>
       {/* 作品图片 */}
       <div className="relative aspect-[3/4] overflow-hidden">
         <motion.img
-          src={artwork.imageUrl}
+          src={getImageUrl(artwork.id.toString(), 'small', artwork.imagePath)}
           alt={artwork.title}
           className={cn(
             'w-full h-full object-cover transition-all duration-500',

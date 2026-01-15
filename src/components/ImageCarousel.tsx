@@ -5,7 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { ChevronLeft, ChevronRight, Play, Pause } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { Artwork } from '../types';
-import { getProxyImageUrl } from '../lib/pixiv-proxy';
+import { getImageUrl } from '../lib/pixiv-proxy';
 
 interface ImageCarouselProps {
   /** 轮播图片数据 */
@@ -140,7 +140,7 @@ export default function ImageCarousel({
             className="absolute inset-0"
           >
             <img
-              src={currentImage.id ? getProxyImageUrl(currentImage.id.toString(), 'original') : currentImage.imageUrl}
+              src={currentImage.id ? getImageUrl(currentImage.id.toString(), 'original', currentImage.imagePath) : currentImage.imageUrl}
               alt={currentImage.title}
               className="w-full h-full object-cover"
               loading="lazy"
