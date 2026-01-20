@@ -195,18 +195,38 @@ export async function getRecommendations(
 ) {
   const client = getTursoClient()
 
-  // 使用 SQLite 的 RANDOM() 函数实现真正的随机推荐
-  // 每次调用都会返回不同的随机结果，支持"换一批"功能
+  // 先获取符合条件的总数
+  const countResult = await client.execute({
+    sql: `
+      SELECT COUNT(*) as count FROM pic
+      WHERE popularity >= 0.2
+        AND title IS NOT NULL
+        AND author_name IS NOT NULL
+    `,
+    args: []
+  })
+  const totalCount = Number(countResult.rows[0]?.count) || 0
+
+  if (totalCount === 0) {
+    return { recommendations: [], total: 0 }
+  }
+
+  // 使用随机 OFFSET 来增强随机性
+  // 计算一个随机的起始位置，确保每次都能获取不同的数据
+  const maxOffset = Math.max(0, totalCount - limit)
+  const randomOffset = Math.floor(Math.random() * (maxOffset + 1))
+
+  // 使用 RANDOM() 排序配合随机 OFFSET 实现真正的随机推荐
   const picsResult = await client.execute({
     sql: `
       SELECT * FROM pic
-      WHERE popularity >= 0.3
+      WHERE popularity >= 0.2
         AND title IS NOT NULL
         AND author_name IS NOT NULL
       ORDER BY RANDOM()
-      LIMIT ?
+      LIMIT ? OFFSET ?
     `,
-    args: [limit]
+    args: [limit, randomOffset]
   })
 
   if (!picsResult.rows || picsResult.rows.length === 0) {
@@ -256,19 +276,8 @@ export async function getRecommendations(
     }
   }))
 
-  // 获取总数
-  const countResult = await client.execute({
-    sql: `
-      SELECT COUNT(*) as count FROM pic
-      WHERE popularity >= 0.3
-        AND title IS NOT NULL
-        AND author_name IS NOT NULL
-    `,
-    args: []
-  })
-  const total = Number(countResult.rows[0]?.count) || 0
-
-  return { recommendations, total }
+  // 返回总数（使用之前查询的 totalCount）
+  return { recommendations, total: totalCount }
 }
 
 /**
