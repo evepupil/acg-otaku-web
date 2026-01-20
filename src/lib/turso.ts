@@ -118,17 +118,22 @@ export async function getRankings(
   const client = getTursoClient()
   const offset = (page - 1) * limit
 
-  // 获取排行榜数据，关联pic表
+  // 获取排行榜数据，只返回最新爬取时间的数据
   const rankingsResult = await client.execute({
     sql: `
       SELECT r.pid, r.rank, p.*
       FROM ranking r
       LEFT JOIN pic p ON r.pid = p.pid
       WHERE r.rank_type = ?
+        AND r.crawl_time = (
+          SELECT MAX(crawl_time)
+          FROM ranking
+          WHERE rank_type = ?
+        )
       ORDER BY r.rank ASC
       LIMIT ? OFFSET ?
     `,
-    args: [rankType, limit, offset]
+    args: [rankType, rankType, limit, offset]
   })
 
   if (!rankingsResult.rows || rankingsResult.rows.length === 0) {
@@ -159,10 +164,18 @@ export async function getRankings(
     return transformPicToArtwork(pic, Number(row.rank))
   })
 
-  // 获取总数
+  // 获取总数，只统计最新爬取时间的数据
   const countResult = await client.execute({
-    sql: 'SELECT COUNT(*) as count FROM ranking WHERE rank_type = ?',
-    args: [rankType]
+    sql: `
+      SELECT COUNT(*) as count FROM ranking
+      WHERE rank_type = ?
+        AND crawl_time = (
+          SELECT MAX(crawl_time)
+          FROM ranking
+          WHERE rank_type = ?
+        )
+    `,
+    args: [rankType, rankType]
   })
   const total = Number(countResult.rows[0]?.count) || 0
 
