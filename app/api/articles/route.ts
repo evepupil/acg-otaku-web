@@ -7,76 +7,70 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getAllArticles, getArticleById, searchArticles } from '../../../src/lib/articles'
 
 // 备用模拟文章数据（当真实文章不存在时使用）
-const mockArticles = [
+const mockArticles: Array<{
+  id: string; slug: string; title: string; author_name: string; featured_image: string;
+  excerpt: string; content: string; tags: string[]; published_at: string;
+  view_count: number; category: string
+}> = [
   {
-    id: 201,
+    id: '201', slug: '201',
     title: '日系插画中的色彩运用技巧',
-    author: '艺术评论家A',
-    coverImage: 'https://trae-api-sg.mchost.guru/api/ide/v1/text_to_image?prompt=japanese%20illustration%20color%20theory%20art%20analysis%20colorful&image_size=landscape_16_9',
+    author_name: '艺术评论家A',
+    featured_image: 'https://trae-api-sg.mchost.guru/api/ide/v1/text_to_image?prompt=japanese%20illustration%20color%20theory%20art%20analysis%20colorful&image_size=landscape_16_9',
     excerpt: '深入分析日系插画中独特的色彩搭配方法，探讨如何通过色彩传达情感...',
-    content: '日系插画以其独特的色彩运用而闻名世界。本文将从色彩心理学的角度，分析日系插画中常见的配色方案...（完整内容）',
+    content: '日系插画以其独特的色彩运用而闻名世界。本文将从色彩心理学的角度，分析日系插画中常见的配色方案...',
     category: '技法分析',
     tags: ['色彩理论', '日系插画', '绘画技巧'],
-    publishDate: '2024-01-15',
-    readTime: 8,
-    views: 12450,
-    likes: 1876
+    published_at: '2024-01-15',
+    view_count: 12450
   },
   {
-    id: 202,
+    id: '202', slug: '202',
     title: '从宫崎骏作品看动画场景设计',
-    author: '动画研究者B',
-    coverImage: 'https://trae-api-sg.mchost.guru/api/ide/v1/text_to_image?prompt=studio%20ghibli%20style%20landscape%20animation%20background%20detailed&image_size=landscape_16_9',
+    author_name: '动画研究者B',
+    featured_image: 'https://trae-api-sg.mchost.guru/api/ide/v1/text_to_image?prompt=studio%20ghibli%20style%20landscape%20animation%20background%20detailed&image_size=landscape_16_9',
     excerpt: '宫崎骏动画中的场景设计蕴含着深厚的艺术功底，本文解析其构图与色彩的奥秘...',
-    content: '宫崎骏的动画作品不仅在故事情节上引人入胜，其场景设计更是达到了艺术的高度...（完整内容）',
+    content: '宫崎骏的动画作品不仅在故事情节上引人入胜，其场景设计更是达到了艺术的高度...',
     category: '大师解析',
     tags: ['宫崎骏', '场景设计', '动画艺术'],
-    publishDate: '2024-01-12',
-    readTime: 12,
-    views: 18920,
-    likes: 2543
+    published_at: '2024-01-12',
+    view_count: 18920
   },
   {
-    id: 203,
+    id: '203', slug: '203',
     title: '数字绘画工具对比：Photoshop vs Procreate',
-    author: '数字艺术家C',
-    coverImage: 'https://trae-api-sg.mchost.guru/api/ide/v1/text_to_image?prompt=digital%20art%20tools%20comparison%20tablet%20stylus%20creative%20workspace&image_size=landscape_16_9',
+    author_name: '数字艺术家C',
+    featured_image: 'https://trae-api-sg.mchost.guru/api/ide/v1/text_to_image?prompt=digital%20art%20tools%20comparison%20tablet%20stylus%20creative%20workspace&image_size=landscape_16_9',
     excerpt: '详细对比两大主流数字绘画软件的优缺点，帮助艺术家选择适合的创作工具...',
-    content: '在数字艺术创作领域，工具的选择往往决定了创作的效率和最终效果...（完整内容）',
+    content: '在数字艺术创作领域，工具的选择往往决定了创作的效率和最终效果...',
     category: '工具推荐',
     tags: ['数字绘画', '软件对比', '创作工具'],
-    publishDate: '2024-01-10',
-    readTime: 6,
-    views: 9876,
-    likes: 1432
+    published_at: '2024-01-10',
+    view_count: 9876
   },
   {
-    id: 204,
+    id: '204', slug: '204',
     title: '二次元角色设计的黄金法则',
-    author: '角色设计师D',
-    coverImage: 'https://trae-api-sg.mchost.guru/api/ide/v1/text_to_image?prompt=anime%20character%20design%20concept%20art%20multiple%20poses%20detailed&image_size=landscape_16_9',
+    author_name: '角色设计师D',
+    featured_image: 'https://trae-api-sg.mchost.guru/api/ide/v1/text_to_image?prompt=anime%20character%20design%20concept%20art%20multiple%20poses%20detailed&image_size=landscape_16_9',
     excerpt: '揭秘成功二次元角色设计背后的设计原理，从造型到性格的完整设计流程...',
-    content: '一个成功的二次元角色不仅要有吸引人的外观，更要有鲜明的性格特征...（完整内容）',
+    content: '一个成功的二次元角色不仅要有吸引人的外观，更要有鲜明的性格特征...',
     category: '设计理论',
     tags: ['角色设计', '二次元', '设计原理'],
-    publishDate: '2024-01-08',
-    readTime: 10,
-    views: 15670,
-    likes: 2109
+    published_at: '2024-01-08',
+    view_count: 15670
   },
   {
-    id: 205,
+    id: '205', slug: '205',
     title: '插画师如何建立个人风格',
-    author: '资深插画师E',
-    coverImage: 'https://trae-api-sg.mchost.guru/api/ide/v1/text_to_image?prompt=artist%20personal%20style%20development%20creative%20process%20inspiration&image_size=landscape_16_9',
+    author_name: '资深插画师E',
+    featured_image: 'https://trae-api-sg.mchost.guru/api/ide/v1/text_to_image?prompt=artist%20personal%20style%20development%20creative%20process%20inspiration&image_size=landscape_16_9',
     excerpt: '从模仿到创新，探讨插画师建立独特个人风格的成长路径和实用方法...',
-    content: '每个插画师都希望拥有自己独特的风格，但风格的形成是一个循序渐进的过程...（完整内容）',
+    content: '每个插画师都希望拥有自己独特的风格，但风格的形成是一个循序渐进的过程...',
     category: '职业发展',
     tags: ['个人风格', '插画师', '职业规划'],
-    publishDate: '2024-01-05',
-    readTime: 9,
-    views: 11234,
-    likes: 1654
+    published_at: '2024-01-05',
+    view_count: 11234
   }
 ]
 
@@ -104,7 +98,7 @@ export async function GET(request: NextRequest) {
       if (realArticles.length > 0) {
         article = getArticleById(articleId)
       } else {
-        article = mockArticles.find(item => item.id === parseInt(articleId))
+        article = mockArticles.find(item => item.id === articleId)
       }
       
       if (!article) {
@@ -123,8 +117,9 @@ export async function GET(request: NextRequest) {
 
     // 分类筛选
     if (category) {
-      filteredArticles = filteredArticles.filter(article => 
-        article.category === category
+      filteredArticles = filteredArticles.filter(article =>
+        ('category' in article && article.category === category) ||
+        article.tags.includes(category)
       )
     }
 
@@ -145,7 +140,11 @@ export async function GET(request: NextRequest) {
     }
 
     // 按发布日期排序（最新的在前）
-    filteredArticles.sort((a, b) => new Date(b.publishDate).getTime() - new Date(a.publishDate).getTime())
+    filteredArticles.sort((a, b) => {
+      const dateA = 'published_at' in a ? a.published_at : ''
+      const dateB = 'published_at' in b ? b.published_at : ''
+      return new Date(dateB).getTime() - new Date(dateA).getTime()
+    })
 
     // 分页处理
     const startIndex = (page - 1) * limit

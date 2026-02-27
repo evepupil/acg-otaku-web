@@ -95,15 +95,86 @@ export interface RankingData {
   period: 'daily' | 'weekly' | 'monthly'
 }
 
-// 推荐数据类型
-export interface RecommendationData {
-  recommendations: (Artwork & {
-    recommendReason?: string
-    score?: number
-  })[]
+// 策展类型
+export type CurationType = 'ranking_pick' | 'daily_art' | 'artist_feature' | 'topic_feature'
+export type PickType = 'ranking_pick' | 'daily_art'
+
+// 每日精选
+export interface DailyPick {
+  id: number
+  pickDate: string
+  pickType: PickType
+  title: string
+  description: string
+  coverPid: string
+  isPublished: boolean
+  artworks: (Artwork & { editorComment?: string; sortOrder?: number })[]
+  createdAt: string
+  updatedAt: string
+}
+
+// 画师专题
+export interface ArtistFeature {
+  id: number
+  artistId: string
+  artistName: string
+  artistAvatar: string
+  artistBio: string
+  featureTitle: string
+  featureContent: string
+  coverPid: string
+  pixivUrl: string
+  twitterUrl: string
+  isPublished: boolean
+  publishedAt: string
+  artworks: (Artwork & { editorComment?: string; sortOrder?: number })[]
+  createdAt: string
+  updatedAt: string
+}
+
+// 话题专题
+export interface TopicFeature {
+  id: number
+  topicName: string
+  topicSlug: string
+  topicDescription: string
+  featureContent: string
+  coverPid: string
+  tags: string[]
+  isPublished: boolean
+  publishedAt: string
+  artworks: (Artwork & { editorComment?: string; sortOrder?: number })[]
+  createdAt: string
+  updatedAt: string
+}
+
+// 管理后台统计
+export interface AdminStats {
+  totalArtworks: number
+  totalDailyPicks: number
+  totalArtistFeatures: number
+  totalTopicFeatures: number
+  publishedDailyPicks: number
+  publishedArtistFeatures: number
+  publishedTopicFeatures: number
+}
+
+// 每日精选列表数据
+export interface DailyPickListData {
+  picks: DailyPick[]
   pagination: Pagination
-  category: string
-  timestamp: string
+}
+
+// 画师专题列表数据
+export interface ArtistFeatureListData {
+  features: ArtistFeature[]
+  pagination: Pagination
+}
+
+// 话题专题列表数据
+export interface TopicFeatureListData {
+  features: TopicFeature[]
+  pagination: Pagination
 }
 
 // 文章列表数据类型

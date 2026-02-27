@@ -9,7 +9,7 @@ import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Menu, X, Home, TrendingUp, Heart, BookOpen, Search } from 'lucide-react'
+import { Menu, X, Home, TrendingUp, CalendarDays, Palette, Hash, BookOpen, Search } from 'lucide-react'
 import { cn } from '../lib/utils'
 import { useBreakpoint, useScrollPosition } from '../hooks'
 
@@ -27,9 +27,11 @@ interface NavItem {
  */
 const navItems: NavItem[] = [
   { href: '/', label: '首页', icon: Home },
-  { href: '/rankings', label: '排行榜', icon: TrendingUp },
-  { href: '/recommendations', label: '推荐', icon: Heart },
-  { href: '/articles', label: '鉴赏', icon: BookOpen },
+  { href: '/rankings', label: '每日排行精选', icon: TrendingUp },
+  { href: '/daily', label: '每日美图', icon: CalendarDays },
+  { href: '/artists', label: '画师鉴赏', icon: Palette },
+  { href: '/topics', label: '话题鉴赏', icon: Hash },
+  { href: '/articles', label: '文章', icon: BookOpen },
   { href: '/search', label: '搜图', icon: Search },
 ]
 

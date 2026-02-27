@@ -1,50 +1,53 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getRankings } from '@/lib/turso'
+import { getPublishedDailyPicks, getDailyPickByDate } from '@/lib/turso'
 
 /**
- * 排行榜数据接口
- * 支持每日、每周、每月排行榜查询
- * 从Turso数据库获取真实数据
- */
-
-/**
- * GET请求处理函数 - 获取排行榜数据
- * @param request - Next.js请求对象
- * @returns 排行榜数据响应
+ * 排行榜精选数据接口
+ * 从daily_pick表获取人工精选的排行数据
  */
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url)
-    const period = searchParams.get('period') || 'daily' // 默认为每日排行榜
+    const date = searchParams.get('date')
     const page = parseInt(searchParams.get('page') || '1')
     const limit = parseInt(searchParams.get('limit') || '20')
 
-    // 验证时间周期参数
-    if (!['daily', 'weekly', 'monthly'].includes(period)) {
-      return NextResponse.json(
-        { error: '无效的时间周期参数' },
-        { status: 400 }
-      )
+    // 按日期获取单个精选
+    if (date) {
+      const pick = await getDailyPickByDate(date, 'ranking_pick')
+      if (!pick) {
+        return NextResponse.json({
+          success: true,
+          data: { rankings: [], pagination: { page: 1, limit, total: 0, totalPages: 0 }, date }
+        })
+      }
+      return NextResponse.json({
+        success: true,
+        data: {
+          rankings: pick.artworks,
+          pagination: { page: 1, limit: pick.artworks.length, total: pick.artworks.length, totalPages: 1 },
+          date: pick.pickDate,
+          title: pick.title,
+          description: pick.description,
+        }
+      })
     }
 
-    // 从Turso数据库获取排行榜数据
-    const { artworks, total } = await getRankings(
-      period as 'daily' | 'weekly' | 'monthly',
-      page,
-      limit
-    )
+    // 获取所有排行精选列表
+    const { picks, total } = await getPublishedDailyPicks(page, limit, 'ranking_pick')
+
+    // 取第一个的作品作为默认展示
+    const latestPick = picks[0] || null
 
     return NextResponse.json({
       success: true,
       data: {
-        rankings: artworks,
-        pagination: {
-          page,
-          limit,
-          total,
-          totalPages: Math.ceil(total / limit)
-        },
-        period
+        rankings: latestPick?.artworks || [],
+        pagination: { page, limit, total, totalPages: Math.ceil(total / limit) },
+        date: latestPick?.pickDate || '',
+        title: latestPick?.title || '',
+        description: latestPick?.description || '',
+        picks: picks.map(p => ({ id: p.id, pickDate: p.pickDate, title: p.title })),
       }
     })
   } catch (error) {

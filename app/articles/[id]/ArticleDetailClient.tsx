@@ -10,6 +10,7 @@ import {
 import Button from '@/components/Button'
 import { useRouter } from 'next/navigation'
 import type { Article } from '../../../src/lib/articles'
+import WechatQRCode from '@/components/WechatQRCode'
 
 /**
  * 目录组件
@@ -343,6 +344,16 @@ export default function ArticleDetailClient({ article, relatedArticles }: Articl
               <Button variant="primary" className="w-full">
                 关注作者
               </Button>
+            </motion.div>
+
+            {/* 公众号引流 */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.4 }}
+              className="mb-6"
+            >
+              <WechatQRCode />
             </motion.div>
           </div>
         </div>

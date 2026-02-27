@@ -256,7 +256,7 @@ function ArticleCard({ article, viewMode }: { article: Article; viewMode: ViewMo
         <div className="flex items-center justify-between text-sm text-gray-500">
           <div className="flex items-center space-x-2">
             <User className="w-4 h-4" />
-            <span>{article.author_name}</span>
+            <span>{typeof article.author === 'object' ? article.author.name : article.author || '未知作者'}</span>
           </div>
           
           <div className="flex items-center space-x-4">

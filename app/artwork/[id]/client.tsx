@@ -7,12 +7,15 @@
 
 import { useState, useEffect, useCallback, use } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { 
+import {
   Eye, Tag,
-  ArrowLeft, ZoomIn, ZoomOut, RotateCw, X
+  ArrowLeft, ZoomIn, ZoomOut, RotateCw, X,
+  ExternalLink
 } from 'lucide-react'
 import Button from '@/components/Button'
 import Loading from '@/components/Loading'
+import ShareButtons from '@/components/ShareButtons'
+import WechatQRCode from '@/components/WechatQRCode'
 import { useRouter } from 'next/navigation'
 import { getImageUrl } from '@/lib/pixiv-proxy'
 
@@ -212,6 +215,8 @@ export default function ArtworkDetailClient({ params }: { params: Promise<{ id: 
     };
     dimensions: { width: number; height: number } | null;
     popularity: number;
+    editorComment?: string | null;
+    curationType?: string | null;
   } | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -259,7 +264,9 @@ export default function ArtworkDetailClient({ params }: { params: Promise<{ id: 
           bookmarks: artworkData.stats?.bookmarks || 0
         },
         dimensions: null as { width: number; height: number } | null, // 数据库中暂无尺寸信息
-        popularity: artworkData.popularity
+        popularity: artworkData.popularity,
+        editorComment: artworkData.editorComment || null,
+        curationType: artworkData.curationType || null
       }
       
       setArtwork(artworkDetail)
@@ -458,6 +465,38 @@ export default function ArtworkDetailClient({ params }: { params: Promise<{ id: 
                 </div>
               </div>
             )}
+
+            {/* 编辑评语 */}
+            {artwork.editorComment && (
+              <div className="bg-white rounded-2xl shadow-lg p-6">
+                <h3 className="text-lg font-semibold text-gray-900 mb-3">编辑评语</h3>
+                <p className="text-gray-700 leading-relaxed italic border-l-4 border-emerald-400 pl-4">
+                  {artwork.editorComment}
+                </p>
+              </div>
+            )}
+
+            {/* 操作按钮 */}
+            <div className="bg-white rounded-2xl shadow-lg p-6 space-y-4">
+              <h3 className="text-lg font-semibold text-gray-900 mb-3">分享与链接</h3>
+
+              {/* Pixiv原作链接 */}
+              <a
+                href={`https://www.pixiv.net/artworks/${artwork.pid}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center gap-2 w-full px-4 py-3 bg-blue-50 text-blue-700 rounded-xl hover:bg-blue-100 transition-colors text-sm font-medium"
+              >
+                <ExternalLink className="w-4 h-4" />
+                在Pixiv查看原作
+              </a>
+
+              {/* 分享按钮 */}
+              <ShareButtons title={artwork.title} />
+            </div>
+
+            {/* 公众号二维码 */}
+            <WechatQRCode />
           </div>
         </div>
       </div>

@@ -27,18 +27,17 @@ const footerSections = [
     title: '浏览',
     links: [
       { href: '/', label: '首页' },
-      { href: '/rankings', label: '排行榜' },
-      { href: '/recommendations', label: '推荐' },
-      { href: '/articles', label: '鉴赏' },
+      { href: '/rankings', label: '每日排行精选' },
+      { href: '/daily', label: '每日美图' },
+      { href: '/artists', label: '画师鉴赏' },
+      { href: '/topics', label: '话题鉴赏' },
     ] as FooterLink[]
   },
   {
-    title: '关于',
+    title: '更多',
     links: [
-      { href: '/about', label: '关于我们' },
-      { href: '/contact', label: '联系我们' },
-      { href: '/privacy', label: '隐私政策' },
-      { href: '/terms', label: '使用条款' },
+      { href: '/articles', label: '文章' },
+      { href: '/search', label: '搜图' },
     ] as FooterLink[]
   },
   {
@@ -103,15 +102,15 @@ export default function Footer() {
                   <div className="w-8 h-8 bg-gradient-to-br from-emerald-500 to-green-600 rounded-lg flex items-center justify-center">
                     <span className="text-white font-bold text-sm">P</span>
                   </div>
-                  <span className="text-xl font-bold bg-gradient-to-r from-pink-600 to-purple-600 bg-clip-text text-transparent">
-                    Pixiv Gallery
+                  <span className="text-xl font-bold bg-gradient-to-r from-green-600 to-emerald-600 bg-clip-text text-transparent">
+                    ACG萌图宅
                   </span>
                 </Link>
                 
                 {/* 描述 */}
                 <p className="text-gray-600 text-sm leading-relaxed mb-6">
-                  发现最美的插画作品，探索艺术的无限可能。
-                  专注于为您提供高质量的插画鉴赏体验。
+                  精心策划的ACG插画鉴赏平台。
+                  每日精选优质作品，深度解读画师风格。
                 </p>
                 
                 {/* 社交媒体链接 */}
@@ -204,7 +203,7 @@ export default function Footer() {
           className="py-6 flex flex-col sm:flex-row items-center justify-between space-y-4 sm:space-y-0"
         >
           <div className="flex items-center space-x-2 text-sm text-gray-500">
-            <span>&copy; {currentYear} Pixiv Gallery. 保留所有权利。</span>
+            <span>&copy; {currentYear} ACG萌图宅. 保留所有权利。</span>
           </div>
           
           <div className="flex items-center space-x-1 text-sm text-gray-500">

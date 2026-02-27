@@ -1,174 +1,46 @@
 /**
- * 排行榜页面组件 - 展示每日/每周/每月热门插画排行榜
- * 支持时间维度切换和分页浏览
+ * 排行榜精选页面 - 展示人工精选的Pixiv排行作品
+ * 支持按日期浏览
  */
 
 'use client'
 
 import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Calendar, TrendingUp, Eye, Heart, Clock, Filter } from 'lucide-react'
-// import Navigation from '../../src/components/Navigation'
-// import Footer from '../../src/components/Footer'
+import { ChevronLeft, ChevronRight, CalendarDays, TrendingUp, Filter } from 'lucide-react'
 import Button from '@/components/Button'
 import Loading from '@/components/Loading'
-import { getImageUrl, getRecommendedSize } from '@/lib/pixiv-proxy'
-import { useRouter } from 'next/navigation'
+import ArtworkGrid from '@/components/ArtworkGrid'
 import type { Artwork } from '@/types'
 
-// 排行榜时间周期类型
-type RankingPeriod = 'daily' | 'weekly' | 'monthly'
-
-// 分页响应类型 (暂时注释未使用)
-// type PaginatedResponse<T> = {
-//   data: T[]
-//   pagination: {
-//     page: number
-//     limit: number
-//     total: number
-//     totalPages: number
-//   }
-// }
-
-/**
- * 时间维度选项
- */
-const PERIOD_OPTIONS: { value: RankingPeriod; label: string; icon: React.ReactNode }[] = [
-  { value: 'daily', label: '每日', icon: <Calendar className="w-4 h-4" /> },
-  { value: 'weekly', label: '每周', icon: <TrendingUp className="w-4 h-4" /> },
-  { value: 'monthly', label: '每月', icon: <Clock className="w-4 h-4" /> }
-]
-
-/**
- * 排行榜作品卡片组件
- */
-function RankingCard({ artwork, rank }: { artwork: Artwork; rank: number }) {
-  const router = useRouter()
-
-  /**
-   * 处理卡片点击，跳转到作品详情页
-   */
-  const handleCardClick = () => {
-    router.push(`/artwork/${artwork.id}`)
-  }
-
-  return (
-    <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0, y: -20 }}
-      transition={{ duration: 0.3 }}
-      className="glass-card rounded-xl overflow-hidden group hover:shadow-xl transition-all duration-300 cursor-pointer"
-      onClick={handleCardClick}
-    >
-      <div className="relative">
-        {/* 排名标识 */}
-        <div className="absolute top-4 left-4 z-10">
-          <div className={`
-            w-10 h-10 rounded-full flex items-center justify-center font-bold text-white shadow-lg
-            ${rank <= 3 ? 'bg-gradient-to-r from-yellow-400 to-orange-500' : 'bg-gradient-to-r from-gray-400 to-gray-600'}
-          `}>
-            {rank}
-          </div>
-        </div>
-        
-        {/* 作品图片 */}
-        <div className="relative aspect-[4/3] overflow-hidden">
-          <img
-            src={getImageUrl(artwork.id.toString(), getRecommendedSize('card'), artwork.imagePath)}
-            alt={artwork.title}
-            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-          />
-          
-          {/* 悬浮信息 */}
-          <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors duration-300 flex items-end">
-            <div className="w-full p-4 bg-gradient-to-t from-black/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-              <div className="flex items-center space-x-4 text-white text-sm">
-                <div className="flex items-center space-x-1">
-                  <Eye className="w-4 h-4" />
-                  <span>{artwork.stats.views.toLocaleString()}</span>
-                </div>
-                <div className="flex items-center space-x-1">
-                  <Heart className="w-4 h-4" />
-                  <span>{artwork.stats.likes.toLocaleString()}</span>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-        
-        {/* 作品信息 */}
-        <div className="p-4">
-          <div className="flex items-center space-x-2 mb-2">
-            <span className="font-medium text-green-600 flex-shrink-0">No. {rank}</span>
-            <h3 className="font-semibold text-gray-800 group-hover:text-green-600 transition-colors truncate">
-              {artwork.title}
-            </h3>
-          </div>
-          
-          {/* 作者和PID信息 */}
-          <div className="flex items-center justify-between text-sm text-gray-600 mb-3">
-            <div className="flex items-center space-x-2 flex-1 min-w-0">
-              <span className="hover:text-green-600 transition-colors cursor-pointer truncate">
-                @{artwork.artist.name}
-              </span>
-            </div>
-            <div className="flex items-center space-x-2 flex-shrink-0">
-              <span className="font-medium text-green-600">
-                PID {artwork.id}
-              </span>
-            </div>
-          </div>
-          
-          <div className="flex items-center justify-between text-sm text-gray-500">
-            <div className="flex items-center space-x-4">
-              <div className="flex items-center space-x-1">
-                <Eye className="w-4 h-4" />
-                <span>{artwork.stats.views.toLocaleString()}</span>
-              </div>
-              <div className="flex items-center space-x-1">
-                <Heart className="w-4 h-4" />
-                <span>{artwork.stats.likes.toLocaleString()}</span>
-              </div>
-            </div>
-            <span>{new Date(artwork.createdAt).toLocaleDateString()}</span>
-          </div>
-        </div>
-      </div>
-    </motion.div>
-  )
-}
-
-/**
- * 排行榜页面组件
- */
 export default function RankingsPage() {
-  const [period, setPeriod] = useState<RankingPeriod>('daily')
-  const [artworks, setArtworks] = useState<Artwork[]>([])
+  const [artworks, setArtworks] = useState<(Artwork & { editorComment?: string })[]>([])
   const [loading, setLoading] = useState(true)
-  const [page, setPage] = useState(1)
-  const [totalPages, setTotalPages] = useState(1)
+  const [date, setDate] = useState('')
+  const [title, setTitle] = useState('')
+  const [description, setDescription] = useState('')
+  const [availableDates, setAvailableDates] = useState<{ pickDate: string; title: string }[]>([])
   const [error, setError] = useState<string | null>(null)
 
-  /**
-   * 获取排行榜数据
-   */
-  const fetchRankings = async (selectedPeriod: RankingPeriod, selectedPage: number = 1) => {
+  const fetchRankings = async (selectedDate?: string) => {
     try {
       setLoading(true)
       setError(null)
-      
-      const response = await fetch(
-        `/api/rankings?period=${selectedPeriod}&page=${selectedPage}&limit=20`
-      )
-      
-      if (!response.ok) {
-        throw new Error('获取排行榜数据失败')
+
+      const params = new URLSearchParams()
+      if (selectedDate) params.set('date', selectedDate)
+
+      const response = await fetch(`/api/rankings?${params}`)
+      if (!response.ok) throw new Error('获取排行榜数据失败')
+
+      const data = await response.json()
+      setArtworks(data.data.rankings || [])
+      setDate(data.data.date || '')
+      setTitle(data.data.title || '')
+      setDescription(data.data.description || '')
+      if (data.data.picks) {
+        setAvailableDates(data.data.picks)
       }
-      
-      const response_data = await response.json()
-      setArtworks(response_data.data.rankings)
-      setTotalPages(response_data.data.pagination.totalPages)
     } catch (err) {
       setError(err instanceof Error ? err.message : '获取数据失败')
     } finally {
@@ -176,29 +48,17 @@ export default function RankingsPage() {
     }
   }
 
-  /**
-   * 处理时间维度切换
-   */
-  const handlePeriodChange = (newPeriod: RankingPeriod) => {
-    setPeriod(newPeriod)
-    setPage(1)
-    fetchRankings(newPeriod, 1)
+  const changeDate = (offset: number) => {
+    const currentIndex = availableDates.findIndex(d => d.pickDate === date)
+    const newIndex = currentIndex + offset
+    if (newIndex >= 0 && newIndex < availableDates.length) {
+      fetchRankings(availableDates[newIndex].pickDate)
+    }
   }
 
-  /**
-   * 处理分页
-   */
-  const handlePageChange = (newPage: number) => {
-    setPage(newPage)
-    fetchRankings(period, newPage)
-    // 滚动到顶部
-    window.scrollTo({ top: 0, behavior: 'smooth' })
-  }
-
-  // 初始化数据
   useEffect(() => {
-    fetchRankings(period)
-  }, [period])
+    fetchRankings()
+  }, [])
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-emerald-50 via-white to-green-50 pt-20">
@@ -211,147 +71,77 @@ export default function RankingsPage() {
         >
           <h1 className="text-4xl md:text-5xl font-bold mb-4">
             <span className="bg-gradient-to-r from-emerald-600 to-green-600 bg-clip-text text-transparent">
-              热门排行榜
+              <TrendingUp className="inline-block w-10 h-10 mr-2" />
+              每日排行精选
             </span>
           </h1>
           <p className="text-xl text-gray-600 max-w-2xl mx-auto">
-            发现最受欢迎的插画作品，探索艺术创作的热门趋势
+            从Pixiv排行榜中精心挑选的优质作品
           </p>
         </motion.div>
 
-        {/* 时间维度选择器 */}
+        {/* 日期选择器 */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.1 }}
-          className="flex justify-center mb-8"
+          className="flex items-center justify-center gap-4 mb-8"
         >
-          <div className="glass-card p-2 rounded-xl">
-            <div className="flex space-x-2">
-              {PERIOD_OPTIONS.map((option) => (
-                <button
-                  key={option.value}
-                  onClick={() => handlePeriodChange(option.value)}
-                  className={`
-                    px-6 py-3 rounded-lg font-medium transition-all duration-300 flex items-center space-x-2
-                    ${period === option.value
-                      ? 'bg-gradient-to-r from-emerald-500 to-green-600 text-white shadow-lg'
-                      : 'text-gray-600 hover:text-emerald-600 hover:bg-white/50'
-                    }
-                  `}
-                >
-                  {option.icon}
-                  <span>{option.label}</span>
-                </button>
-              ))}
-            </div>
+          <button
+            onClick={() => changeDate(1)}
+            disabled={!availableDates.length || availableDates.findIndex(d => d.pickDate === date) >= availableDates.length - 1}
+            className="p-2 rounded-xl bg-white border border-gray-200 hover:bg-gray-50 transition-colors disabled:opacity-30"
+          >
+            <ChevronLeft className="w-5 h-5 text-gray-600" />
+          </button>
+          <div className="flex items-center gap-2 px-6 py-2.5 bg-white rounded-xl border border-gray-200 shadow-sm">
+            <CalendarDays className="w-4 h-4 text-green-600" />
+            <span className="text-gray-900 font-medium">{date || '最新'}</span>
           </div>
+          <button
+            onClick={() => changeDate(-1)}
+            disabled={!availableDates.length || availableDates.findIndex(d => d.pickDate === date) <= 0}
+            className="p-2 rounded-xl bg-white border border-gray-200 hover:bg-gray-50 transition-colors disabled:opacity-30"
+          >
+            <ChevronRight className="w-5 h-5 text-gray-600" />
+          </button>
         </motion.div>
 
-        {/* 排行榜内容 */}
+        {/* 标题和描述 */}
+        {title && (
+          <div className="text-center mb-6">
+            <h2 className="text-xl font-semibold text-gray-900">{title}</h2>
+            {description && <p className="text-gray-500 mt-1">{description}</p>}
+          </div>
+        )}
+
+        {/* 内容 */}
         <AnimatePresence mode="wait">
           {loading ? (
-            <motion.div
-              key="loading"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              className="flex justify-center py-20"
-            >
+            <motion.div key="loading" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+              className="flex justify-center py-20">
               <Loading variant="spinner" size="lg" text="加载排行榜数据..." />
             </motion.div>
           ) : error ? (
-            <motion.div
-              key="error"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              className="text-center py-20"
-            >
+            <motion.div key="error" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+              className="text-center py-20">
               <div className="glass-card p-8 rounded-xl max-w-md mx-auto">
-                <div className="text-red-500 mb-4">
-                  <Filter className="w-12 h-12 mx-auto" />
-                </div>
+                <div className="text-red-500 mb-4"><Filter className="w-12 h-12 mx-auto" /></div>
                 <h3 className="text-xl font-semibold text-gray-800 mb-2">加载失败</h3>
                 <p className="text-gray-600 mb-4">{error}</p>
-                <Button
-                  onClick={() => fetchRankings(period, page)}
-                  variant="primary"
-                >
-                  重试
-                </Button>
+                <Button onClick={() => fetchRankings()} variant="primary">重试</Button>
               </div>
             </motion.div>
+          ) : artworks.length === 0 ? (
+            <motion.div key="empty" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+              className="text-center py-20">
+              <TrendingUp className="w-16 h-16 text-gray-300 mx-auto mb-4" />
+              <p className="text-gray-400 text-lg">暂无排行精选</p>
+              <p className="text-gray-300 text-sm mt-1">管理员还未发布该日期的排行精选</p>
+            </motion.div>
           ) : (
-            <motion.div
-              key={`rankings-${period}`}
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              transition={{ duration: 0.3 }}
-            >
-              {/* 排行榜网格 */}
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 mb-8">
-                {artworks.map((artwork, index) => (
-                  <RankingCard
-                    key={artwork.id}
-                    artwork={artwork}
-                    rank={(page - 1) * 20 + index + 1}
-                  />
-                ))}
-              </div>
-
-              {/* 分页控件 */}
-              {totalPages > 1 && (
-                <motion.div
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  className="flex justify-center"
-                >
-                  <div className="glass-card p-4 rounded-xl">
-                    <div className="flex items-center space-x-2">
-                      <Button
-                        onClick={() => handlePageChange(page - 1)}
-                        disabled={page === 1}
-                        variant="outline"
-                        size="sm"
-                      >
-                        上一页
-                      </Button>
-                      
-                      <div className="flex items-center space-x-1">
-                        {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
-                          const pageNum = Math.max(1, Math.min(totalPages - 4, page - 2)) + i
-                          return (
-                            <button
-                              key={pageNum}
-                              onClick={() => handlePageChange(pageNum)}
-                              className={`
-                                w-10 h-10 rounded-lg font-medium transition-all duration-200
-                                ${page === pageNum
-                                  ? 'bg-gradient-to-r from-emerald-500 to-green-600 text-white'
-                                  : 'text-gray-600 hover:text-emerald-600 hover:bg-white/50'
-                                }
-                              `}
-                            >
-                              {pageNum}
-                            </button>
-                          )
-                        })}
-                      </div>
-                      
-                      <Button
-                        onClick={() => handlePageChange(page + 1)}
-                        disabled={page === totalPages}
-                        variant="outline"
-                        size="sm"
-                      >
-                        下一页
-                      </Button>
-                    </div>
-                  </div>
-                </motion.div>
-              )}
+            <motion.div key="content" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+              <ArtworkGrid artworks={artworks} />
             </motion.div>
           )}
         </AnimatePresence>

@@ -2,16 +2,15 @@
 
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
+import Link from 'next/link';
 import Navigation from '../src/components/Navigation';
 import ImageCarousel from '../src/components/ImageCarousel';
-import FeaturedPreview from '../src/components/FeaturedPreview';
 import Footer from '../src/components/Footer';
-// 移除直接导入supabase，改为通过API路由获取数据
+import { TrendingUp, CalendarDays, Palette, Hash } from 'lucide-react';
 
 /**
  * 首页组件
  * 展示网站主要内容和导航入口
- * @returns JSX元素
  */
 export default function HomePage() {
   const [featuredArtworks, setFeaturedArtworks] = useState([]);
@@ -19,12 +18,15 @@ export default function HomePage() {
   useEffect(() => {
     const fetchFeaturedArtworks = async () => {
       try {
-        const response = await fetch('/api/recommendations?page=1&limit=5');
-        if (!response.ok) {
-          throw new Error('获取精选作品失败');
-        }
+        // 从每日精选API获取数据
+        const response = await fetch('/api/daily-picks?page=1&limit=1');
+        if (!response.ok) throw new Error('获取精选作品失败');
         const data = await response.json();
-        setFeaturedArtworks(data.data.recommendations);
+
+        if (data.success && data.data?.picks?.length > 0) {
+          const latestPick = data.data.picks[0];
+          setFeaturedArtworks(latestPick.artworks?.slice(0, 5) || []);
+        }
       } catch (error) {
         console.error('获取精选作品失败:', error);
       }
@@ -33,26 +35,58 @@ export default function HomePage() {
     fetchFeaturedArtworks();
   }, []);
 
+  const sections = [
+    {
+      title: '每日排行精选',
+      description: '从Pixiv排行榜精心挑选的优质作品',
+      href: '/rankings',
+      icon: TrendingUp,
+      gradient: 'from-emerald-500 to-green-600',
+      bgLight: 'bg-emerald-50',
+    },
+    {
+      title: '每日美图',
+      description: '每天精选的ACG插画佳作',
+      href: '/daily',
+      icon: CalendarDays,
+      gradient: 'from-blue-500 to-cyan-600',
+      bgLight: 'bg-blue-50',
+    },
+    {
+      title: '画师鉴赏',
+      description: '深入了解优秀画师的艺术世界',
+      href: '/artists',
+      icon: Palette,
+      gradient: 'from-purple-500 to-violet-600',
+      bgLight: 'bg-purple-50',
+    },
+    {
+      title: '话题鉴赏',
+      description: '围绕主题探索精选作品集',
+      href: '/topics',
+      icon: Hash,
+      gradient: 'from-orange-500 to-amber-600',
+      bgLight: 'bg-orange-50',
+    },
+  ];
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-white via-gray-50 to-green-50">
-      {/* 导航栏 - 绝对定位覆盖在轮播图上 */}
       <div className="relative z-50">
         <Navigation />
       </div>
-      
-      {/* 主要内容区域 */}
+
       <main>
         {/* 全屏插画轮播 */}
         <section className="relative">
-          <ImageCarousel 
+          <ImageCarousel
             images={featuredArtworks}
             autoPlayInterval={6000}
             showControls={true}
             showIndicators={true}
             height="100vh"
           />
-          
-          {/* 向下滚动提示 */}
+
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -75,8 +109,8 @@ export default function HomePage() {
             </motion.div>
           </motion.div>
         </section>
-        
-        {/* 精选内容预览 */}
+
+        {/* 板块入口 */}
         <motion.section
           initial={{ opacity: 0, y: 50 }}
           whileInView={{ opacity: 1, y: 0 }}
@@ -84,10 +118,39 @@ export default function HomePage() {
           transition={{ duration: 0.8 }}
           className="py-20 relative z-10"
         >
-          <FeaturedPreview />
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="text-center mb-12">
+              <h2 className="text-3xl font-bold text-gray-900">探索 ACG 艺术世界</h2>
+              <p className="text-gray-500 mt-2">精心策划的内容等你发现</p>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+              {sections.map((section, index) => {
+                const Icon = section.icon;
+                return (
+                  <motion.div
+                    key={section.href}
+                    initial={{ opacity: 0, y: 30 }}
+                    whileInView={{ opacity: 1, y: 0 }}
+                    viewport={{ once: true }}
+                    transition={{ delay: index * 0.1, duration: 0.5 }}
+                  >
+                    <Link href={section.href}
+                      className={`block group p-8 ${section.bgLight} rounded-2xl hover:shadow-xl transition-all duration-300 border border-transparent hover:border-gray-100`}>
+                      <div className={`w-14 h-14 rounded-2xl bg-gradient-to-r ${section.gradient} flex items-center justify-center mb-5 group-hover:scale-110 transition-transform`}>
+                        <Icon className="w-7 h-7 text-white" />
+                      </div>
+                      <h3 className="text-xl font-bold text-gray-900 mb-2">{section.title}</h3>
+                      <p className="text-gray-500 text-sm leading-relaxed">{section.description}</p>
+                    </Link>
+                  </motion.div>
+                );
+              })}
+            </div>
+          </div>
         </motion.section>
       </main>
-      
+
       <Footer />
     </div>
   );
