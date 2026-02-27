@@ -1,8 +1,7 @@
 import type { Metadata } from 'next'
 import { Inter } from 'next/font/google'
 import './globals.css'
-import Navigation from '@/components/Navigation'
-import Footer from '@/components/Footer'
+import LayoutChrome from '@/components/LayoutChrome'
 
 const inter = Inter({ subsets: ['latin'] })
 
@@ -73,13 +72,7 @@ function RootLayout({
   return (
     <html lang="zh-CN">
       <body className={inter.className}>
-        <div className="min-h-screen bg-gradient-to-br from-green-50 via-white to-emerald-50">
-          <Navigation />
-          <main className="relative">
-            {children}
-          </main>
-          <Footer />
-        </div>
+        <LayoutChrome>{children}</LayoutChrome>
       </body>
     </html>
   )
