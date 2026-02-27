@@ -96,3 +96,5 @@ coverage/
 tmp/
 temp/
 *-cwd
+.claude
+.omc
