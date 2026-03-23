@@ -1,5 +1,5 @@
 import { Metadata } from 'next'
-import { rankingsMetadata } from '../metadata'
+import { rankingsMetadata } from '../../metadata'
 
 /**
  * 排行榜页面元数据

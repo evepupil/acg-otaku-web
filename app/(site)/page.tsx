@@ -3,7 +3,7 @@ import type { Metadata } from 'next'
 import { CalendarDays, Hash, Palette, TrendingUp } from 'lucide-react'
 
 import ImageCarousel from '@/components/ImageCarousel'
-import { homeMetadata } from './metadata'
+import { homeMetadata } from '../metadata'
 import { getPublishedDailyPicks } from '@/lib/turso'
 import type { Artwork } from '@/types'
 

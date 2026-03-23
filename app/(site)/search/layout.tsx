@@ -1,5 +1,5 @@
 import { Metadata } from 'next'
-import { searchMetadata } from '../metadata'
+import { searchMetadata } from '../../metadata'
 
 /**
  * 搜图页面元数据

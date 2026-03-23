@@ -1,6 +1,5 @@
 import type { Metadata } from 'next'
 import './globals.css'
-import LayoutChrome from '@/components/LayoutChrome'
 
 export const metadata: Metadata = {
   title: {
@@ -68,9 +67,7 @@ function RootLayout({
 }) {
   return (
     <html lang="zh-CN">
-      <body className="antialiased">
-        <LayoutChrome>{children}</LayoutChrome>
-      </body>
+      <body className="antialiased">{children}</body>
     </html>
   )
 }

@@ -1,5 +1,5 @@
 import { Metadata } from 'next'
-import { articlesMetadata } from '../metadata'
+import { articlesMetadata } from '../../metadata'
 
 /**
  * 文章鉴赏页面元数据
