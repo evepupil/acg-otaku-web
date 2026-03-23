@@ -1,27 +1,6 @@
-/**
- * 页脚组件
- * 提供网站信息、链接和版权声明
- */
-
-'use client'
-
 import Link from 'next/link'
-import { motion } from 'framer-motion'
-import { Heart, Github, Twitter, Mail, ExternalLink } from 'lucide-react'
-import { cn } from '../lib/utils'
+import { Github, Mail, Twitter } from 'lucide-react'
 
-/**
- * 页脚链接接口
- */
-interface FooterLink {
-  href: string
-  label: string
-  external?: boolean
-}
-
-/**
- * 页脚链接组配置
- */
 const footerSections = [
   {
     title: '浏览',
@@ -31,191 +10,91 @@ const footerSections = [
       { href: '/daily', label: '每日美图' },
       { href: '/artists', label: '画师鉴赏' },
       { href: '/topics', label: '话题鉴赏' },
-    ] as FooterLink[]
+    ],
   },
   {
-    title: '更多',
+    title: '内容',
     links: [
       { href: '/articles', label: '文章' },
       { href: '/search', label: '搜图' },
-    ] as FooterLink[]
+    ],
   },
-  {
-    title: '社区',
-    links: [
-      { href: 'https://github.com', label: 'GitHub', external: true },
-      { href: 'https://twitter.com', label: 'Twitter', external: true },
-      { href: 'mailto:contact@example.com', label: '邮箱联系', external: true },
-    ] as FooterLink[]
-  }
-]
+] as const
 
-/**
- * 社交媒体链接配置
- */
 const socialLinks = [
-  {
-    href: 'https://github.com',
-    icon: Github,
-    label: 'GitHub',
-    color: 'hover:text-gray-900'
-  },
-  {
-    href: 'https://twitter.com',
-    icon: Twitter,
-    label: 'Twitter',
-    color: 'hover:text-blue-500'
-  },
-  {
-    href: 'mailto:contact@example.com',
-    icon: Mail,
-    label: 'Email',
-    color: 'hover:text-red-500'
-  }
-]
+  { href: 'https://github.com', label: 'GitHub', icon: Github },
+  { href: 'https://twitter.com', label: 'Twitter', icon: Twitter },
+  { href: 'mailto:contact@example.com', label: 'Email', icon: Mail },
+] as const
 
-/**
- * 页脚组件
- */
 export default function Footer() {
   const currentYear = new Date().getFullYear()
 
   return (
-    <footer className="relative mt-20 bg-gradient-to-br from-gray-50 to-white border-t border-gray-200/50">
-      {/* 装饰性背景 */}
-      <div className="absolute inset-0 bg-gradient-to-br from-pink-50/30 to-purple-50/30" />
-      
-      <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        {/* 主要内容区域 */}
-        <div className="py-12 lg:py-16">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 lg:gap-12">
-            {/* 品牌信息 */}
-            <div className="lg:col-span-1">
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ duration: 0.6 }}
-              >
-                {/* Logo */}
-                <Link href="/" className="flex items-center space-x-2 group mb-4">
-                  <div className="w-8 h-8 bg-gradient-to-br from-emerald-500 to-green-600 rounded-lg flex items-center justify-center">
-                    <span className="text-white font-bold text-sm">P</span>
-                  </div>
-                  <span className="text-xl font-bold bg-gradient-to-r from-green-600 to-emerald-600 bg-clip-text text-transparent">
-                    ACG萌图宅
-                  </span>
-                </Link>
-                
-                {/* 描述 */}
-                <p className="text-gray-600 text-sm leading-relaxed mb-6">
-                  精心策划的ACG插画鉴赏平台。
-                  每日精选优质作品，深度解读画师风格。
-                </p>
-                
-                {/* 社交媒体链接 */}
-                <div className="flex items-center space-x-4">
-                  {socialLinks.map((social) => {
-                    const Icon = social.icon
-                    return (
-                      <motion.a
-                        key={social.label}
-                        href={social.href}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        whileHover={{ scale: 1.1 }}
-                        whileTap={{ scale: 0.9 }}
-                        className={cn(
-                          'p-2 rounded-lg bg-white/50 text-gray-500 transition-all duration-200',
-                          'hover:bg-white hover:shadow-md',
-                          social.color
-                        )}
-                        aria-label={social.label}
-                      >
-                        <Icon className="w-4 h-4" />
-                      </motion.a>
-                    )
-                  })}
-                </div>
-              </motion.div>
-            </div>
-            
-            {/* 链接组 */}
-            {footerSections.map((section, sectionIndex) => (
-              <div key={section.title} className="">
-                <motion.div
-                  initial={{ opacity: 0, y: 20 }}
-                  whileInView={{ opacity: 1, y: 0 }}
-                  viewport={{ once: true }}
-                  transition={{ duration: 0.6, delay: (sectionIndex + 1) * 0.1 }}
-                >
-                  <h3 className="text-sm font-semibold text-gray-900 uppercase tracking-wider mb-4 bg-gradient-to-r from-emerald-600 to-green-600 bg-clip-text text-transparent">
-                    {section.title}
-                  </h3>
-                  <ul className="space-y-3">
-                    {section.links.map((link, linkIndex) => (
-                      <motion.li
-                        key={link.href}
-                        initial={{ opacity: 0, x: -10 }}
-                        whileInView={{ opacity: 1, x: 0 }}
-                        viewport={{ once: true }}
-                        transition={{ 
-                          duration: 0.4, 
-                          delay: (sectionIndex + 1) * 0.1 + linkIndex * 0.05 
-                        }}
-                      >
-                        {link.external ? (
-                          <a
-                            href={link.href}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="group flex items-center text-sm text-gray-600 hover:text-emerald-600 transition-colors duration-200"
-                          >
-                            <span>{link.label}</span>
-                            <ExternalLink className="w-3 h-3 ml-1 opacity-0 group-hover:opacity-100 transition-opacity" />
-                          </a>
-                        ) : (
-                          <Link
-                            href={link.href}
-                            className="text-sm text-gray-600 hover:text-emerald-600 transition-colors duration-200"
-                          >
-                            {link.label}
-                          </Link>
-                        )}
-                      </motion.li>
-                    ))}
-                  </ul>
-                </motion.div>
+    <footer className="border-t border-slate-200 bg-[radial-gradient(circle_at_top,_rgba(16,185,129,0.08),_transparent_32%),linear-gradient(180deg,#fcfffd_0%,#f6fbf7_100%)]">
+      <div className="mx-auto max-w-7xl px-4 py-14 sm:px-6 lg:px-8">
+        <div className="grid gap-10 lg:grid-cols-[minmax(0,1.3fr)_repeat(2,minmax(0,0.8fr))]">
+          <div className="max-w-md">
+            <div className="flex items-center gap-3">
+              <span className="inline-flex h-11 w-11 items-center justify-center rounded-2xl bg-[linear-gradient(135deg,#059669,#34d399)] text-lg font-semibold text-white shadow-[0_12px_32px_rgba(5,150,105,0.24)]">
+                萌
+              </span>
+              <div>
+                <p className="text-lg font-semibold text-slate-900">ACG萌图宅</p>
+                <p className="text-sm text-slate-500">Curated anime illustration archive</p>
               </div>
-            ))}
+            </div>
+
+            <p className="mt-5 text-sm leading-7 text-slate-600">
+              这个页脚也做了收敛：少一点无效动画，多一点结构感和留白，让底部信息区真正像站点收束，而不是再来一轮视觉噪音。
+            </p>
+
+            <div className="mt-6 flex items-center gap-3">
+              {socialLinks.map((social) => {
+                const Icon = social.icon
+
+                return (
+                  <a
+                    key={social.label}
+                    href={social.href}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex h-11 w-11 items-center justify-center rounded-2xl border border-slate-200 bg-white text-slate-500 transition hover:-translate-y-0.5 hover:border-slate-300 hover:text-slate-900"
+                    aria-label={social.label}
+                  >
+                    <Icon className="h-4 w-4" />
+                  </a>
+                )
+              })}
+            </div>
           </div>
+
+          {footerSections.map((section) => (
+            <div key={section.title}>
+              <h2 className="text-sm font-semibold uppercase tracking-[0.24em] text-slate-500">
+                {section.title}
+              </h2>
+              <ul className="mt-5 space-y-3">
+                {section.links.map((link) => (
+                  <li key={link.href}>
+                    <Link
+                      href={link.href}
+                      className="text-sm text-slate-600 transition hover:text-slate-950"
+                    >
+                      {link.label}
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ))}
         </div>
-        
-        {/* 分割线 */}
-        <div className="border-t border-gray-200/50" />
-        
-        {/* 版权信息 */}
-        <motion.div
-          initial={{ opacity: 0 }}
-          whileInView={{ opacity: 1 }}
-          viewport={{ once: true }}
-          transition={{ duration: 0.6, delay: 0.3 }}
-          className="py-6 flex flex-col sm:flex-row items-center justify-between space-y-4 sm:space-y-0"
-        >
-          <div className="flex items-center space-x-2 text-sm text-gray-500">
-            <span>&copy; {currentYear} ACG萌图宅. 保留所有权利。</span>
-          </div>
-          
-          <div className="flex items-center space-x-1 text-sm text-gray-500">
-            <span>用</span>
-            <Heart className="w-4 h-4 text-red-500 mx-1" />
-            <span>制作</span>
-          </div>
-        </motion.div>
+
+        <div className="mt-12 flex flex-col gap-3 border-t border-slate-200 pt-6 text-sm text-slate-500 sm:flex-row sm:items-center sm:justify-between">
+          <p>&copy; {currentYear} ACG萌图宅. All rights reserved.</p>
+          <p>界面收敛后，页面切换和滚动都会更干净。</p>
+        </div>
       </div>
-      
-      {/* 装饰性元素 */}
-      <div className="absolute top-0 left-1/2 transform -translate-x-1/2 w-px h-12 bg-gradient-to-b from-transparent via-pink-200 to-transparent" />
     </footer>
   )
 }

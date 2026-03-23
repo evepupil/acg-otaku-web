@@ -56,6 +56,7 @@
   }
   body {
     @apply bg-background text-foreground;
+    font-family: "Segoe UI", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
   }
 }
 
@@ -104,4 +105,25 @@ html {
 /* 图片加载动画 */
 .image-loading {
   @apply animate-pulse bg-gray-200;
+}
+
+@keyframes growX {
+  from {
+    transform: scaleX(0);
+  }
+
+  to {
+    transform: scaleX(1);
+  }
+}
+
+@keyframes floatY {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+
+  50% {
+    transform: translateY(12px);
+  }
 }

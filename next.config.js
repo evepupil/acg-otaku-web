@@ -6,6 +6,7 @@ const __dirname = path.dirname(__filename);
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  typedRoutes: false,
   images: {
     domains: ['localhost'],
     remotePatterns: [
@@ -20,9 +21,6 @@ const nextConfig = {
   },
   eslint: {
     ignoreDuringBuilds: false,
-  },
-  experimental: {
-    typedRoutes: false,
   },
   webpack: (config) => {
     config.resolve.alias = {

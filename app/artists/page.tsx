@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import Link from 'next/link'
 import { Palette, Loader2 } from 'lucide-react'
 import { getImageUrl } from '@/lib/pixiv-proxy'
 import type { ArtistFeature } from '@/types'
@@ -48,13 +49,13 @@ export default function ArtistsPage() {
           <>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {features.map(feature => (
-                <a key={feature.id} href={`/artists/${feature.id}`}
+                <Link key={feature.id} href={`/artists/${feature.id}`}
                   className="group bg-white rounded-2xl border border-gray-100 overflow-hidden hover:shadow-xl transition-all duration-300">
                   {/* 封面 */}
                   <div className="aspect-[16/9] overflow-hidden relative">
                     {feature.coverPid ? (
                       <img src={getImageUrl(feature.coverPid, 'small')} alt={feature.featureTitle}
-                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" loading="lazy" />
+                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" loading="lazy" decoding="async" />
                     ) : (
                       <div className="w-full h-full bg-gradient-to-br from-purple-100 to-violet-200 flex items-center justify-center">
                         <Palette className="w-12 h-12 text-purple-400" />
@@ -79,7 +80,7 @@ export default function ArtistsPage() {
                       </span>
                     </div>
                   </div>
-                </a>
+                </Link>
               ))}
             </div>
 

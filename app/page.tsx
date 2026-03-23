@@ -1,157 +1,145 @@
-'use client';
+import Link from 'next/link'
+import type { Metadata } from 'next'
+import { CalendarDays, Hash, Palette, TrendingUp } from 'lucide-react'
 
-import { useState, useEffect } from 'react';
-import { motion } from 'framer-motion';
-import Link from 'next/link';
-import Navigation from '../src/components/Navigation';
-import ImageCarousel from '../src/components/ImageCarousel';
-import Footer from '../src/components/Footer';
-import { TrendingUp, CalendarDays, Palette, Hash } from 'lucide-react';
+import ImageCarousel from '@/components/ImageCarousel'
+import { homeMetadata } from './metadata'
+import { getPublishedDailyPicks } from '@/lib/turso'
+import type { Artwork } from '@/types'
 
-/**
- * 首页组件
- * 展示网站主要内容和导航入口
- */
-export default function HomePage() {
-  const [featuredArtworks, setFeaturedArtworks] = useState([]);
+export const metadata: Metadata = homeMetadata
 
-  useEffect(() => {
-    const fetchFeaturedArtworks = async () => {
-      try {
-        // 从每日精选API获取数据
-        const response = await fetch('/api/daily-picks?page=1&limit=1');
-        if (!response.ok) throw new Error('获取精选作品失败');
-        const data = await response.json();
+const sections = [
+  {
+    title: '每日排行精选',
+    description: '从 Pixiv 榜单里筛掉噪音，只保留值得停留的作品。',
+    href: '/rankings',
+    icon: TrendingUp,
+    accent: 'from-emerald-500 to-teal-500',
+    surface: 'from-emerald-50 to-white',
+  },
+  {
+    title: '每日美图',
+    description: '按日期回看每日策展，适合快速浏览当天最稳的一组图。',
+    href: '/daily',
+    icon: CalendarDays,
+    accent: 'from-sky-500 to-cyan-500',
+    surface: 'from-sky-50 to-white',
+  },
+  {
+    title: '画师鉴赏',
+    description: '不只看图，也看创作风格、标签走向和画师的稳定输出。',
+    href: '/artists',
+    icon: Palette,
+    accent: 'from-fuchsia-500 to-pink-500',
+    surface: 'from-fuchsia-50 to-white',
+  },
+  {
+    title: '话题鉴赏',
+    description: '把同一主题下的作品拢在一起，浏览时更有策展感。',
+    href: '/topics',
+    icon: Hash,
+    accent: 'from-amber-500 to-orange-500',
+    surface: 'from-amber-50 to-white',
+  },
+] as const
 
-        if (data.success && data.data?.picks?.length > 0) {
-          const latestPick = data.data.picks[0];
-          setFeaturedArtworks(latestPick.artworks?.slice(0, 5) || []);
-        }
-      } catch (error) {
-        console.error('获取精选作品失败:', error);
-      }
-    };
+async function getFeaturedArtworks(): Promise<Artwork[]> {
+  try {
+    const { picks } = await getPublishedDailyPicks(1, 1)
+    return picks[0]?.artworks?.slice(0, 5) ?? []
+  } catch (error) {
+    console.error('Failed to load featured artworks for home page:', error)
+    return []
+  }
+}
 
-    fetchFeaturedArtworks();
-  }, []);
-
-  const sections = [
-    {
-      title: '每日排行精选',
-      description: '从Pixiv排行榜精心挑选的优质作品',
-      href: '/rankings',
-      icon: TrendingUp,
-      gradient: 'from-emerald-500 to-green-600',
-      bgLight: 'bg-emerald-50',
-    },
-    {
-      title: '每日美图',
-      description: '每天精选的ACG插画佳作',
-      href: '/daily',
-      icon: CalendarDays,
-      gradient: 'from-blue-500 to-cyan-600',
-      bgLight: 'bg-blue-50',
-    },
-    {
-      title: '画师鉴赏',
-      description: '深入了解优秀画师的艺术世界',
-      href: '/artists',
-      icon: Palette,
-      gradient: 'from-purple-500 to-violet-600',
-      bgLight: 'bg-purple-50',
-    },
-    {
-      title: '话题鉴赏',
-      description: '围绕主题探索精选作品集',
-      href: '/topics',
-      icon: Hash,
-      gradient: 'from-orange-500 to-amber-600',
-      bgLight: 'bg-orange-50',
-    },
-  ];
+export default async function HomePage() {
+  const featuredArtworks = await getFeaturedArtworks()
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-white via-gray-50 to-green-50">
-      <div className="relative z-50">
-        <Navigation />
-      </div>
+    <div className="bg-[radial-gradient(circle_at_top,_rgba(16,185,129,0.14),_transparent_34%),linear-gradient(180deg,#f7fdf9_0%,#ffffff_42%,#f7faf7_100%)]">
+      <section className="relative overflow-hidden">
+        <div className="pointer-events-none absolute inset-x-0 top-0 h-56 bg-gradient-to-b from-emerald-100/60 to-transparent" />
+        <ImageCarousel
+          images={featuredArtworks}
+          autoPlayInterval={6500}
+          showControls={featuredArtworks.length > 1}
+          showIndicators={featuredArtworks.length > 1}
+          height="min(88svh, 920px)"
+        />
 
-      <main>
-        {/* 全屏插画轮播 */}
-        <section className="relative">
-          <ImageCarousel
-            images={featuredArtworks}
-            autoPlayInterval={6000}
-            showControls={true}
-            showIndicators={true}
-            height="100vh"
-          />
+        <div className="pointer-events-none absolute inset-x-0 bottom-0 z-20 mx-auto max-w-7xl px-4 pb-10 sm:px-6 lg:px-8">
+          <div className="max-w-xl rounded-[2rem] border border-white/45 bg-white/15 p-6 text-white shadow-[0_24px_80px_rgba(15,23,42,0.28)] backdrop-blur-xl">
+            <p className="mb-3 inline-flex rounded-full border border-white/35 bg-white/10 px-3 py-1 text-xs font-medium uppercase tracking-[0.24em] text-white/85">
+              Curated Daily Selection
+            </p>
+            <h1 className="text-4xl font-semibold tracking-tight sm:text-5xl">
+              不只是图站，更像一个更轻的二次元策展首页
+            </h1>
+            <p className="mt-4 max-w-lg text-sm leading-7 text-white/78 sm:text-base">
+              首页先给氛围，再给入口。首屏只保留最新精选，让进入站点这一步更顺、更快，也更像作品展示页。
+            </p>
+          </div>
+        </div>
 
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 2, duration: 1 }}
-            className="absolute bottom-8 left-1/2 -translate-x-1/2 z-10"
-          >
-            <motion.div
-              animate={{ y: [0, 10, 0] }}
-              transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut' }}
-              className="flex flex-col items-center text-white/80"
-            >
-              <span className="text-sm mb-2">向下滚动探索更多</span>
-              <div className="w-6 h-10 border-2 border-white/60 rounded-full flex justify-center">
-                <motion.div
-                  animate={{ y: [0, 12, 0] }}
-                  transition={{ duration: 1.5, repeat: Infinity, ease: 'easeInOut' }}
-                  className="w-1 h-3 bg-white/60 rounded-full mt-2"
-                />
+        <div className="pointer-events-none absolute bottom-7 left-1/2 z-20 hidden -translate-x-1/2 flex-col items-center text-white/72 md:flex">
+          <span className="text-xs uppercase tracking-[0.28em]">Scroll</span>
+          <span className="mt-3 h-10 w-6 rounded-full border border-white/40">
+            <span className="mx-auto mt-2 block h-3 w-1 animate-[floatY_1.6s_ease-in-out_infinite] rounded-full bg-white/70" />
+          </span>
+        </div>
+      </section>
+
+      <section className="relative z-10 -mt-10 pb-24">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+          <div className="rounded-[2rem] border border-emerald-100/70 bg-white/88 p-6 shadow-[0_24px_80px_rgba(15,23,42,0.08)] backdrop-blur md:p-8">
+            <div className="flex flex-col gap-3 border-b border-slate-200/70 pb-8 md:flex-row md:items-end md:justify-between">
+              <div>
+                <p className="text-sm font-medium uppercase tracking-[0.24em] text-emerald-600">
+                  Explore
+                </p>
+                <h2 className="mt-3 text-3xl font-semibold tracking-tight text-slate-900">
+                  四个入口，先把站点结构讲清楚
+                </h2>
               </div>
-            </motion.div>
-          </motion.div>
-        </section>
-
-        {/* 板块入口 */}
-        <motion.section
-          initial={{ opacity: 0, y: 50 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true, margin: '-100px' }}
-          transition={{ duration: 0.8 }}
-          className="py-20 relative z-10"
-        >
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="text-center mb-12">
-              <h2 className="text-3xl font-bold text-gray-900">探索 ACG 艺术世界</h2>
-              <p className="text-gray-500 mt-2">精心策划的内容等你发现</p>
+              <p className="max-w-2xl text-sm leading-7 text-slate-600 sm:text-base">
+                现在首页不再靠大段动画撑观感，而是把内容路线、色彩分区和点击目标做得更明确。
+              </p>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-              {sections.map((section, index) => {
-                const Icon = section.icon;
+            <div className="mt-8 grid grid-cols-1 gap-5 md:grid-cols-2 xl:grid-cols-4">
+              {sections.map((section) => {
+                const Icon = section.icon
+
                 return (
-                  <motion.div
+                  <Link
                     key={section.href}
-                    initial={{ opacity: 0, y: 30 }}
-                    whileInView={{ opacity: 1, y: 0 }}
-                    viewport={{ once: true }}
-                    transition={{ delay: index * 0.1, duration: 0.5 }}
+                    href={section.href}
+                    className={`group rounded-[1.75rem] border border-slate-200/70 bg-gradient-to-br ${section.surface} p-6 shadow-sm transition duration-300 hover:-translate-y-1 hover:shadow-[0_18px_40px_rgba(15,23,42,0.08)]`}
                   >
-                    <Link href={section.href}
-                      className={`block group p-8 ${section.bgLight} rounded-2xl hover:shadow-xl transition-all duration-300 border border-transparent hover:border-gray-100`}>
-                      <div className={`w-14 h-14 rounded-2xl bg-gradient-to-r ${section.gradient} flex items-center justify-center mb-5 group-hover:scale-110 transition-transform`}>
-                        <Icon className="w-7 h-7 text-white" />
+                    <div className="flex items-start justify-between gap-4">
+                      <div className={`inline-flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br ${section.accent} text-white shadow-lg shadow-slate-300/20 transition duration-300 group-hover:scale-105`}>
+                        <Icon className="h-6 w-6" />
                       </div>
-                      <h3 className="text-xl font-bold text-gray-900 mb-2">{section.title}</h3>
-                      <p className="text-gray-500 text-sm leading-relaxed">{section.description}</p>
-                    </Link>
-                  </motion.div>
-                );
+                      <span className="text-xs font-medium uppercase tracking-[0.24em] text-slate-400 transition duration-300 group-hover:text-slate-600">
+                        Open
+                      </span>
+                    </div>
+
+                    <h3 className="mt-10 text-2xl font-semibold tracking-tight text-slate-900">
+                      {section.title}
+                    </h3>
+                    <p className="mt-3 text-sm leading-7 text-slate-600">
+                      {section.description}
+                    </p>
+                  </Link>
+                )
               })}
             </div>
           </div>
-        </motion.section>
-      </main>
-
-      <Footer />
+        </div>
+      </section>
     </div>
-  );
+  )
 }

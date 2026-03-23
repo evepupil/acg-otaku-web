@@ -1,6 +1,6 @@
-'use client'
-
+import Link from 'next/link'
 import { ExternalLink, MessageSquare } from 'lucide-react'
+
 import { getImageUrl } from '@/lib/pixiv-proxy'
 import type { Artwork } from '@/types'
 
@@ -9,66 +9,69 @@ interface CuratedArtworkCardProps {
   showComment?: boolean
 }
 
-export default function CuratedArtworkCard({ artwork, showComment = true }: CuratedArtworkCardProps) {
+export default function CuratedArtworkCard({
+  artwork,
+  showComment = true,
+}: CuratedArtworkCardProps) {
   return (
-    <div className="group bg-white rounded-2xl border border-gray-100 overflow-hidden hover:shadow-xl transition-all duration-300">
-      {/* 图片 */}
-      <a href={`/artwork/${artwork.id}`} className="block relative aspect-[3/4] overflow-hidden">
+    <article className="group overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm transition duration-300 hover:-translate-y-1 hover:shadow-[0_18px_40px_rgba(15,23,42,0.08)]">
+      <Link href={`/artwork/${artwork.id}`} className="block aspect-[3/4] overflow-hidden">
         <img
           src={getImageUrl(String(artwork.id), 'small', artwork.imagePath)}
           alt={artwork.title}
-          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+          className="h-full w-full object-cover transition duration-500 group-hover:scale-[1.03]"
           loading="lazy"
+          decoding="async"
         />
-        <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
-      </a>
+      </Link>
 
-      {/* 信息 */}
-      <div className="p-4 space-y-2">
-        <a href={`/artwork/${artwork.id}`} className="block">
-          <h3 className="font-medium text-gray-900 truncate group-hover:text-green-600 transition-colors">
-            {artwork.title}
-          </h3>
-        </a>
+      <div className="space-y-3 p-4">
+        <div className="flex items-start justify-between gap-3">
+          <div className="min-w-0">
+            <Link href={`/artwork/${artwork.id}`} className="block">
+              <h3 className="truncate text-base font-semibold text-slate-900 transition group-hover:text-emerald-700">
+                {artwork.title}
+              </h3>
+            </Link>
+            <p className="mt-1 truncate text-sm text-slate-500">{artwork.artist?.name}</p>
+          </div>
 
-        <div className="flex items-center justify-between text-sm text-gray-500">
-          <span>{artwork.artist?.name}</span>
           <a
             href={`https://www.pixiv.net/artworks/${artwork.id}`}
             target="_blank"
             rel="noopener noreferrer"
-            className="flex items-center gap-1 text-xs text-blue-500 hover:text-blue-700"
+            className="inline-flex items-center gap-1 text-xs font-medium text-sky-600 transition hover:text-sky-700"
           >
-            <ExternalLink className="w-3 h-3" />
+            <ExternalLink className="h-3.5 w-3.5" />
             Pixiv
           </a>
         </div>
 
-        {/* 编辑评语 */}
         {showComment && artwork.editorComment && (
-          <div className="flex items-start gap-2 p-2.5 bg-green-50 rounded-xl">
-            <MessageSquare className="w-3.5 h-3.5 text-green-600 mt-0.5 flex-shrink-0" />
-            <p className="text-xs text-green-700 leading-relaxed">{artwork.editorComment}</p>
+          <div className="flex items-start gap-2 rounded-2xl bg-emerald-50 px-3 py-2.5">
+            <MessageSquare className="mt-0.5 h-3.5 w-3.5 flex-shrink-0 text-emerald-600" />
+            <p className="text-xs leading-6 text-emerald-800">{artwork.editorComment}</p>
           </div>
         )}
 
-        {/* 标签 */}
         {artwork.tags.length > 0 && (
-          <div className="flex flex-wrap gap-1">
-            {artwork.tags.slice(0, 4).map((tag, i) => (
-              <span key={i} className="px-2 py-0.5 text-xs bg-gray-100 text-gray-600 rounded-full">
+          <div className="flex flex-wrap gap-2">
+            {artwork.tags.slice(0, 4).map((tag) => (
+              <span
+                key={tag}
+                className="rounded-full bg-slate-100 px-2.5 py-1 text-xs text-slate-600"
+              >
                 {tag}
               </span>
             ))}
           </div>
         )}
 
-        {/* 数据 */}
-        <div className="flex items-center gap-3 text-xs text-gray-400">
+        <div className="flex items-center gap-3 text-xs text-slate-400">
           <span>{artwork.stats?.views?.toLocaleString()} 浏览</span>
           <span>{artwork.stats?.bookmarks?.toLocaleString()} 收藏</span>
         </div>
       </div>
-    </div>
+    </article>
   )
 }
