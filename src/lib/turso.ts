@@ -458,6 +458,51 @@ export async function getPublishedDailyPicks(page: number = 1, limit: number = 2
 }
 
 /**
+ * 获取已发布的每日精选摘要列表，不加载作品明细
+ */
+export async function getPublishedDailyPickSummaries(
+  page: number = 1,
+  limit: number = 20,
+  pickType?: string
+) {
+  const client = getTursoClient()
+  const offset = (page - 1) * limit
+
+  let where = 'is_published = 1'
+  const args: (string | number)[] = []
+  if (pickType) {
+    where += ' AND pick_type = ?'
+    args.push(pickType)
+  }
+
+  const countResult = await client.execute({
+    sql: `SELECT COUNT(*) as count FROM daily_pick WHERE ${where}`,
+    args
+  })
+  const total = Number(countResult.rows[0]?.count) || 0
+
+  const result = await client.execute({
+    sql: `SELECT * FROM daily_pick WHERE ${where} ORDER BY pick_date DESC LIMIT ? OFFSET ?`,
+    args: [...args, limit, offset]
+  })
+
+  const picks = result.rows.map(row => ({
+    id: Number(row.id),
+    pickDate: String(row.pick_date),
+    pickType: String(row.pick_type) as 'ranking_pick' | 'daily_art',
+    title: String(row.title || ''),
+    description: String(row.description || ''),
+    coverPid: String(row.cover_pid || ''),
+    isPublished: true,
+    artworks: [],
+    createdAt: String(row.created_at || ''),
+    updatedAt: String(row.updated_at || ''),
+  }))
+
+  return { picks, total }
+}
+
+/**
  * 获取单个每日精选（含作品列表）
  */
 export async function getDailyPickById(id: number) {

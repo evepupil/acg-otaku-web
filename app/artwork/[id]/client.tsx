@@ -1,37 +1,55 @@
-/**
- * 插画详情页客户端组件 - 处理交互逻辑
- * 支持图片缩放、收藏、分享等功能
- */
-
 'use client'
 
-import { useState, useEffect, useCallback, use } from 'react'
-import { motion, AnimatePresence } from 'framer-motion'
+import { useEffect, useState } from 'react'
+import { useRouter } from 'next/navigation'
 import {
-  Eye, Tag,
-  ArrowLeft, ZoomIn, ZoomOut, RotateCw, X,
-  ExternalLink
+  ArrowLeft,
+  ExternalLink,
+  Eye,
+  RotateCw,
+  Tag,
+  X,
+  ZoomIn,
+  ZoomOut,
 } from 'lucide-react'
-import Button from '@/components/Button'
-import Loading from '@/components/Loading'
+
 import ShareButtons from '@/components/ShareButtons'
 import WechatQRCode from '@/components/WechatQRCode'
-import { useRouter } from 'next/navigation'
 import { getImageUrl } from '@/lib/pixiv-proxy'
 
-/**
- * 图片查看器组件
- */
-function ImageViewer({ 
-  imageUrl, 
-  title, 
-  isOpen, 
-  onClose 
-}: { 
+export type ArtworkDetailData = {
+  id: number | string
+  pid: string
+  title: string
+  imageUrl: string
+  imagePath: string
+  artist?: {
+    id: number
+    name: string
+  } | string
+  tags: string[]
+  createdAt: string
+  stats: {
+    views: number
+    likes: number
+    bookmarks: number
+  }
+  dimensions: { width: number; height: number } | null
+  popularity: number
+  editorComment?: string | null
+  curationType?: string | null
+}
+
+function ImageViewer({
+  imageUrl,
+  title,
+  isOpen,
+  onClose,
+}: {
   imageUrl: string
   title: string
   isOpen: boolean
-  onClose: () => void 
+  onClose: () => void
 }) {
   const [scale, setScale] = useState(1)
   const [rotation, setRotation] = useState(0)
@@ -39,471 +57,289 @@ function ImageViewer({
   const [isDragging, setIsDragging] = useState(false)
   const [dragStart, setDragStart] = useState({ x: 0, y: 0 })
 
-  /**
-   * 重置图片状态
-   */
-  const resetImage = () => {
+  useEffect(() => {
+    if (!isOpen) {
+      return
+    }
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        onClose()
+      }
+    }
+
+    document.body.style.overflow = 'hidden'
+    window.addEventListener('keydown', handleKeyDown)
+
+    return () => {
+      document.body.style.overflow = ''
+      window.removeEventListener('keydown', handleKeyDown)
+    }
+  }, [isOpen, onClose])
+
+  if (!isOpen) {
+    return null
+  }
+
+  const reset = () => {
     setScale(1)
     setRotation(0)
     setPosition({ x: 0, y: 0 })
   }
 
-  /**
-   * 处理鼠标拖拽开始
-   */
-  const handleMouseDown = (e: React.MouseEvent) => {
-    setIsDragging(true)
-    setDragStart({ x: e.clientX - position.x, y: e.clientY - position.y })
-  }
-
-  /**
-   * 处理鼠标拖拽
-   */
-  const handleMouseMove = (e: React.MouseEvent) => {
-    if (!isDragging) return
-    setPosition({
-      x: e.clientX - dragStart.x,
-      y: e.clientY - dragStart.y
-    })
-  }
-
-  /**
-   * 处理鼠标拖拽结束
-   */
-  const handleMouseUp = () => {
-    setIsDragging(false)
-  }
-
-  /**
-   * 处理键盘事件
-   */
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (!isOpen) return
-      
-      switch (e.key) {
-        case 'Escape':
-          onClose()
-          break
-        case '+':
-        case '=':
-          setScale(prev => Math.min(prev + 0.2, 3))
-          break
-        case '-':
-          setScale(prev => Math.max(prev - 0.2, 0.5))
-          break
-        case 'r':
-        case 'R':
-          setRotation(prev => prev + 90)
-          break
-        case '0':
-          resetImage()
-          break
-      }
-    }
-
-    window.addEventListener('keydown', handleKeyDown)
-    return () => window.removeEventListener('keydown', handleKeyDown)
-  }, [isOpen, onClose])
-
-  if (!isOpen) return null
-
   return (
-    <AnimatePresence>
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        exit={{ opacity: 0 }}
-        className="fixed inset-0 z-50 bg-black bg-opacity-90 flex items-center justify-center"
-        onClick={onClose}
-      >
-        {/* 工具栏 */}
-        <div className="absolute top-4 right-4 flex gap-2 z-10">
-          <Button
-            variant="secondary"
-            size="sm"
-            onClick={(e) => {
-              e.stopPropagation()
-              setScale(prev => Math.min(prev + 0.2, 3))
-            }}
-          >
-            <ZoomIn className="w-4 h-4" />
-          </Button>
-          <Button
-            variant="secondary"
-            size="sm"
-            onClick={(e) => {
-              e.stopPropagation()
-              setScale(prev => Math.max(prev - 0.2, 0.5))
-            }}
-          >
-            <ZoomOut className="w-4 h-4" />
-          </Button>
-          <Button
-            variant="secondary"
-            size="sm"
-            onClick={(e) => {
-              e.stopPropagation()
-              setRotation(prev => prev + 90)
-            }}
-          >
-            <RotateCw className="w-4 h-4" />
-          </Button>
-          <Button
-            variant="secondary"
-            size="sm"
-            onClick={(e) => {
-              e.stopPropagation()
-              resetImage()
-            }}
-          >
-            重置
-          </Button>
-          <Button
-            variant="secondary"
-            size="sm"
-            onClick={onClose}
-          >
-            <X className="w-4 h-4" />
-          </Button>
-        </div>
+    <div className="fixed inset-0 z-50 bg-black/90" onClick={onClose}>
+      <div className="absolute right-4 top-4 z-10 flex flex-wrap gap-2">
+        <button
+          type="button"
+          onClick={(event) => {
+            event.stopPropagation()
+            setScale((prev) => Math.min(prev + 0.2, 3))
+          }}
+          className="rounded-xl bg-white/10 p-3 text-white backdrop-blur transition hover:bg-white/20"
+        >
+          <ZoomIn className="h-4 w-4" />
+        </button>
+        <button
+          type="button"
+          onClick={(event) => {
+            event.stopPropagation()
+            setScale((prev) => Math.max(prev - 0.2, 0.5))
+          }}
+          className="rounded-xl bg-white/10 p-3 text-white backdrop-blur transition hover:bg-white/20"
+        >
+          <ZoomOut className="h-4 w-4" />
+        </button>
+        <button
+          type="button"
+          onClick={(event) => {
+            event.stopPropagation()
+            setRotation((prev) => prev + 90)
+          }}
+          className="rounded-xl bg-white/10 p-3 text-white backdrop-blur transition hover:bg-white/20"
+        >
+          <RotateCw className="h-4 w-4" />
+        </button>
+        <button
+          type="button"
+          onClick={(event) => {
+            event.stopPropagation()
+            reset()
+          }}
+          className="rounded-xl bg-white/10 px-4 py-3 text-sm text-white backdrop-blur transition hover:bg-white/20"
+        >
+          重置
+        </button>
+        <button
+          type="button"
+          onClick={onClose}
+          className="rounded-xl bg-white/10 p-3 text-white backdrop-blur transition hover:bg-white/20"
+        >
+          <X className="h-4 w-4" />
+        </button>
+      </div>
 
-        {/* 图片容器 */}
-        <motion.img
+      <div className="flex h-full items-center justify-center p-6">
+        <img
           src={imageUrl}
           alt={title}
-          className="max-w-none cursor-move select-none"
+          className="max-h-full max-w-full cursor-move select-none"
           style={{
             transform: `translate(${position.x}px, ${position.y}px) scale(${scale}) rotate(${rotation}deg)`,
-            transformOrigin: 'center'
+            transformOrigin: 'center',
           }}
-          onMouseDown={handleMouseDown}
-          onMouseMove={handleMouseMove}
-          onMouseUp={handleMouseUp}
-          onMouseLeave={handleMouseUp}
-          onClick={(e) => e.stopPropagation()}
-          drag
-          dragConstraints={false}
+          onClick={(event) => event.stopPropagation()}
+          onMouseDown={(event) => {
+            setIsDragging(true)
+            setDragStart({ x: event.clientX - position.x, y: event.clientY - position.y })
+          }}
+          onMouseMove={(event) => {
+            if (!isDragging) return
+            setPosition({
+              x: event.clientX - dragStart.x,
+              y: event.clientY - dragStart.y,
+            })
+          }}
+          onMouseUp={() => setIsDragging(false)}
+          onMouseLeave={() => setIsDragging(false)}
         />
-      </motion.div>
-    </AnimatePresence>
+      </div>
+    </div>
   )
 }
 
-/**
- * 插画详情页客户端组件
- */
-export default function ArtworkDetailClient({ params }: { params: Promise<{ id: string }> }) {
-  const resolvedParams = use(params)
+export default function ArtworkDetailClient({
+  artwork,
+}: {
+  artwork: ArtworkDetailData | null
+}) {
   const router = useRouter()
-  const [artwork, setArtwork] = useState<{
-    id: string;
-    pid: string;
-    title: string;
-    imageUrl: string;
-    imagePath: string;  // B2 存储桶图片路径
-    artist?: {
-      id: number;
-      name: string;
-    };
-    tags: string[];
-    createdAt: string;
-    stats: {
-      views: number;
-      likes: number;
-      bookmarks: number;
-    };
-    dimensions: { width: number; height: number } | null;
-    popularity: number;
-    editorComment?: string | null;
-    curationType?: string | null;
-  } | null>(null)
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
-
   const [showImageViewer, setShowImageViewer] = useState(false)
   const [imageLoaded, setImageLoaded] = useState(false)
 
-  /**
-   * 获取插画详情数据
-   */
-  const fetchArtworkDetail = useCallback(async () => {
-    try {
-      setLoading(true)
-      setError(null)
-      
-      // 通过API路由获取数据
-      const response = await fetch(`/api/artwork/${resolvedParams.id}`)
-      if (!response.ok) {
-        throw new Error('获取作品详情失败')
-      }
-      
-      const data = await response.json()
-      if (!data.success || !data.data) {
-        throw new Error('作品不存在')
-      }
-      
-      const artworkData = data.data
-      
-      // 转换为详情页面需要的格式
-      const artworkDetail = {
-        id: artworkData.id,
-        pid: artworkData.pid || artworkData.id.toString(), // 确保pid有值
-        title: artworkData.title,
-        imageUrl: artworkData.imageUrl,
-        imagePath: artworkData.imagePath || '',  // 添加 imagePath
-        artist: artworkData.artist || {
-          id: artworkData.authorId ? parseInt(artworkData.authorId) : 0,
-          name: typeof artworkData.artist === 'string' ? artworkData.artist : '未知作者'
-        },
-        tags: artworkData.tags,
-        createdAt: artworkData.uploadTime || new Date().toISOString(),
-        stats: {
-          views: artworkData.stats?.views || 0,
-          likes: artworkData.stats?.likes || 0,
-          bookmarks: artworkData.stats?.bookmarks || 0
-        },
-        dimensions: null as { width: number; height: number } | null, // 数据库中暂无尺寸信息
-        popularity: artworkData.popularity,
-        editorComment: artworkData.editorComment || null,
-        curationType: artworkData.curationType || null
-      }
-      
-      setArtwork(artworkDetail)
-    } catch (err) {
-      console.error('获取作品详情失败:', err)
-      setError(err instanceof Error ? err.message : '获取作品详情失败')
-    } finally {
-      setLoading(false)
-    }
-  }, [resolvedParams.id])
-
-  useEffect(() => {
-    fetchArtworkDetail()
-  }, [fetchArtworkDetail])
-
-  /**
-   * 处理返回按钮点击
-   */
-  const handleBack = () => {
-    router.back()
-  }
-
-  /**
-   * 处理图片加载完成
-   */
-  const handleImageLoad = () => {
-    setImageLoaded(true)
-  }
-
-  /**
-   * 处理图片加载错误
-   */
-  const handleImageError = () => {
-    setImageLoaded(false)
-  }
-
-  if (loading) {
+  if (!artwork) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <Loading />
-      </div>
-    )
-  }
-
-  if (error || !artwork) {
-    return (
-      <div className="min-h-screen flex flex-col items-center justify-center px-4">
+      <div className="flex min-h-screen flex-col items-center justify-center px-4">
         <div className="text-center">
-          <h1 className="text-2xl font-bold text-gray-900 mb-4">
-            {error || '作品不存在'}
-          </h1>
-          <p className="text-gray-600 mb-8">
-            抱歉，您访问的作品可能不存在或已被删除
-          </p>
-          <Button onClick={handleBack}>
-            <ArrowLeft className="w-4 h-4 mr-2" />
+          <h1 className="text-2xl font-semibold text-slate-900">作品不存在</h1>
+          <p className="mt-3 text-slate-600">你访问的作品可能不存在，或者已经被移除。</p>
+          <button
+            type="button"
+            onClick={() => router.back()}
+            className="mt-6 inline-flex items-center gap-2 rounded-2xl bg-emerald-600 px-4 py-3 text-sm font-medium text-white transition hover:bg-emerald-700"
+          >
+            <ArrowLeft className="h-4 w-4" />
             返回上一页
-          </Button>
+          </button>
         </div>
       </div>
     )
   }
+
+  const artistName =
+    typeof artwork.artist === 'object' ? artwork.artist.name : artwork.artist || '未知作者'
+  const originalImageUrl = artwork.pid
+    ? getImageUrl(artwork.pid, 'original', artwork.imagePath)
+    : artwork.imageUrl
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-green-50 via-white to-emerald-50">
-      {/* 头部导航 */}
-      <div className="sticky top-0 z-40 bg-white/80 backdrop-blur-sm border-b border-gray-200">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between h-16">
-            <Button
-              variant="ghost"
-              onClick={handleBack}
-              className="flex items-center gap-2"
-            >
-              <ArrowLeft className="w-4 h-4" />
-              返回
-            </Button>
-            
-            <div className="flex items-center gap-4">
-              <span className="text-sm text-gray-500">
-                作品ID: {artwork.pid}
-              </span>
-            </div>
-          </div>
+    <div className="min-h-screen bg-[radial-gradient(circle_at_top,_rgba(16,185,129,0.08),_transparent_28%),linear-gradient(180deg,#f7fdf9_0%,#ffffff_38%,#f5fbf6_100%)]">
+      <div className="sticky top-0 z-40 border-b border-slate-200 bg-white/78 backdrop-blur-xl">
+        <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
+          <button
+            type="button"
+            onClick={() => router.back()}
+            className="inline-flex items-center gap-2 text-sm text-slate-600 transition hover:text-slate-950"
+          >
+            <ArrowLeft className="h-4 w-4" />
+            返回
+          </button>
+
+          <span className="text-sm text-slate-500">作品 ID: {artwork.pid}</span>
         </div>
       </div>
 
-      {/* 主要内容 */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* 图片展示区域 */}
+      <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
+        <div className="grid grid-cols-1 gap-8 lg:grid-cols-3">
           <div className="lg:col-span-2">
-            <div className="bg-white rounded-2xl shadow-lg overflow-hidden">
-              <div className="relative aspect-square bg-gray-100 flex items-center justify-center">
-                {artwork.pid ? (
-                  <motion.img
-                    src={getImageUrl(artwork.pid, 'original', artwork.imagePath)}
-                    alt={artwork.title}
-                    className="w-full h-full object-contain cursor-zoom-in"
-                    onLoad={handleImageLoad}
-                    onError={handleImageError}
-                    onClick={() => setShowImageViewer(true)}
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: imageLoaded ? 1 : 0 }}
-                    transition={{ duration: 0.3 }}
-                  />
-                ) : (
-                  <div className="text-gray-400">
-                    图片加载失败
-                  </div>
-                )}
-                
-                {!imageLoaded && artwork.pid && (
+            <div className="overflow-hidden rounded-[2rem] border border-slate-200 bg-white shadow-[0_24px_80px_rgba(15,23,42,0.06)]">
+              <div className="relative flex aspect-square items-center justify-center bg-slate-100">
+                <img
+                  src={originalImageUrl}
+                  alt={artwork.title}
+                  className={`h-full w-full cursor-zoom-in object-contain transition-opacity duration-300 ${
+                    imageLoaded ? 'opacity-100' : 'opacity-0'
+                  }`}
+                  onLoad={() => setImageLoaded(true)}
+                  onClick={() => setShowImageViewer(true)}
+                />
+
+                {!imageLoaded && (
                   <div className="absolute inset-0 flex items-center justify-center">
-                    <Loading />
+                    <div className="h-8 w-8 animate-spin rounded-full border-2 border-emerald-200 border-t-emerald-600" />
                   </div>
                 )}
               </div>
             </div>
           </div>
 
-          {/* 作品信息区域 */}
           <div className="space-y-6">
-            {/* 基本信息 */}
-            <div className="bg-white rounded-2xl shadow-lg p-6">
-              <h1 className="text-2xl font-bold text-gray-900 mb-4">
-                {artwork.title}
-              </h1>
-              
-              <div className="space-y-4">
+            <section className="rounded-[1.75rem] border border-slate-200 bg-white p-6 shadow-sm">
+              <h1 className="text-2xl font-semibold tracking-tight text-slate-900">{artwork.title}</h1>
+
+              <div className="mt-5 space-y-4">
                 <div>
-                  <h3 className="text-sm font-medium text-gray-500 mb-1">作者</h3>
-                  <p className="text-lg text-gray-900">
-                    {typeof artwork.artist === 'object' ? artwork.artist.name : artwork.artist || '未知作者'}
-                  </p>
+                  <h2 className="text-sm font-medium text-slate-500">作者</h2>
+                  <p className="mt-1 text-lg text-slate-900">{artistName}</p>
                 </div>
-                
+
                 <div>
-                  <h3 className="text-sm font-medium text-gray-500 mb-1">创建时间</h3>
-                  <p className="text-gray-700">
+                  <h2 className="text-sm font-medium text-slate-500">创建时间</h2>
+                  <p className="mt-1 text-slate-700">
                     {new Date(artwork.createdAt).toLocaleDateString('zh-CN')}
                   </p>
                 </div>
-                
+
                 <div>
-                  <h3 className="text-sm font-medium text-gray-500 mb-2">统计信息</h3>
-                  <div className="grid grid-cols-3 gap-4 text-center">
-                    <div>
-                      <div className="flex items-center justify-center mb-1">
-                        <Eye className="w-4 h-4 text-gray-400 mr-1" />
-                      </div>
-                      <p className="text-lg font-semibold text-gray-900">
+                  <h2 className="mb-3 text-sm font-medium text-slate-500">统计信息</h2>
+                  <div className="grid grid-cols-3 gap-3 text-center">
+                    <div className="rounded-2xl bg-slate-50 px-3 py-4">
+                      <Eye className="mx-auto mb-2 h-4 w-4 text-slate-400" />
+                      <p className="text-lg font-semibold text-slate-900">
                         {artwork.stats.views.toLocaleString()}
                       </p>
-                      <p className="text-xs text-gray-500">浏览</p>
+                      <p className="mt-1 text-xs text-slate-500">浏览</p>
                     </div>
-                    <div>
-                      <div className="flex items-center justify-center mb-1">
-                        <span className="text-red-500">♥</span>
-                      </div>
-                      <p className="text-lg font-semibold text-gray-900">
+                    <div className="rounded-2xl bg-slate-50 px-3 py-4">
+                      <span className="mb-2 block text-sm text-rose-500">❤</span>
+                      <p className="text-lg font-semibold text-slate-900">
                         {artwork.stats.likes.toLocaleString()}
                       </p>
-                      <p className="text-xs text-gray-500">点赞</p>
+                      <p className="mt-1 text-xs text-slate-500">点赞</p>
                     </div>
-                    <div>
-                      <div className="flex items-center justify-center mb-1">
-                        <span className="text-yellow-500">★</span>
-                      </div>
-                      <p className="text-lg font-semibold text-gray-900">
+                    <div className="rounded-2xl bg-slate-50 px-3 py-4">
+                      <span className="mb-2 block text-sm text-amber-500">★</span>
+                      <p className="text-lg font-semibold text-slate-900">
                         {artwork.stats.bookmarks.toLocaleString()}
                       </p>
-                      <p className="text-xs text-gray-500">收藏</p>
+                      <p className="mt-1 text-xs text-slate-500">收藏</p>
                     </div>
                   </div>
                 </div>
               </div>
-            </div>
+            </section>
 
-            {/* 标签 */}
-            {artwork.tags && artwork.tags.length > 0 && (
-              <div className="bg-white rounded-2xl shadow-lg p-6">
-                <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
-                  <Tag className="w-5 h-5 mr-2" />
+            {artwork.tags.length > 0 && (
+              <section className="rounded-[1.75rem] border border-slate-200 bg-white p-6 shadow-sm">
+                <h2 className="flex items-center gap-2 text-lg font-semibold text-slate-900">
+                  <Tag className="h-5 w-5" />
                   标签
-                </h3>
-                <div className="flex flex-wrap gap-2">
-                  {artwork.tags.map((tag, index) => (
+                </h2>
+                <div className="mt-4 flex flex-wrap gap-2">
+                  {artwork.tags.map((tag) => (
                     <span
-                      key={index}
-                      className="inline-flex items-center px-3 py-1 rounded-full text-sm bg-emerald-100 text-emerald-800 hover:bg-emerald-200 transition-colors cursor-pointer"
+                      key={tag}
+                      className="rounded-full bg-emerald-50 px-3 py-1 text-sm text-emerald-700"
                     >
                       {tag}
                     </span>
                   ))}
                 </div>
-              </div>
+              </section>
             )}
 
-            {/* 编辑评语 */}
             {artwork.editorComment && (
-              <div className="bg-white rounded-2xl shadow-lg p-6">
-                <h3 className="text-lg font-semibold text-gray-900 mb-3">编辑评语</h3>
-                <p className="text-gray-700 leading-relaxed italic border-l-4 border-emerald-400 pl-4">
+              <section className="rounded-[1.75rem] border border-slate-200 bg-white p-6 shadow-sm">
+                <h2 className="text-lg font-semibold text-slate-900">编辑评语</h2>
+                <p className="mt-4 border-l-4 border-emerald-400 pl-4 text-sm leading-7 text-slate-700">
                   {artwork.editorComment}
                 </p>
-              </div>
+              </section>
             )}
 
-            {/* 操作按钮 */}
-            <div className="bg-white rounded-2xl shadow-lg p-6 space-y-4">
-              <h3 className="text-lg font-semibold text-gray-900 mb-3">分享与链接</h3>
+            <section className="space-y-4 rounded-[1.75rem] border border-slate-200 bg-white p-6 shadow-sm">
+              <h2 className="text-lg font-semibold text-slate-900">分享与链接</h2>
 
-              {/* Pixiv原作链接 */}
               <a
                 href={`https://www.pixiv.net/artworks/${artwork.pid}`}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="flex items-center gap-2 w-full px-4 py-3 bg-blue-50 text-blue-700 rounded-xl hover:bg-blue-100 transition-colors text-sm font-medium"
+                className="flex w-full items-center gap-2 rounded-2xl bg-sky-50 px-4 py-3 text-sm font-medium text-sky-700 transition hover:bg-sky-100"
               >
-                <ExternalLink className="w-4 h-4" />
-                在Pixiv查看原作
+                <ExternalLink className="h-4 w-4" />
+                在 Pixiv 查看原作
               </a>
 
-              {/* 分享按钮 */}
               <ShareButtons title={artwork.title} />
-            </div>
+            </section>
 
-            {/* 公众号二维码 */}
             <WechatQRCode />
           </div>
         </div>
       </div>
 
-      {/* 图片查看器 */}
       <ImageViewer
-        imageUrl={artwork.pid ? getImageUrl(artwork.pid, 'original', artwork.imagePath) : ''}
+        imageUrl={originalImageUrl}
         title={artwork.title}
         isOpen={showImageViewer}
         onClose={() => setShowImageViewer(false)}

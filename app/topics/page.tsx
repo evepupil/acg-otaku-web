@@ -1,81 +1,115 @@
-'use client'
-
-import { useState, useEffect } from 'react'
 import Link from 'next/link'
-import { Hash, Loader2 } from 'lucide-react'
+import { ChevronLeft, ChevronRight, Hash } from 'lucide-react'
+
 import { getImageUrl } from '@/lib/pixiv-proxy'
-import type { TopicFeature } from '@/types'
+import { getTopicFeatures } from '@/lib/turso'
 
-export default function TopicsPage() {
-  const [features, setFeatures] = useState<TopicFeature[]>([])
-  const [loading, setLoading] = useState(true)
-  const [page, setPage] = useState(1)
-  const [totalPages, setTotalPages] = useState(1)
+export const dynamic = 'force-dynamic'
 
-  useEffect(() => {
-    setLoading(true)
-    fetch(`/api/topic-features?page=${page}&limit=12`)
-      .then(res => res.json())
-      .then(data => {
-        if (data.success) {
-          setFeatures(data.data.features)
-          setTotalPages(data.data.pagination.totalPages)
-        }
-      })
-      .finally(() => setLoading(false))
-  }, [page])
+const PAGE_SIZE = 12
+
+function parsePage(value?: string) {
+  const parsed = Number(value)
+  return Number.isInteger(parsed) && parsed > 0 ? parsed : 1
+}
+
+function getPageHref(page: number) {
+  return page <= 1 ? '/topics' : `/topics?page=${page}`
+}
+
+export default async function TopicsPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ page?: string }>
+}) {
+  const params = await searchParams
+  const requestedPage = parsePage(params.page)
+  const initialData = await getTopicFeatures(requestedPage, PAGE_SIZE, true)
+  const totalPages = Math.max(1, Math.ceil(initialData.total / PAGE_SIZE))
+  const safePage = Math.min(requestedPage, totalPages)
+  const { features } =
+    safePage === requestedPage
+      ? initialData
+      : await getTopicFeatures(safePage, PAGE_SIZE, true)
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-white via-gray-50 to-orange-50">
-      <div className="max-w-7xl mx-auto px-4 py-8 pt-24">
-        <div className="text-center mb-10">
-          <h1 className="text-3xl font-bold text-gray-900">
-            <Hash className="inline-block w-8 h-8 mr-2 text-orange-600" />
-            话题鉴赏
-          </h1>
-          <p className="text-gray-500 mt-2">围绕主题探索精选作品</p>
+    <div className="min-h-screen bg-[radial-gradient(circle_at_top,_rgba(249,115,22,0.08),_transparent_28%),linear-gradient(180deg,#fffdf9_0%,#fff7ed_100%)]">
+      <div className="mx-auto max-w-7xl px-4 py-8 pt-10 sm:px-6 lg:px-8">
+        <div className="mb-10 rounded-[2rem] border border-amber-100/80 bg-white/92 p-6 shadow-[0_24px_80px_rgba(15,23,42,0.06)] backdrop-blur md:p-8">
+          <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
+            <div className="max-w-2xl">
+              <p className="text-sm font-medium uppercase tracking-[0.24em] text-amber-600">
+                Topic Features
+              </p>
+              <h1 className="mt-3 text-3xl font-semibold tracking-tight text-slate-900 md:text-4xl">
+                话题鉴赏
+              </h1>
+              <p className="mt-4 text-sm leading-7 text-slate-600 md:text-base">
+                话题页也改成了服务端分页，进入时直接看到卡片，不再等浏览器先把列表数据补回来。
+              </p>
+            </div>
+
+            <div className="inline-flex items-center gap-2 rounded-2xl border border-amber-100 bg-amber-50 px-4 py-3 text-sm font-medium text-amber-700">
+              <Hash className="h-4 w-4" />
+              <span>
+                第 {safePage} / {totalPages} 页
+              </span>
+            </div>
+          </div>
         </div>
 
-        {loading ? (
-          <div className="flex justify-center py-20">
-            <Loader2 className="w-8 h-8 animate-spin text-orange-600" />
-          </div>
-        ) : features.length === 0 ? (
-          <div className="text-center py-20">
-            <Hash className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-            <p className="text-gray-400 text-lg">暂无话题专题</p>
+        {features.length === 0 ? (
+          <div className="rounded-[2rem] border border-dashed border-slate-300 bg-white/80 px-6 py-20 text-center shadow-sm">
+            <Hash className="mx-auto h-16 w-16 text-slate-300" />
+            <h2 className="mt-6 text-2xl font-semibold text-slate-900">暂无话题专题</h2>
           </div>
         ) : (
           <>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {features.map(feature => (
-                <Link key={feature.id} href={`/topics/${feature.id}`}
-                  className="group bg-white rounded-2xl border border-gray-100 overflow-hidden hover:shadow-xl transition-all duration-300">
-                  <div className="aspect-[16/9] overflow-hidden relative">
+            <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
+              {features.map((feature) => (
+                <Link
+                  key={feature.id}
+                  href={`/topics/${feature.id}`}
+                  className="group overflow-hidden rounded-[1.75rem] border border-slate-200 bg-white shadow-sm transition duration-300 hover:-translate-y-1 hover:shadow-[0_18px_40px_rgba(15,23,42,0.08)]"
+                >
+                  <div className="relative aspect-[16/9] overflow-hidden">
                     {feature.coverPid ? (
-                      <img src={getImageUrl(feature.coverPid, 'small')} alt={feature.topicName}
-                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" loading="lazy" decoding="async" />
+                      <img
+                        src={getImageUrl(feature.coverPid, 'small')}
+                        alt={feature.topicName}
+                        className="h-full w-full object-cover transition duration-500 group-hover:scale-[1.03]"
+                        loading="lazy"
+                        decoding="async"
+                      />
                     ) : (
-                      <div className="w-full h-full bg-gradient-to-br from-orange-100 to-amber-200 flex items-center justify-center">
-                        <Hash className="w-12 h-12 text-orange-400" />
+                      <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-amber-100 to-orange-200">
+                        <Hash className="h-12 w-12 text-amber-400" />
                       </div>
                     )}
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent" />
+
+                    <div className="absolute inset-0 bg-gradient-to-t from-slate-950/70 via-slate-950/10 to-transparent" />
                   </div>
-                  <div className="p-5">
-                    <h3 className="font-semibold text-gray-900 group-hover:text-orange-600 transition-colors text-lg">
+
+                  <div className="space-y-3 p-5">
+                    <h2 className="text-xl font-semibold tracking-tight text-slate-900 transition group-hover:text-amber-700">
                       {feature.topicName}
-                    </h3>
+                    </h2>
                     {feature.topicDescription && (
-                      <p className="text-sm text-gray-500 mt-2 line-clamp-2">{feature.topicDescription}</p>
+                      <p className="line-clamp-2 text-sm leading-6 text-slate-500">
+                        {feature.topicDescription}
+                      </p>
                     )}
-                    <div className="flex flex-wrap gap-1.5 mt-3">
-                      {feature.tags.slice(0, 4).map((tag, i) => (
-                        <span key={i} className="text-xs text-orange-600 bg-orange-50 px-2 py-0.5 rounded-full">
+
+                    <div className="flex flex-wrap gap-2">
+                      {feature.tags.slice(0, 4).map((tag) => (
+                        <span
+                          key={tag}
+                          className="rounded-full bg-amber-50 px-2.5 py-1 text-xs font-medium text-amber-700"
+                        >
                           #{tag}
                         </span>
                       ))}
-                      <span className="text-xs text-gray-400 bg-gray-50 px-2 py-0.5 rounded-full">
+                      <span className="rounded-full bg-slate-100 px-2.5 py-1 text-xs text-slate-500">
                         {feature.artworks?.length || 0} 件作品
                       </span>
                     </div>
@@ -85,13 +119,44 @@ export default function TopicsPage() {
             </div>
 
             {totalPages > 1 && (
-              <div className="flex justify-center gap-2 mt-8">
-                {Array.from({ length: totalPages }, (_, i) => (
-                  <button key={i} onClick={() => setPage(i + 1)}
-                    className={`w-10 h-10 rounded-xl text-sm font-medium transition-all ${page === i + 1 ? 'bg-orange-600 text-white' : 'bg-white text-gray-600 hover:bg-orange-50'}`}>
-                    {i + 1}
-                  </button>
+              <div className="mt-10 flex flex-wrap items-center justify-center gap-2">
+                <Link
+                  href={getPageHref(Math.max(1, safePage - 1))}
+                  className={`inline-flex h-11 items-center gap-2 rounded-2xl border px-4 text-sm font-medium transition ${
+                    safePage > 1
+                      ? 'border-slate-200 bg-white text-slate-700 hover:border-slate-300 hover:text-slate-950'
+                      : 'pointer-events-none border-slate-200 bg-slate-100 text-slate-300'
+                  }`}
+                >
+                  <ChevronLeft className="h-4 w-4" />
+                  上一页
+                </Link>
+
+                {Array.from({ length: totalPages }, (_, index) => index + 1).map((pageNumber) => (
+                  <Link
+                    key={pageNumber}
+                    href={getPageHref(pageNumber)}
+                    className={`inline-flex h-11 min-w-11 items-center justify-center rounded-2xl px-4 text-sm font-medium transition ${
+                      pageNumber === safePage
+                        ? 'bg-amber-600 text-white'
+                        : 'bg-white text-slate-600 hover:bg-amber-50 hover:text-amber-700'
+                    }`}
+                  >
+                    {pageNumber}
+                  </Link>
                 ))}
+
+                <Link
+                  href={getPageHref(Math.min(totalPages, safePage + 1))}
+                  className={`inline-flex h-11 items-center gap-2 rounded-2xl border px-4 text-sm font-medium transition ${
+                    safePage < totalPages
+                      ? 'border-slate-200 bg-white text-slate-700 hover:border-slate-300 hover:text-slate-950'
+                      : 'pointer-events-none border-slate-200 bg-slate-100 text-slate-300'
+                  }`}
+                >
+                  下一页
+                  <ChevronRight className="h-4 w-4" />
+                </Link>
               </div>
             )}
           </>

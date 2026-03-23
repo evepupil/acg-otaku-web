@@ -1,40 +1,55 @@
-/**
- * 插画详情页组件 - 展示插画的详细信息、作者信息、相关作品等
- * 支持图片缩放、收藏、分享等功能
- */
-
 import type { Metadata } from 'next'
-import ArtworkDetailClient from './client'
 
-/**
- * 获取插画数据的服务器端函数
- * @param id 插画ID
- * @returns 插画数据或null
- */
-async function getArtworkData(id: string) {
+import ArtworkDetailClient, { type ArtworkDetailData } from './client'
+import { getArtworkById } from '@/lib/turso'
+
+export const dynamic = 'force-dynamic'
+
+async function getArtworkData(id: string): Promise<ArtworkDetailData | null> {
+  const parsedId = Number(id)
+  if (!Number.isInteger(parsedId) || parsedId <= 0) {
+    return null
+  }
+
   try {
-    const response = await fetch(`https://acgotaku.com/api/artwork/${id}`, {
-      cache: 'no-store' // 确保获取最新数据
-    })
-    
-    if (!response.ok) {
+    const artworkData = await getArtworkById(parsedId)
+    if (!artworkData) {
       return null
     }
-    
-    const data = await response.json()
-    return data.success ? data.data : null
+
+    return {
+      id: artworkData.id,
+      pid: artworkData.pid || artworkData.id.toString(),
+      title: artworkData.title,
+      imageUrl: artworkData.imageUrl,
+      imagePath: artworkData.imagePath || '',
+      artist: artworkData.artist || {
+        id: 0,
+        name: '未知作者',
+      },
+      tags: artworkData.tags || [],
+      createdAt: artworkData.uploadTime || artworkData.createdAt || new Date().toISOString(),
+      stats: {
+        views: artworkData.stats?.views || 0,
+        likes: artworkData.stats?.likes || 0,
+        bookmarks: artworkData.stats?.bookmarks || 0,
+      },
+      dimensions: null,
+      popularity: artworkData.popularity || 0,
+      editorComment: artworkData.editorComment || null,
+      curationType: artworkData.curationType || null,
+    }
   } catch (error) {
-    console.error('Failed to fetch artwork data:', error)
+    console.error('Failed to load artwork data:', error)
     return null
   }
 }
 
-/**
- * 生成动态metadata
- * @param params 路由参数
- * @returns Metadata对象
- */
-export async function generateMetadata({ params }: { params: Promise<{ id: string }> }): Promise<Metadata> {
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ id: string }>
+}): Promise<Metadata> {
   const resolvedParams = await params
   const artwork = await getArtworkData(resolvedParams.id)
 
@@ -49,15 +64,19 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
     }
   }
 
-  const title = `${artwork.title} - ${artwork.artist?.name || '未知作者'}`
-  const description = `欣赏由 ${artwork.artist?.name || '未知作者'} 创作的精美插画《${artwork.title}》。${artwork.tags ? `标签：${artwork.tags.join(', ')}。` : ''}在ACG萌图宅发现更多优质二次元艺术作品。`
+  const artistName =
+    typeof artwork.artist === 'object' ? artwork.artist.name : artwork.artist || '未知作者'
+  const title = `${artwork.title} - ${artistName}`
+  const description = `欣赏 ${artistName} 创作的插画《${artwork.title}》。${
+    artwork.tags.length ? `标签：${artwork.tags.join('、')}。` : ''
+  }`
   const imageUrl = artwork.imageUrl || '/og-image.jpg'
   const canonicalUrl = `https://acgotaku.com/artwork/${artwork.pid || resolvedParams.id}`
 
   return {
     title,
     description,
-    keywords: artwork.tags ? [...artwork.tags, 'ACG', '萌图', '二次元', '插画', 'Pixiv'] : ['ACG', '萌图', '二次元', '插画', 'Pixiv'],
+    keywords: [...artwork.tags, 'ACG', '萌图', '二次元', '插画', 'Pixiv'],
     alternates: {
       canonical: canonicalUrl,
     },
@@ -74,9 +93,9 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
           alt: artwork.title,
         },
       ],
-      publishedTime: artwork.uploadTime || new Date().toISOString(),
-      authors: [artwork.artist || '未知作者'],
-      tags: artwork.tags || [],
+      publishedTime: artwork.createdAt,
+      authors: [artistName],
+      tags: artwork.tags,
     },
     twitter: {
       card: 'summary_large_image',
@@ -98,13 +117,13 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
   }
 }
 
+export default async function ArtworkDetailPage({
+  params,
+}: {
+  params: Promise<{ id: string }>
+}) {
+  const resolvedParams = await params
+  const artwork = await getArtworkData(resolvedParams.id)
 
-
-/**
- * 插画详情页服务器组件
- * @param params 路由参数
- * @returns JSX元素
- */
-export default function ArtworkDetailPage({ params }: { params: Promise<{ id: string }> }) {
-  return <ArtworkDetailClient params={params} />
+  return <ArtworkDetailClient artwork={artwork} />
 }
