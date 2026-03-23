@@ -26,6 +26,8 @@ export interface Article extends ArticleMetadata {
   htmlContent?: string
 }
 
+export type ArticleSortOption = 'latest' | 'views'
+
 // 文章目录路径
 const articlesDirectory = path.join(process.cwd(), 'articles')
 
@@ -244,4 +246,69 @@ export function searchArticles(query: string): Article[] {
     article.content.toLowerCase().includes(lowercaseQuery) ||
     article.tags.some(tag => tag.toLowerCase().includes(lowercaseQuery))
   )
+}
+
+export function getArticleTagsWithCount() {
+  return Object.entries(getAllTags())
+    .map(([tag, count]) => ({ tag, count }))
+    .sort((a, b) => b.count - a.count || a.tag.localeCompare(b.tag))
+}
+
+export function getFilteredArticles(options: {
+  search?: string
+  tag?: string
+  sort?: ArticleSortOption
+  page?: number
+  limit?: number
+}) {
+  const {
+    search = '',
+    tag = '',
+    sort = 'latest',
+    page = 1,
+    limit = 12,
+  } = options
+
+  let articles = getAllArticles()
+
+  if (tag) {
+    const normalizedTag = tag.toLowerCase()
+    articles = articles.filter((article) =>
+      article.tags.some((articleTag) => articleTag.toLowerCase() === normalizedTag)
+    )
+  }
+
+  if (search) {
+    const normalizedQuery = search.toLowerCase()
+    articles = articles.filter((article) =>
+      article.title.toLowerCase().includes(normalizedQuery) ||
+      article.excerpt.toLowerCase().includes(normalizedQuery) ||
+      article.content.toLowerCase().includes(normalizedQuery) ||
+      article.tags.some((articleTag) => articleTag.toLowerCase().includes(normalizedQuery))
+    )
+  }
+
+  articles = [...articles].sort((a, b) => {
+    if (sort === 'views') {
+      return b.view_count - a.view_count
+    }
+
+    return new Date(b.published_at).getTime() - new Date(a.published_at).getTime()
+  })
+
+  const total = articles.length
+  const totalPages = Math.max(1, Math.ceil(total / limit))
+  const safePage = Math.min(Math.max(page, 1), totalPages)
+  const startIndex = (safePage - 1) * limit
+  const paginatedArticles = articles.slice(startIndex, startIndex + limit)
+
+  return {
+    articles: paginatedArticles,
+    pagination: {
+      page: safePage,
+      limit,
+      total,
+      totalPages,
+    },
+  }
 }
