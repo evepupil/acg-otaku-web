@@ -1,4 +1,5 @@
 import { createClient, Client } from '@libsql/client'
+import { env } from '@/env'
 
 /**
  * Turso数据库客户端配置
@@ -7,8 +8,8 @@ import { createClient, Client } from '@libsql/client'
  */
 
 // 获取环境变量
-const tursoUrl = process.env.TURSO_DATABASE_URL
-const tursoAuthToken = process.env.TURSO_AUTH_TOKEN
+const tursoUrl = env.TURSO_DATABASE_URL
+const tursoAuthToken = env.TURSO_AUTH_TOKEN
 
 // Turso客户端实例（单例模式）
 let tursoClient: Client | null = null

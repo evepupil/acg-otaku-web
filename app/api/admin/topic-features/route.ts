@@ -1,22 +1,49 @@
+import { ZodError } from 'zod'
 import { NextRequest, NextResponse } from 'next/server'
+
 import { verifyAdminRequest } from '@/lib/admin-auth'
-import { getTopicFeatures, createTopicFeature, updateTopicFeature, deleteTopicFeature } from '@/lib/turso'
+import { getTopicFeatures } from '@/lib/turso'
+import {
+  adminIdQuerySchema,
+  adminPaginationQuerySchema,
+  createTopicFeatureSchema,
+  updateTopicFeatureSchema,
+} from '@/lib/validation/admin'
+import { parseJsonBody, parseSearchParams } from '@/lib/validation/request'
+import {
+  createTopicFeatureRecord,
+  deleteTopicFeatureRecord,
+  getTopicFeatureSlugExists,
+  updateTopicFeatureRecord,
+} from '@/db/curation'
+
+function validationErrorResponse(error: ZodError) {
+  return NextResponse.json(
+    { success: false, error: error.issues[0]?.message ?? '请求参数无效' },
+    { status: 400 }
+  )
+}
 
 export async function GET(request: NextRequest) {
   const isAdmin = await verifyAdminRequest(request)
   if (!isAdmin) return NextResponse.json({ success: false, error: '未授权' }, { status: 401 })
 
-  const { searchParams } = new URL(request.url)
-  const page = parseInt(searchParams.get('page') || '1')
-  const limit = parseInt(searchParams.get('limit') || '20')
-
   try {
+    const { page, limit } = parseSearchParams(
+      new URL(request.url).searchParams,
+      adminPaginationQuerySchema
+    )
+
     const { features, total } = await getTopicFeatures(page, limit)
     return NextResponse.json({
       success: true,
       data: { features, pagination: { page, limit, total, totalPages: Math.ceil(total / limit) } }
     })
   } catch (error) {
+    if (error instanceof ZodError) {
+      return validationErrorResponse(error)
+    }
+
     console.error('获取话题专题列表失败:', error)
     return NextResponse.json({ success: false, error: '获取失败' }, { status: 500 })
   }
@@ -27,16 +54,20 @@ export async function POST(request: NextRequest) {
   if (!isAdmin) return NextResponse.json({ success: false, error: '未授权' }, { status: 401 })
 
   try {
-    const body = await request.json()
-    const { topicName, topicSlug, ...rest } = body
+    const payload = await parseJsonBody(request, createTopicFeatureSchema)
+    const exists = await getTopicFeatureSlugExists(payload.topicSlug)
 
-    if (!topicName || !topicSlug) {
-      return NextResponse.json({ success: false, error: '请填写话题名称和slug' }, { status: 400 })
+    if (exists) {
+      return NextResponse.json({ success: false, error: 'slug 已存在' }, { status: 409 })
     }
 
-    const id = await createTopicFeature({ topicName, topicSlug, ...rest })
+    const id = await createTopicFeatureRecord(payload)
     return NextResponse.json({ success: true, data: { id } })
   } catch (error) {
+    if (error instanceof ZodError) {
+      return validationErrorResponse(error)
+    }
+
     console.error('创建话题专题失败:', error)
     return NextResponse.json({ success: false, error: '创建失败' }, { status: 500 })
   }
@@ -47,13 +78,23 @@ export async function PUT(request: NextRequest) {
   if (!isAdmin) return NextResponse.json({ success: false, error: '未授权' }, { status: 401 })
 
   try {
-    const body = await request.json()
-    const { id, ...data } = body
-    if (!id) return NextResponse.json({ success: false, error: '缺少ID' }, { status: 400 })
+    const payload = await parseJsonBody(request, updateTopicFeatureSchema)
 
-    await updateTopicFeature(id, data)
+    if (payload.topicSlug) {
+      const exists = await getTopicFeatureSlugExists(payload.topicSlug, payload.id)
+
+      if (exists) {
+        return NextResponse.json({ success: false, error: 'slug 已存在' }, { status: 409 })
+      }
+    }
+
+    await updateTopicFeatureRecord(payload.id, payload)
     return NextResponse.json({ success: true })
   } catch (error) {
+    if (error instanceof ZodError) {
+      return validationErrorResponse(error)
+    }
+
     console.error('更新话题专题失败:', error)
     return NextResponse.json({ success: false, error: '更新失败' }, { status: 500 })
   }
@@ -63,13 +104,15 @@ export async function DELETE(request: NextRequest) {
   const isAdmin = await verifyAdminRequest(request)
   if (!isAdmin) return NextResponse.json({ success: false, error: '未授权' }, { status: 401 })
 
-  const id = new URL(request.url).searchParams.get('id')
-  if (!id) return NextResponse.json({ success: false, error: '缺少ID' }, { status: 400 })
-
   try {
-    await deleteTopicFeature(parseInt(id))
+    const { id } = parseSearchParams(new URL(request.url).searchParams, adminIdQuerySchema)
+    await deleteTopicFeatureRecord(id)
     return NextResponse.json({ success: true })
   } catch (error) {
+    if (error instanceof ZodError) {
+      return validationErrorResponse(error)
+    }
+
     console.error('删除话题专题失败:', error)
     return NextResponse.json({ success: false, error: '删除失败' }, { status: 500 })
   }

@@ -1,8 +1,9 @@
 import { SignJWT, jwtVerify } from 'jose'
 import { NextRequest } from 'next/server'
+import { env } from '@/env'
 
-const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || ''
-const JWT_SECRET = process.env.ADMIN_JWT_SECRET || 'default-secret-change-me'
+const ADMIN_PASSWORD = env.ADMIN_PASSWORD
+const JWT_SECRET = env.ADMIN_JWT_SECRET
 
 const secret = new TextEncoder().encode(JWT_SECRET)
 const TOKEN_COOKIE_NAME = 'admin_token'
