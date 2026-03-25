@@ -340,3 +340,93 @@ export async function getDailyPickExists(pickDateValue: string, pickTypeValue: D
 
   return result.length > 0
 }
+
+export async function getDailyPickArtworkLinkExists(dailyPickIdValue: number, pidValue: string) {
+  const result = await db
+    .select({ id: dailyPickArtwork.id })
+    .from(dailyPickArtwork)
+    .where(and(eq(dailyPickArtwork.dailyPickId, dailyPickIdValue), eq(dailyPickArtwork.pid, pidValue)))
+    .limit(1)
+
+  return result.length > 0
+}
+
+export async function addDailyPickArtworkRecord(
+  dailyPickIdValue: number,
+  pidValue: string,
+  sortOrder = 0,
+  editorComment?: string
+) {
+  await db.insert(dailyPickArtwork).values({
+    dailyPickId: dailyPickIdValue,
+    pid: pidValue,
+    sortOrder,
+    editorComment: editorComment ?? null,
+  })
+}
+
+export async function removeDailyPickArtworkRecord(dailyPickIdValue: number, pidValue: string) {
+  await db
+    .delete(dailyPickArtwork)
+    .where(and(eq(dailyPickArtwork.dailyPickId, dailyPickIdValue), eq(dailyPickArtwork.pid, pidValue)))
+}
+
+export async function getArtistFeatureArtworkLinkExists(artistFeatureIdValue: number, pidValue: string) {
+  const result = await db
+    .select({ id: artistFeatureArtwork.id })
+    .from(artistFeatureArtwork)
+    .where(and(eq(artistFeatureArtwork.artistFeatureId, artistFeatureIdValue), eq(artistFeatureArtwork.pid, pidValue)))
+    .limit(1)
+
+  return result.length > 0
+}
+
+export async function addArtistFeatureArtworkRecord(
+  artistFeatureIdValue: number,
+  pidValue: string,
+  sortOrder = 0,
+  editorComment?: string
+) {
+  await db.insert(artistFeatureArtwork).values({
+    artistFeatureId: artistFeatureIdValue,
+    pid: pidValue,
+    sortOrder,
+    editorComment: editorComment ?? null,
+  })
+}
+
+export async function removeArtistFeatureArtworkRecord(artistFeatureIdValue: number, pidValue: string) {
+  await db
+    .delete(artistFeatureArtwork)
+    .where(and(eq(artistFeatureArtwork.artistFeatureId, artistFeatureIdValue), eq(artistFeatureArtwork.pid, pidValue)))
+}
+
+export async function getTopicFeatureArtworkLinkExists(topicFeatureIdValue: number, pidValue: string) {
+  const result = await db
+    .select({ id: topicFeatureArtwork.id })
+    .from(topicFeatureArtwork)
+    .where(and(eq(topicFeatureArtwork.topicFeatureId, topicFeatureIdValue), eq(topicFeatureArtwork.pid, pidValue)))
+    .limit(1)
+
+  return result.length > 0
+}
+
+export async function addTopicFeatureArtworkRecord(
+  topicFeatureIdValue: number,
+  pidValue: string,
+  sortOrder = 0,
+  editorComment?: string
+) {
+  await db.insert(topicFeatureArtwork).values({
+    topicFeatureId: topicFeatureIdValue,
+    pid: pidValue,
+    sortOrder,
+    editorComment: editorComment ?? null,
+  })
+}
+
+export async function removeTopicFeatureArtworkRecord(topicFeatureIdValue: number, pidValue: string) {
+  await db
+    .delete(topicFeatureArtwork)
+    .where(and(eq(topicFeatureArtwork.topicFeatureId, topicFeatureIdValue), eq(topicFeatureArtwork.pid, pidValue)))
+}

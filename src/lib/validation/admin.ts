@@ -91,6 +91,16 @@ export const adminPidQuerySchema = z.object({
   pid: z.string().trim().regex(/^\d+$/),
 })
 
+export const adminRouteIdSchema = z.object({
+  id: z.coerce.number().int().positive(),
+})
+
+export const createCurationArtworkLinkSchema = z.object({
+  pid: z.string().trim().regex(/^\d+$/),
+  sortOrder: z.coerce.number().int().min(0).optional().default(0),
+  editorComment: optionalNullableText,
+})
+
 export const createArtistFeatureSchema = z.object({
   artistId: z.string().trim().min(1).max(120),
   artistName: z.string().trim().min(1).max(120),
