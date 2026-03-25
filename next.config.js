@@ -8,11 +8,27 @@ const __dirname = path.dirname(__filename);
 const nextConfig = {
   typedRoutes: false,
   images: {
-    domains: ['localhost'],
     remotePatterns: [
       {
         protocol: 'https',
-        hostname: '**',
+        hostname: 'pixiv-b2-bucket.acgotaku.com',
+        pathname: '/**',
+      },
+      {
+        protocol: 'http',
+        hostname: '124.156.215.153',
+        port: '3003',
+        pathname: '/**',
+      },
+      {
+        protocol: 'http',
+        hostname: 'localhost',
+        pathname: '/**',
+      },
+      {
+        protocol: 'https',
+        hostname: 'localhost',
+        pathname: '/**',
       },
     ],
   },
