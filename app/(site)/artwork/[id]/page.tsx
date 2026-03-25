@@ -1,7 +1,7 @@
 import type { Metadata } from 'next'
 
 import ArtworkDetailClient, { type ArtworkDetailData } from './client'
-import { getArtworkById } from '@/lib/turso'
+import { getArtworkById } from '@/db/content'
 
 export const dynamic = 'force-dynamic'
 

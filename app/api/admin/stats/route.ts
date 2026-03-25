@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { getContentStats } from '@/db/content'
 import { verifyAdminRequest } from '@/lib/admin-auth'
-import { getContentStats } from '@/lib/turso'
 
 export async function GET(request: NextRequest) {
   const isAdmin = await verifyAdminRequest(request)

@@ -3,7 +3,7 @@ import { ArrowLeft, Hash } from 'lucide-react'
 
 import ArtworkGrid from '@/components/ArtworkGrid'
 import FeatureArticle from '@/components/FeatureArticle'
-import { getTopicFeatureById } from '@/lib/turso'
+import { getTopicFeatureById } from '@/db/content'
 
 export const dynamic = 'force-dynamic'
 

@@ -1,8 +1,8 @@
 import { ZodError } from 'zod'
 import { NextRequest, NextResponse } from 'next/server'
 
+import { getTopicFeatures } from '@/db/content'
 import { verifyAdminRequest } from '@/lib/admin-auth'
-import { getTopicFeatures } from '@/lib/turso'
 import {
   adminIdQuerySchema,
   adminPaginationQuerySchema,

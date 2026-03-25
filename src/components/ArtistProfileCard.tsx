@@ -1,3 +1,4 @@
+import Image from 'next/image'
 import { ExternalLink } from 'lucide-react'
 
 interface ArtistProfileCardProps {
@@ -12,9 +13,9 @@ export default function ArtistProfileCard({ artistName, artistBio, artistAvatar,
   return (
     <div className="bg-white rounded-2xl border border-gray-100 p-6 flex flex-col sm:flex-row items-center sm:items-start gap-6">
       {/* 头像 */}
-      <div className="w-24 h-24 rounded-full bg-gradient-to-br from-purple-100 to-violet-200 flex items-center justify-center flex-shrink-0 overflow-hidden">
+      <div className="relative w-24 h-24 rounded-full bg-gradient-to-br from-purple-100 to-violet-200 flex items-center justify-center flex-shrink-0 overflow-hidden">
         {artistAvatar ? (
-          <img src={artistAvatar} alt={artistName} className="w-full h-full object-cover" />
+          <Image src={artistAvatar} alt={artistName} fill sizes="96px" className="object-cover" />
         ) : (
           <span className="text-3xl font-bold text-purple-600">{artistName.charAt(0)}</span>
         )}

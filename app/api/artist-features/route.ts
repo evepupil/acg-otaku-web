@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getArtistFeatures } from '@/lib/turso'
+import { getArtistFeatures } from '@/db/content'
 
 export const dynamic = 'force-dynamic'
 

@@ -2,7 +2,7 @@ import Link from 'next/link'
 import { CalendarDays, Hash, Image, Palette } from 'lucide-react'
 
 import StatsCard from '@/components/admin/StatsCard'
-import { getContentStats } from '@/lib/turso'
+import { getContentStats } from '@/db/content'
 
 const quickActions = [
   {

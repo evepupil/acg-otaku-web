@@ -1,8 +1,8 @@
 import { ZodError } from 'zod'
 import { NextRequest, NextResponse } from 'next/server'
 
+import { getArtistFeatures } from '@/db/content'
 import { verifyAdminRequest } from '@/lib/admin-auth'
-import { getArtistFeatures } from '@/lib/turso'
 import {
   adminIdQuerySchema,
   adminPaginationQuerySchema,

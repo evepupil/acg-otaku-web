@@ -5,7 +5,7 @@ import ArtworkGrid from '@/components/ArtworkGrid'
 import {
   getDailyPickByDate,
   getPublishedDailyPickSummaries,
-} from '@/lib/turso'
+} from '@/db/content'
 
 export const dynamic = 'force-dynamic'
 

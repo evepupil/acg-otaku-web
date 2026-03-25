@@ -1,5 +1,6 @@
 'use client'
 
+import Image from 'next/image'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { ChevronLeft, ChevronRight, Pause, Play } from 'lucide-react'
 import { useRouter } from 'next/navigation'
@@ -129,13 +130,13 @@ export default function ImageCarousel({
             key={slide.id}
             className={`absolute inset-0 transition-opacity duration-700 ${isActive ? 'opacity-100' : 'pointer-events-none opacity-0'}`}
           >
-            <img
+            <Image
               src={slide.src}
               alt={slide.title}
-              className="h-full w-full object-cover"
-              loading={index === 0 ? 'eager' : 'lazy'}
-              fetchPriority={index === 0 ? 'high' : 'auto'}
-              decoding="async"
+              fill
+              priority={index === 0}
+              sizes="100vw"
+              className="object-cover"
             />
             <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(2,6,23,0.24)_0%,rgba(2,6,23,0.42)_44%,rgba(2,6,23,0.88)_100%)]" />
             <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,_transparent_28%,rgba(2,6,23,0.16)_72%)]" />

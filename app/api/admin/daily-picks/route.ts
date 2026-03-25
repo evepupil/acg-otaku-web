@@ -1,8 +1,8 @@
 import { ZodError } from 'zod'
 import { NextRequest, NextResponse } from 'next/server'
 
+import { getDailyPicks } from '@/db/content'
 import { verifyAdminRequest } from '@/lib/admin-auth'
-import { getDailyPicks } from '@/lib/turso'
 import {
   adminDailyPickListQuerySchema,
   adminIdQuerySchema,

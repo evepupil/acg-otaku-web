@@ -1,3 +1,4 @@
+import Image from 'next/image'
 import Link from 'next/link'
 import { ExternalLink, MessageSquare } from 'lucide-react'
 
@@ -15,13 +16,13 @@ export default function CuratedArtworkCard({
 }: CuratedArtworkCardProps) {
   return (
     <article className="group overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm transition duration-300 hover:-translate-y-1 hover:shadow-[0_18px_40px_rgba(15,23,42,0.08)]">
-      <Link href={`/artwork/${artwork.id}`} className="block aspect-[3/4] overflow-hidden">
-        <img
+      <Link href={`/artwork/${artwork.id}`} className="relative block aspect-[3/4] overflow-hidden">
+        <Image
           src={getImageUrl(String(artwork.id), 'small', artwork.imagePath)}
           alt={artwork.title}
-          className="h-full w-full object-cover transition duration-500 group-hover:scale-[1.03]"
-          loading="lazy"
-          decoding="async"
+          fill
+          sizes="(min-width: 1280px) 20vw, (min-width: 768px) 30vw, 50vw"
+          className="object-cover transition duration-500 group-hover:scale-[1.03]"
         />
       </Link>
 

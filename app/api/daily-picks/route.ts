@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getPublishedDailyPicks, getDailyPickByDate } from '@/lib/turso'
+import { getDailyPickByDate, getPublishedDailyPicks } from '@/db/content'
 
 export const dynamic = 'force-dynamic'
 

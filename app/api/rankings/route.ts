@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getPublishedDailyPicks, getDailyPickByDate } from '@/lib/turso'
+import { getDailyPickByDate, getPublishedDailyPicks } from '@/db/content'
 
 /**
  * 排行榜精选数据接口

@@ -2,7 +2,7 @@ import Link from 'next/link'
 import { CalendarDays, ChevronLeft, ChevronRight, Search } from 'lucide-react'
 
 import ArtworkGrid from '@/components/ArtworkGrid'
-import { getDailyPickByDate } from '@/lib/turso'
+import { getDailyPickByDate } from '@/db/content'
 
 export const dynamic = 'force-dynamic'
 

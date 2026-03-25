@@ -4,7 +4,7 @@ import { ArrowLeft, Palette } from 'lucide-react'
 import ArtistProfileCard from '@/components/ArtistProfileCard'
 import ArtworkGrid from '@/components/ArtworkGrid'
 import FeatureArticle from '@/components/FeatureArticle'
-import { getArtistFeatureById } from '@/lib/turso'
+import { getArtistFeatureById } from '@/db/content'
 
 export const dynamic = 'force-dynamic'
 
