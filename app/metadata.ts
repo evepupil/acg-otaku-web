@@ -1,49 +1,40 @@
-import { Metadata } from 'next'
+import type { Metadata } from 'next'
 
-/**
- * 主页SEO元数据配置
- */
 export const homeMetadata: Metadata = {
-  title: 'ACG萌图宅 - 精选ACG插画鉴赏平台',
-  description: '精心策划的ACG插画鉴赏平台，每日精选优质作品，深度解读画师风格，围绕话题探索作品集。',
-  keywords: [
-    'pixiv', '插画', '排行榜', '二次元', '动漫', '艺术', '绘画', 
-    '插画师', '原创', 'illustration', 'anime', 'manga', '热门作品'
-  ],
+  title: 'ACG萌图宅',
+  description: '收录每日精选、排行整理、画师专题、话题归档与搜图工具的 ACG 插画内容站。',
+  keywords: ['ACG', '插画', 'Pixiv', '每日精选', '排行', '画师专题', '话题专题'],
   openGraph: {
-    title: 'Pixiv插画排行榜 - 发现最热门的二次元插画作品',
-    description: '探索Pixiv平台最受欢迎的插画作品，包含每日、每周、每月排行榜，发现优秀的二次元艺术作品和插画师。',
+    title: 'ACG萌图宅',
+    description: '收录每日精选、排行整理、画师专题、话题归档与搜图工具的 ACG 插画内容站。',
     type: 'website',
     locale: 'zh_CN',
     url: 'https://acgotaku.com',
-    siteName: 'Pixiv插画排行榜',
+    siteName: 'ACG萌图宅',
     images: [
       {
         url: 'https://acgotaku.com/og-image.jpg',
         width: 1200,
         height: 630,
-        alt: 'Pixiv插画排行榜 - 发现最热门的二次元插画作品',
+        alt: 'ACG萌图宅首页',
       },
     ],
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'Pixiv插画排行榜 - 发现最热门的二次元插画作品',
-    description: '探索Pixiv平台最受欢迎的插画作品，包含每日、每周、每月排行榜。',
+    title: 'ACG萌图宅',
+    description: '收录每日精选、排行整理、画师专题、话题归档与搜图工具的 ACG 插画内容站。',
     images: ['https://acgotaku.com/og-image.jpg'],
   },
 }
 
-/**
- * 搜图页面SEO元数据配置
- */
 export const searchMetadata: Metadata = {
-  title: '以图搜图 - ACG萌图宅',
-  description: '上传图片，通过AI技术找到相似的二次元作品和来源信息。支持动漫、插画、漫画等各类ACG图片搜索。',
-  keywords: ['以图搜图', '反向图像搜索', 'ACG', '二次元', '动漫', '插画', 'SauceNAO'],
+  title: '搜图 - ACG萌图宅',
+  description: '上传图片后查找相近作品与来源信息。',
+  keywords: ['搜图', '以图搜图', '反向图片搜索', 'ACG', '插画'],
   openGraph: {
-    title: '以图搜图 - ACG萌图宅',
-    description: '上传图片，通过AI技术找到相似的二次元作品和来源信息',
+    title: '搜图 - ACG萌图宅',
+    description: '上传图片后查找相近作品与来源信息。',
     type: 'website',
     locale: 'zh_CN',
     url: 'https://acgotaku.com/search',
@@ -53,65 +44,51 @@ export const searchMetadata: Metadata = {
         url: 'https://acgotaku.com/og-search.jpg',
         width: 1200,
         height: 630,
-        alt: '以图搜图 - ACG萌图宅',
+        alt: 'ACG萌图宅搜图页面',
       },
     ],
   },
   twitter: {
     card: 'summary_large_image',
-    title: '以图搜图 - ACG萌图宅',
-    description: '上传图片，通过AI技术找到相似的二次元作品和来源信息。支持动漫、插画、漫画等各类ACG图片搜索。',
+    title: '搜图 - ACG萌图宅',
+    description: '上传图片后查找相近作品与来源信息。',
     images: ['https://acgotaku.com/og-search.jpg'],
   },
 }
 
-/**
- * 排行榜页面SEO元数据配置
- */
 export const rankingsMetadata: Metadata = {
-  title: '每日排行精选 - ACG萌图宅',
-  description: '从Pixiv排行榜中精心挑选的优质ACG插画作品，每日更新。',
-  keywords: [
-    'pixiv排行榜', '每日排行', '每周排行', '每月排行', '热门插画', 
-    '二次元排行榜', '插画排名', '人气作品', 'pixiv ranking'
-  ],
+  title: '排行精选 - ACG萌图宅',
+  description: '按日期查看已经整理发布的排行精选作品。',
+  keywords: ['排行精选', '每日排行', 'Pixiv', '插画精选', 'ACG'],
   openGraph: {
-    title: 'Pixiv插画排行榜 - 每日/每周/每月热门作品',
-    description: '查看Pixiv平台的插画排行榜，包含每日、每周、每月最受欢迎的二次元插画作品。',
+    title: '排行精选 - ACG萌图宅',
+    description: '按日期查看已经整理发布的排行精选作品。',
     type: 'website',
     locale: 'zh_CN',
     url: 'https://acgotaku.com/rankings',
-    siteName: 'Pixiv插画排行榜',
+    siteName: 'ACG萌图宅',
     images: [
       {
         url: 'https://acgotaku.com/og-rankings.jpg',
         width: 1200,
         height: 630,
-        alt: 'Pixiv插画排行榜 - 每日/每周/每月热门作品',
+        alt: 'ACG萌图宅排行精选页面',
       },
     ],
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'Pixiv插画排行榜 - 每日/每周/每月热门作品',
-    description: '查看Pixiv平台的插画排行榜，包含每日、每周、每月最受欢迎的二次元插画作品。',
+    title: '排行精选 - ACG萌图宅',
+    description: '按日期查看已经整理发布的排行精选作品。',
     images: ['https://acgotaku.com/og-rankings.jpg'],
   },
 }
 
-/**
- * 文章页面SEO元数据配置
- */
 export const articlesMetadata: Metadata = {
-  title: '文章 - ACG萌图宅',
-  description: '深度解读ACG艺术，画师风格分析，创作技巧分享，二次元文化探讨。',
-  keywords: ['ACG文章', '插画鉴赏', '画师分析', '二次元文化', '创作技巧'],
-  openGraph: {
-    title: '文章 - ACG萌图宅',
-    description: '深度解读ACG艺术，画师风格分析，创作技巧分享。',
-    type: 'website',
-    locale: 'zh_CN',
-    url: 'https://acgotaku.com/articles',
-    siteName: 'ACG萌图宅',
+  title: '文章已下线 - ACG萌图宅',
+  description: '文章内容已下线，当前站点以精选作品、画师专题、话题专题和搜图工具为主。',
+  robots: {
+    index: false,
+    follow: false,
   },
 }

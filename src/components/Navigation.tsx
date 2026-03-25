@@ -4,7 +4,6 @@ import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import {
-  BookOpen,
   CalendarDays,
   Hash,
   Home,
@@ -25,11 +24,10 @@ interface NavItem {
 
 const navItems: NavItem[] = [
   { href: '/', label: '首页', icon: Home },
-  { href: '/rankings', label: '每日排行精选', icon: TrendingUp },
+  { href: '/rankings', label: '排行精选', icon: TrendingUp },
   { href: '/daily', label: '每日美图', icon: CalendarDays },
-  { href: '/artists', label: '画师鉴赏', icon: Palette },
-  { href: '/topics', label: '话题鉴赏', icon: Hash },
-  { href: '/articles', label: '文章', icon: BookOpen },
+  { href: '/artists', label: '画师专题', icon: Palette },
+  { href: '/topics', label: '话题专题', icon: Hash },
   { href: '/search', label: '搜图', icon: Search },
 ]
 
@@ -43,6 +41,7 @@ export default function Navigation() {
 
   useEffect(() => {
     document.body.style.overflow = isMenuOpen ? 'hidden' : ''
+
     return () => {
       document.body.style.overflow = ''
     }
@@ -50,10 +49,10 @@ export default function Navigation() {
 
   return (
     <>
-      <header className="fixed inset-x-0 top-0 z-50 border-b border-white/60 bg-[rgba(255,255,255,0.72)] backdrop-blur-xl supports-[backdrop-filter]:bg-[rgba(255,255,255,0.68)]">
-        <div className="mx-auto flex h-20 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
+      <header className="fixed inset-x-0 top-0 z-50 border-b border-white/70 bg-[rgba(248,250,252,0.88)] backdrop-blur-xl supports-[backdrop-filter]:bg-[rgba(248,250,252,0.82)]">
+        <div className="mx-auto flex h-[4.5rem] max-w-7xl items-center justify-between px-4 sm:px-6 lg:h-20 lg:px-8">
           <Link href="/" className="flex items-center gap-3">
-            <span className="inline-flex h-11 w-11 items-center justify-center rounded-2xl bg-[linear-gradient(135deg,#059669,#34d399)] text-lg font-semibold text-white shadow-[0_12px_32px_rgba(5,150,105,0.28)]">
+            <span className="inline-flex h-11 w-11 items-center justify-center rounded-2xl bg-[linear-gradient(135deg,#059669,#34d399)] text-lg font-semibold text-white shadow-[0_12px_32px_rgba(5,150,105,0.22)]">
               萌
             </span>
             <span className="flex flex-col">
@@ -92,7 +91,7 @@ export default function Navigation() {
           <button
             type="button"
             onClick={() => setIsMenuOpen((prev) => !prev)}
-            className="inline-flex h-11 w-11 items-center justify-center rounded-2xl border border-slate-200 bg-white/90 text-slate-700 transition hover:border-slate-300 hover:text-slate-900 lg:hidden"
+            className="inline-flex h-11 w-11 items-center justify-center rounded-2xl border border-slate-200 bg-white text-slate-700 transition hover:border-slate-300 hover:text-slate-900 lg:hidden"
             aria-label={isMenuOpen ? '关闭菜单' : '打开菜单'}
             aria-expanded={isMenuOpen}
           >
@@ -111,7 +110,7 @@ export default function Navigation() {
 
       <aside
         className={cn(
-          'fixed right-0 top-0 z-50 flex h-full w-[min(86vw,22rem)] flex-col border-l border-white/60 bg-[linear-gradient(180deg,rgba(255,255,255,0.96)_0%,rgba(244,253,248,0.98)_100%)] px-5 pb-6 pt-24 shadow-[0_24px_80px_rgba(15,23,42,0.18)] transition-transform duration-300 lg:hidden',
+          'fixed right-0 top-0 z-50 flex h-full w-[min(86vw,22rem)] flex-col border-l border-white/70 bg-[linear-gradient(180deg,rgba(255,255,255,0.98)_0%,rgba(244,253,248,1)_100%)] px-5 pb-6 pt-24 shadow-[0_24px_80px_rgba(15,23,42,0.18)] transition-transform duration-300 lg:hidden',
           isMenuOpen ? 'translate-x-0' : 'translate-x-full'
         )}
       >
@@ -139,7 +138,7 @@ export default function Navigation() {
         </nav>
       </aside>
 
-      <div className="h-20" />
+      <div className="h-[4.5rem] lg:h-20" />
     </>
   )
 }

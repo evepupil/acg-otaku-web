@@ -1,0 +1,36 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="240" height="240" viewBox="0 0 240 240" fill="none">
+  <rect width="240" height="240" rx="24" fill="#F0FDF4"/>
+  <rect x="24" y="24" width="192" height="192" rx="16" fill="white" stroke="#BBF7D0" stroke-width="4"/>
+  <rect x="42" y="42" width="42" height="42" rx="8" fill="#166534"/>
+  <rect x="156" y="42" width="42" height="42" rx="8" fill="#166534"/>
+  <rect x="42" y="156" width="42" height="42" rx="8" fill="#166534"/>
+  <rect x="96" y="42" width="12" height="12" rx="3" fill="#22C55E"/>
+  <rect x="114" y="42" width="12" height="12" rx="3" fill="#16A34A"/>
+  <rect x="132" y="42" width="12" height="12" rx="3" fill="#22C55E"/>
+  <rect x="96" y="60" width="12" height="12" rx="3" fill="#16A34A"/>
+  <rect x="114" y="60" width="12" height="12" rx="3" fill="#22C55E"/>
+  <rect x="132" y="60" width="12" height="12" rx="3" fill="#16A34A"/>
+  <rect x="96" y="96" width="12" height="12" rx="3" fill="#16A34A"/>
+  <rect x="114" y="96" width="12" height="12" rx="3" fill="#22C55E"/>
+  <rect x="132" y="96" width="12" height="12" rx="3" fill="#16A34A"/>
+  <rect x="150" y="96" width="12" height="12" rx="3" fill="#22C55E"/>
+  <rect x="168" y="96" width="12" height="12" rx="3" fill="#16A34A"/>
+  <rect x="96" y="114" width="12" height="12" rx="3" fill="#22C55E"/>
+  <rect x="132" y="114" width="12" height="12" rx="3" fill="#22C55E"/>
+  <rect x="150" y="114" width="12" height="12" rx="3" fill="#16A34A"/>
+  <rect x="168" y="114" width="12" height="12" rx="3" fill="#22C55E"/>
+  <rect x="96" y="132" width="12" height="12" rx="3" fill="#16A34A"/>
+  <rect x="114" y="132" width="12" height="12" rx="3" fill="#22C55E"/>
+  <rect x="132" y="132" width="12" height="12" rx="3" fill="#16A34A"/>
+  <rect x="168" y="132" width="12" height="12" rx="3" fill="#16A34A"/>
+  <rect x="96" y="150" width="12" height="12" rx="3" fill="#22C55E"/>
+  <rect x="114" y="150" width="12" height="12" rx="3" fill="#16A34A"/>
+  <rect x="132" y="150" width="12" height="12" rx="3" fill="#22C55E"/>
+  <rect x="150" y="150" width="12" height="12" rx="3" fill="#16A34A"/>
+  <rect x="168" y="150" width="12" height="12" rx="3" fill="#22C55E"/>
+  <rect x="96" y="168" width="12" height="12" rx="3" fill="#16A34A"/>
+  <rect x="132" y="168" width="12" height="12" rx="3" fill="#16A34A"/>
+  <rect x="150" y="168" width="12" height="12" rx="3" fill="#22C55E"/>
+  <rect x="168" y="168" width="12" height="12" rx="3" fill="#16A34A"/>
+  <text x="120" y="223" text-anchor="middle" font-family="Arial, sans-serif" font-size="14" font-weight="700" fill="#166534">WECHAT</text>
+</svg>

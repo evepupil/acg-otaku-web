@@ -1,5 +1,6 @@
 'use client'
 
+import Image from 'next/image'
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import {
@@ -140,14 +141,8 @@ function ImageViewer({
       </div>
 
       <div className="flex h-full items-center justify-center p-6">
-        <img
-          src={imageUrl}
-          alt={title}
-          className="max-h-full max-w-full cursor-move select-none"
-          style={{
-            transform: `translate(${position.x}px, ${position.y}px) scale(${scale}) rotate(${rotation}deg)`,
-            transformOrigin: 'center',
-          }}
+        <div
+          className="relative flex h-full w-full items-center justify-center overflow-hidden"
           onClick={(event) => event.stopPropagation()}
           onMouseDown={(event) => {
             setIsDragging(true)
@@ -162,7 +157,25 @@ function ImageViewer({
           }}
           onMouseUp={() => setIsDragging(false)}
           onMouseLeave={() => setIsDragging(false)}
-        />
+        >
+          <Image
+            src={imageUrl}
+            alt={title}
+            width={1600}
+            height={1600}
+            unoptimized
+            priority
+            className="max-h-full max-w-full select-none object-contain"
+            style={{
+              width: 'auto',
+              height: 'auto',
+              maxWidth: '100%',
+              maxHeight: '100%',
+              transform: `translate(${position.x}px, ${position.y}px) scale(${scale}) rotate(${rotation}deg)`,
+              transformOrigin: 'center',
+            }}
+          />
+        </div>
       </div>
     </div>
   )
@@ -198,6 +211,9 @@ export default function ArtworkDetailClient({
 
   const artistName =
     typeof artwork.artist === 'object' ? artwork.artist.name : artwork.artist || '未知作者'
+  const displayImageUrl = artwork.pid
+    ? getImageUrl(artwork.pid, 'regular', artwork.imagePath)
+    : artwork.imageUrl
   const originalImageUrl = artwork.pid
     ? getImageUrl(artwork.pid, 'original', artwork.imagePath)
     : artwork.imageUrl
@@ -224,10 +240,13 @@ export default function ArtworkDetailClient({
           <div className="lg:col-span-2">
             <div className="overflow-hidden rounded-[2rem] border border-slate-200 bg-white shadow-[0_24px_80px_rgba(15,23,42,0.06)]">
               <div className="relative flex aspect-square items-center justify-center bg-slate-100">
-                <img
-                  src={originalImageUrl}
+                <Image
+                  src={displayImageUrl}
                   alt={artwork.title}
-                  className={`h-full w-full cursor-zoom-in object-contain transition-opacity duration-300 ${
+                  fill
+                  priority
+                  sizes="(min-width: 1024px) 66vw, 100vw"
+                  className={`cursor-zoom-in object-contain transition-opacity duration-300 ${
                     imageLoaded ? 'opacity-100' : 'opacity-0'
                   }`}
                   onLoad={() => setImageLoaded(true)}
@@ -245,45 +264,60 @@ export default function ArtworkDetailClient({
 
           <div className="space-y-6">
             <section className="rounded-[1.75rem] border border-slate-200 bg-white p-6 shadow-sm">
-              <h1 className="text-2xl font-semibold tracking-tight text-slate-900">{artwork.title}</h1>
-
-              <div className="mt-5 space-y-4">
+              <div className="flex items-start justify-between gap-4">
                 <div>
-                  <h2 className="text-sm font-medium text-slate-500">作者</h2>
-                  <p className="mt-1 text-lg text-slate-900">{artistName}</p>
+                  <p className="text-xs uppercase tracking-[0.18em] text-emerald-600">
+                    Artwork Detail
+                  </p>
+                  <h1 className="mt-3 text-2xl font-semibold tracking-tight text-slate-900">
+                    {artwork.title}
+                  </h1>
                 </div>
+                <button
+                  type="button"
+                  onClick={() => setShowImageViewer(true)}
+                  className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1.5 text-xs font-medium text-slate-600 transition hover:border-slate-300 hover:bg-white hover:text-slate-900"
+                >
+                  查看大图
+                </button>
+              </div>
 
-                <div>
-                  <h2 className="text-sm font-medium text-slate-500">创建时间</h2>
-                  <p className="mt-1 text-slate-700">
+              <div className="mt-5 grid gap-4 sm:grid-cols-2">
+                <div className="rounded-2xl bg-slate-50 px-4 py-4">
+                  <p className="text-xs uppercase tracking-[0.18em] text-slate-400">作者</p>
+                  <p className="mt-2 text-base font-medium text-slate-900">{artistName}</p>
+                </div>
+                <div className="rounded-2xl bg-slate-50 px-4 py-4">
+                  <p className="text-xs uppercase tracking-[0.18em] text-slate-400">创建时间</p>
+                  <p className="mt-2 text-base font-medium text-slate-900">
                     {new Date(artwork.createdAt).toLocaleDateString('zh-CN')}
                   </p>
                 </div>
+              </div>
 
-                <div>
-                  <h2 className="mb-3 text-sm font-medium text-slate-500">统计信息</h2>
-                  <div className="grid grid-cols-3 gap-3 text-center">
-                    <div className="rounded-2xl bg-slate-50 px-3 py-4">
-                      <Eye className="mx-auto mb-2 h-4 w-4 text-slate-400" />
-                      <p className="text-lg font-semibold text-slate-900">
-                        {artwork.stats.views.toLocaleString()}
-                      </p>
-                      <p className="mt-1 text-xs text-slate-500">浏览</p>
-                    </div>
-                    <div className="rounded-2xl bg-slate-50 px-3 py-4">
-                      <span className="mb-2 block text-sm text-rose-500">❤</span>
-                      <p className="text-lg font-semibold text-slate-900">
-                        {artwork.stats.likes.toLocaleString()}
-                      </p>
-                      <p className="mt-1 text-xs text-slate-500">点赞</p>
-                    </div>
-                    <div className="rounded-2xl bg-slate-50 px-3 py-4">
-                      <span className="mb-2 block text-sm text-amber-500">★</span>
-                      <p className="text-lg font-semibold text-slate-900">
-                        {artwork.stats.bookmarks.toLocaleString()}
-                      </p>
-                      <p className="mt-1 text-xs text-slate-500">收藏</p>
-                    </div>
+              <div className="mt-5">
+                <h2 className="mb-3 text-sm font-medium text-slate-500">统计信息</h2>
+                <div className="grid grid-cols-3 gap-3 text-center">
+                  <div className="rounded-2xl bg-slate-50 px-3 py-4">
+                    <Eye className="mx-auto mb-2 h-4 w-4 text-slate-400" />
+                    <p className="text-lg font-semibold text-slate-900">
+                      {artwork.stats.views.toLocaleString()}
+                    </p>
+                    <p className="mt-1 text-xs text-slate-500">浏览</p>
+                  </div>
+                  <div className="rounded-2xl bg-slate-50 px-3 py-4">
+                    <span className="mb-2 block text-sm text-rose-500">❤</span>
+                    <p className="text-lg font-semibold text-slate-900">
+                      {artwork.stats.likes.toLocaleString()}
+                    </p>
+                    <p className="mt-1 text-xs text-slate-500">点赞</p>
+                  </div>
+                  <div className="rounded-2xl bg-slate-50 px-3 py-4">
+                    <span className="mb-2 block text-sm text-amber-500">★</span>
+                    <p className="text-lg font-semibold text-slate-900">
+                      {artwork.stats.bookmarks.toLocaleString()}
+                    </p>
+                    <p className="mt-1 text-xs text-slate-500">收藏</p>
                   </div>
                 </div>
               </div>

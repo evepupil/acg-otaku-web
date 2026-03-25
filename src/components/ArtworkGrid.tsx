@@ -9,7 +9,11 @@ interface ArtworkGridProps {
   columns?: 2 | 3 | 4
 }
 
-export default function ArtworkGrid({ artworks, showComment = true, columns = 4 }: ArtworkGridProps) {
+export default function ArtworkGrid({
+  artworks,
+  showComment = true,
+  columns = 4,
+}: ArtworkGridProps) {
   const gridClass = {
     2: 'grid-cols-1 sm:grid-cols-2',
     3: 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-3',
@@ -18,8 +22,8 @@ export default function ArtworkGrid({ artworks, showComment = true, columns = 4 
 
   if (artworks.length === 0) {
     return (
-      <div className="text-center py-20">
-        <p className="text-gray-400">暂无作品</p>
+      <div className="rounded-[1.5rem] border border-dashed border-slate-300 bg-white px-6 py-16 text-center">
+        <p className="text-sm text-slate-500">暂时还没有可展示的作品。</p>
       </div>
     )
   }

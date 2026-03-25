@@ -15,7 +15,7 @@ export default function CuratedArtworkCard({
   showComment = true,
 }: CuratedArtworkCardProps) {
   return (
-    <article className="group overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm transition duration-300 hover:-translate-y-1 hover:shadow-[0_18px_40px_rgba(15,23,42,0.08)]">
+    <article className="group overflow-hidden rounded-[1.75rem] border border-slate-200 bg-white shadow-sm transition duration-300 hover:-translate-y-1 hover:shadow-[0_18px_40px_rgba(15,23,42,0.08)]">
       <Link href={`/artwork/${artwork.id}`} className="relative block aspect-[3/4] overflow-hidden">
         <Image
           src={getImageUrl(String(artwork.id), 'small', artwork.imagePath)}

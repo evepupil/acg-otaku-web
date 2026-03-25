@@ -1,5 +1,6 @@
 'use client'
 
+import Image from 'next/image'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import {
   AlertCircle,
@@ -21,6 +22,10 @@ interface SearchResult {
   url?: string
 }
 
+function getProxyThumbnailUrl(src: string) {
+  return `/api/image-proxy?src=${encodeURIComponent(src)}`
+}
+
 export default function SearchPage() {
   const [selectedFile, setSelectedFile] = useState<File | null>(null)
   const [previewUrl, setPreviewUrl] = useState<string | null>(null)
@@ -37,28 +42,31 @@ export default function SearchPage() {
     }
   }, [previewUrl])
 
-  const processImageFile = useCallback((file: File, source: 'file' | 'paste') => {
-    if (!file.type.startsWith('image/')) {
-      setError('请选择图片文件')
-      return false
-    }
+  const processImageFile = useCallback(
+    (file: File, source: 'file' | 'paste') => {
+      if (!file.type.startsWith('image/')) {
+        setError('请选择图片文件')
+        return false
+      }
 
-    if (file.size > 15 * 1024 * 1024) {
-      setError('图片文件不能超过 15MB')
-      return false
-    }
+      if (file.size > 15 * 1024 * 1024) {
+        setError('图片文件不能超过 15MB')
+        return false
+      }
 
-    clearPreviewUrl()
-    const nextPreviewUrl = URL.createObjectURL(file)
+      clearPreviewUrl()
+      const nextPreviewUrl = URL.createObjectURL(file)
 
-    setSelectedFile(file)
-    setPreviewUrl(nextPreviewUrl)
-    setUploadSource(source)
-    setSearchResults([])
-    setError(null)
+      setSelectedFile(file)
+      setPreviewUrl(nextPreviewUrl)
+      setUploadSource(source)
+      setSearchResults([])
+      setError(null)
 
-    return true
-  }, [clearPreviewUrl])
+      return true
+    },
+    [clearPreviewUrl]
+  )
 
   useEffect(() => {
     return () => {
@@ -81,28 +89,31 @@ export default function SearchPage() {
     }
   }
 
-  const handlePaste = useCallback((event: ClipboardEvent) => {
-    const items = event.clipboardData?.items
-    if (!items) {
-      return
-    }
-
-    for (let index = 0; index < items.length; index += 1) {
-      const item = items[index]
-      if (!item.type.startsWith('image/')) {
-        continue
+  const handlePaste = useCallback(
+    (event: ClipboardEvent) => {
+      const items = event.clipboardData?.items
+      if (!items) {
+        return
       }
 
-      const file = item.getAsFile()
-      if (!file) {
-        continue
-      }
+      for (let index = 0; index < items.length; index += 1) {
+        const item = items[index]
+        if (!item.type.startsWith('image/')) {
+          continue
+        }
 
-      event.preventDefault()
-      processImageFile(file, 'paste')
-      break
-    }
-  }, [processImageFile])
+        const file = item.getAsFile()
+        if (!file) {
+          continue
+        }
+
+        event.preventDefault()
+        processImageFile(file, 'paste')
+        break
+      }
+    },
+    [processImageFile]
+  )
 
   useEffect(() => {
     document.addEventListener('paste', handlePaste)
@@ -164,7 +175,7 @@ export default function SearchPage() {
             以图搜图
           </h1>
           <p className="mt-4 max-w-2xl text-sm leading-7 text-slate-600 md:text-base">
-            这页保留客户端上传能力，但把动画层都拿掉了，交互只保留上传、预览、搜索和结果展示。
+            上传一张图片，查找相近作品、作者信息和来源链接。
           </p>
         </div>
 
@@ -172,11 +183,14 @@ export default function SearchPage() {
           {hasImage ? (
             <div className="text-center">
               {previewUrl && (
-                <div className="relative inline-block">
-                  <img
+                <div className="relative inline-flex max-w-full rounded-2xl border border-slate-200 bg-slate-50 p-2 shadow-sm">
+                  <Image
                     src={previewUrl}
                     alt="预览图片"
-                    className="max-h-80 max-w-full rounded-2xl object-contain shadow-lg"
+                    width={960}
+                    height={960}
+                    unoptimized
+                    className="max-h-80 w-auto rounded-xl object-contain"
                   />
                   <button
                     type="button"
@@ -282,13 +296,16 @@ export default function SearchPage() {
                   key={`${result.url || result.title || 'search'}-${index}`}
                   className="overflow-hidden rounded-[1.5rem] border border-slate-200 bg-slate-50"
                 >
-                  <img
-                    src={result.thumbnail}
-                    alt={result.title || '搜索结果'}
-                    className="aspect-[4/3] w-full object-cover"
-                    loading="lazy"
-                    decoding="async"
-                  />
+                  <div className="relative aspect-[4/3] w-full overflow-hidden bg-slate-200">
+                    <Image
+                      src={getProxyThumbnailUrl(result.thumbnail)}
+                      alt={result.title || '搜索结果'}
+                      fill
+                      unoptimized
+                      sizes="(min-width: 1280px) 25vw, (min-width: 768px) 50vw, 100vw"
+                      className="object-cover"
+                    />
+                  </div>
 
                   <div className="space-y-3 p-5">
                     <div className="inline-flex rounded-full bg-emerald-50 px-3 py-1 text-sm font-medium text-emerald-700">
