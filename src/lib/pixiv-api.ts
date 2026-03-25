@@ -3,7 +3,9 @@
  * 用于管理后台通过PID获取Pixiv插画信息
  */
 
-const PIXIV_COOKIE = process.env.PIXIV_COOKIE || ''
+import { env } from '@/env'
+
+const PIXIV_COOKIE = env.PIXIV_COOKIE || ''
 
 interface PixivIllustInfo {
   pid: string

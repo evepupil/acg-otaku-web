@@ -4,12 +4,13 @@
  */
 
 import { S3Client, PutObjectCommand } from '@aws-sdk/client-s3'
+import { env } from '@/env'
 
-const B2_KEY_ID = process.env.B2_APPLICATION_KEY_ID || ''
-const B2_APP_KEY = process.env.B2_APPLICATION_KEY || ''
-const B2_BUCKET_ID = process.env.B2_BUCKET_ID || ''
-const B2_BUCKET_NAME = process.env.B2_BUCKET_NAME || ''
-const B2_ENDPOINT = process.env.B2_ENDPOINT || `https://s3.us-west-004.backblazeb2.com`
+const B2_KEY_ID = env.B2_APPLICATION_KEY_ID || ''
+const B2_APP_KEY = env.B2_APPLICATION_KEY || ''
+const B2_BUCKET_ID = env.B2_BUCKET_ID || ''
+const B2_BUCKET_NAME = env.B2_BUCKET_NAME || ''
+const B2_ENDPOINT = env.B2_ENDPOINT || `https://s3.us-west-004.backblazeb2.com`
 
 let s3Client: S3Client | null = null
 

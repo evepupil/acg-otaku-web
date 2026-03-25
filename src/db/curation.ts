@@ -1,9 +1,17 @@
 import 'server-only'
 
-import { and, eq, sql } from 'drizzle-orm'
+import { and, desc, eq, like, or, sql } from 'drizzle-orm'
 
 import { db } from '@/db/client'
-import { dailyPick, dailyPickArtwork, topicFeature, topicFeatureArtwork } from '@/db/schema'
+import {
+  artistFeature,
+  artistFeatureArtwork,
+  dailyPick,
+  dailyPickArtwork,
+  pic,
+  topicFeature,
+  topicFeatureArtwork,
+} from '@/db/schema'
 
 export interface DailyPickMutationInput {
   pickDate: string
@@ -39,6 +47,47 @@ export interface TopicFeatureUpdateInput {
   coverPid?: string
   tags?: string
   isPublished?: boolean
+}
+
+export interface ArtistFeatureMutationInput {
+  artistId: string
+  artistName: string
+  artistAvatar?: string
+  artistBio?: string
+  featureTitle: string
+  featureContent?: string
+  coverPid?: string
+  pixivUrl?: string
+  twitterUrl?: string
+}
+
+export interface ArtistFeatureUpdateInput {
+  artistName?: string
+  artistAvatar?: string
+  artistBio?: string
+  featureTitle?: string
+  featureContent?: string
+  coverPid?: string
+  pixivUrl?: string
+  twitterUrl?: string
+  isPublished?: boolean
+}
+
+export interface ArtworkMutationInput {
+  pid: string
+  title?: string
+  authorId?: string
+  authorName?: string
+  tag?: string
+  imageUrl?: string
+  imagePath?: string
+  good?: number
+  star?: number
+  view?: number
+  popularity?: number
+  curationType?: string
+  curatedDate?: string
+  editorComment?: string
 }
 
 export async function createDailyPickRecord(data: DailyPickMutationInput) {
@@ -93,6 +142,50 @@ export async function createTopicFeatureRecord(data: TopicFeatureMutationInput) 
   return result[0]?.id ?? null
 }
 
+export async function createArtistFeatureRecord(data: ArtistFeatureMutationInput) {
+  const result = await db
+    .insert(artistFeature)
+    .values({
+      artistId: data.artistId,
+      artistName: data.artistName,
+      artistAvatar: data.artistAvatar ?? null,
+      artistBio: data.artistBio ?? null,
+      featureTitle: data.featureTitle,
+      featureContent: data.featureContent ?? null,
+      coverPid: data.coverPid ?? null,
+      pixivUrl: data.pixivUrl ?? null,
+      twitterUrl: data.twitterUrl ?? null,
+    })
+    .returning({ id: artistFeature.id })
+
+  return result[0]?.id ?? null
+}
+
+export async function updateArtistFeatureRecord(id: number, data: ArtistFeatureUpdateInput) {
+  const values = {
+    updatedAt: sql`datetime('now')`,
+    ...(data.artistName !== undefined ? { artistName: data.artistName } : {}),
+    ...(data.artistAvatar !== undefined ? { artistAvatar: data.artistAvatar } : {}),
+    ...(data.artistBio !== undefined ? { artistBio: data.artistBio } : {}),
+    ...(data.featureTitle !== undefined ? { featureTitle: data.featureTitle } : {}),
+    ...(data.featureContent !== undefined ? { featureContent: data.featureContent } : {}),
+    ...(data.coverPid !== undefined ? { coverPid: data.coverPid } : {}),
+    ...(data.pixivUrl !== undefined ? { pixivUrl: data.pixivUrl } : {}),
+    ...(data.twitterUrl !== undefined ? { twitterUrl: data.twitterUrl } : {}),
+    ...(data.isPublished !== undefined ? { isPublished: data.isPublished ? 1 : 0 } : {}),
+    ...(data.isPublished ? { publishedAt: sql`datetime('now')` } : {}),
+  }
+
+  await db.update(artistFeature).set(values).where(eq(artistFeature.id, id))
+}
+
+export async function deleteArtistFeatureRecord(id: number) {
+  await db.transaction(async (tx) => {
+    await tx.delete(artistFeatureArtwork).where(eq(artistFeatureArtwork.artistFeatureId, id))
+    await tx.delete(artistFeature).where(eq(artistFeature.id, id))
+  })
+}
+
 export async function updateTopicFeatureRecord(id: number, data: TopicFeatureUpdateInput) {
   const values = {
     updatedAt: sql`datetime('now')`,
@@ -114,6 +207,100 @@ export async function deleteTopicFeatureRecord(id: number) {
     await tx.delete(topicFeatureArtwork).where(eq(topicFeatureArtwork.topicFeatureId, id))
     await tx.delete(topicFeature).where(eq(topicFeature.id, id))
   })
+}
+
+export async function getArtworkExists(pidValue: string) {
+  const result = await db
+    .select({ pid: pic.pid })
+    .from(pic)
+    .where(eq(pic.pid, pidValue))
+    .limit(1)
+
+  return result.length > 0
+}
+
+export async function createArtworkRecord(data: ArtworkMutationInput) {
+  await db.insert(pic).values({
+    pid: data.pid,
+    title: data.title ?? null,
+    authorId: data.authorId ?? null,
+    authorName: data.authorName ?? null,
+    tag: data.tag ?? '',
+    imageUrl: data.imageUrl ?? '',
+    imagePath: data.imagePath ?? '',
+    good: data.good ?? 0,
+    star: data.star ?? 0,
+    view: data.view ?? 0,
+    popularity: data.popularity ?? 0,
+    curationType: data.curationType ?? null,
+    curatedDate: data.curatedDate ?? null,
+    editorComment: data.editorComment ?? null,
+    uploadTime: sql`datetime('now')`,
+  })
+}
+
+export async function deleteArtworkRecord(pidValue: string) {
+  await db.delete(pic).where(eq(pic.pid, pidValue))
+}
+
+export async function getArtworkAdminList(page: number, limit: number, search?: string) {
+  const offset = (page - 1) * limit
+  const where = search
+    ? or(
+        like(pic.pid, `%${search}%`),
+        like(pic.title, `%${search}%`),
+        like(pic.authorName, `%${search}%`),
+        like(pic.tag, `%${search}%`)
+      )
+    : undefined
+
+  const [{ count }] = await db
+    .select({ count: sql<number>`count(*)` })
+    .from(pic)
+    .where(where)
+
+  const artworks = await db
+    .select({
+      pid: pic.pid,
+      title: pic.title,
+      authorId: pic.authorId,
+      authorName: pic.authorName,
+      tag: pic.tag,
+      imageUrl: pic.imageUrl,
+      imagePath: pic.imagePath,
+      good: pic.good,
+      star: pic.star,
+      view: pic.view,
+      uploadTime: pic.uploadTime,
+    })
+    .from(pic)
+    .where(where)
+    .orderBy(desc(pic.uploadTime))
+    .limit(limit)
+    .offset(offset)
+
+  return {
+    artworks: artworks.map((row) => ({
+      id: Number(row.pid),
+      title: row.title || `插画 ${row.pid}`,
+      artist: {
+        id: Number(row.authorId || '0'),
+        name: row.authorName || '未知作者',
+        avatar:
+          'https://trae-api-sg.mchost.guru/api/ide/v1/text_to_image?prompt=anime%20artist%20avatar%20profile%20picture&image_size=square',
+      },
+      imageUrl: row.imageUrl || '',
+      imagePath: row.imagePath || '',
+      tags: row.tag ? row.tag.split(',').filter(Boolean) : [],
+      createdAt: row.uploadTime || new Date().toISOString(),
+      stats: {
+        views: row.view || 0,
+        likes: row.good || 0,
+        bookmarks: row.star || 0,
+      },
+    })),
+    total: Number(count) || 0,
+  }
 }
 
 export async function getTopicFeatureSlugExists(topicSlugValue: string, excludeId?: number) {

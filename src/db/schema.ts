@@ -43,6 +43,31 @@ export const dailyPickArtwork = sqliteTable('daily_pick_artwork', {
   editorComment: text('editor_comment'),
 })
 
+export const artistFeature = sqliteTable('artist_feature', {
+  id: integer('id').primaryKey({ autoIncrement: true }),
+  artistId: text('artist_id').notNull(),
+  artistName: text('artist_name').notNull(),
+  artistAvatar: text('artist_avatar'),
+  artistBio: text('artist_bio'),
+  featureTitle: text('feature_title').notNull(),
+  featureContent: text('feature_content'),
+  coverPid: text('cover_pid'),
+  pixivUrl: text('pixiv_url'),
+  twitterUrl: text('twitter_url'),
+  isPublished: integer('is_published').notNull().default(0),
+  publishedAt: text('published_at'),
+  createdAt: text('created_at').default("datetime('now')"),
+  updatedAt: text('updated_at').default("datetime('now')"),
+})
+
+export const artistFeatureArtwork = sqliteTable('artist_feature_artwork', {
+  id: integer('id').primaryKey({ autoIncrement: true }),
+  artistFeatureId: integer('artist_feature_id').notNull(),
+  pid: text('pid').notNull(),
+  sortOrder: integer('sort_order').notNull().default(0),
+  editorComment: text('editor_comment'),
+})
+
 export const topicFeature = sqliteTable('topic_feature', {
   id: integer('id').primaryKey({ autoIncrement: true }),
   topicName: text('topic_name').notNull(),

@@ -81,3 +81,49 @@ export const createArtworkSchema = z.object({
   pid: z.string().trim().regex(/^\d+$/),
   downloadImages: z.boolean().optional().default(false),
 })
+
+export const createArtworkBatchSchema = z.object({
+  pids: z.array(z.string().trim().regex(/^\d+$/)).min(1).max(50),
+  downloadImages: z.boolean().optional().default(false),
+})
+
+export const adminPidQuerySchema = z.object({
+  pid: z.string().trim().regex(/^\d+$/),
+})
+
+export const createArtistFeatureSchema = z.object({
+  artistId: z.string().trim().min(1).max(120),
+  artistName: z.string().trim().min(1).max(120),
+  artistAvatar: optionalNullableText,
+  artistBio: optionalNullableText,
+  featureTitle: z.string().trim().min(1).max(160),
+  featureContent: optionalNullableText,
+  coverPid: optionalNullableText,
+  pixivUrl: optionalNullableText,
+  twitterUrl: optionalNullableText,
+})
+
+export const updateArtistFeatureSchema = z.object({
+  id: z.coerce.number().int().positive(),
+  artistName: z.string().trim().min(1).max(120).optional(),
+  artistAvatar: optionalNullableText,
+  artistBio: optionalNullableText,
+  featureTitle: z.string().trim().min(1).max(160).optional(),
+  featureContent: optionalNullableText,
+  coverPid: optionalNullableText,
+  pixivUrl: optionalNullableText,
+  twitterUrl: optionalNullableText,
+  isPublished: z.boolean().optional(),
+}).refine(
+  ({ artistName, artistAvatar, artistBio, featureTitle, featureContent, coverPid, pixivUrl, twitterUrl, isPublished }) =>
+    artistName !== undefined ||
+    artistAvatar !== undefined ||
+    artistBio !== undefined ||
+    featureTitle !== undefined ||
+    featureContent !== undefined ||
+    coverPid !== undefined ||
+    pixivUrl !== undefined ||
+    twitterUrl !== undefined ||
+    isPublished !== undefined,
+  { message: 'At least one field must be updated' }
+)
