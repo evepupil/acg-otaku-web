@@ -55,7 +55,7 @@ export default async function DailyPage({
                 每日美图
               </h1>
               <p className="mt-4 text-sm leading-7 text-slate-600 md:text-base">
-                这页现在直接在服务端把当天内容准备好，进入页面时不再先渲染一个空壳再请求一次。
+                按日期回看每天的精选作品，适合慢慢翻，也适合直接找某一天的状态。
               </p>
             </div>
 

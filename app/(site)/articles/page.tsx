@@ -1,11 +1,7 @@
 import Link from 'next/link'
 import { BookOpen, ChevronLeft, ChevronRight, Clock, Eye, Search } from 'lucide-react'
 
-import {
-  getArticleTagsWithCount,
-  getFilteredArticles,
-  type ArticleSortOption,
-} from '@/lib/articles'
+import { getArticleTagsWithCount, getFilteredArticles, type ArticleSortOption } from '@/lib/articles'
 
 export const dynamic = 'force-dynamic'
 
@@ -86,7 +82,7 @@ export default async function ArticlesPage({
                 文章
               </h1>
               <p className="mt-4 text-sm leading-7 text-slate-600 md:text-base">
-                文章列表已经改成服务端内容页，搜索、标签和排序都走 URL，进入页面时直接返回结果，不再先加载一整套客户端筛选应用。
+                这里收录一些关于插画、审美和创作方法的短文，适合搭配作品一起看。
               </p>
             </div>
 
@@ -168,7 +164,7 @@ export default async function ArticlesPage({
               {search || tag ? '没有匹配的文章' : '暂无文章内容'}
             </h2>
             <p className="mt-3 text-sm text-slate-500 md:text-base">
-              {search || tag ? '可以换个关键词，或者清掉当前标签再看。' : '文章会在准备好后直接显示在这里。'}
+              {search || tag ? '可以换个关键词，或者清掉当前标签再看。' : '文章会在准备好后显示在这里。'}
             </p>
           </div>
         ) : (
@@ -190,16 +186,16 @@ export default async function ArticlesPage({
                     />
                   </div>
 
-                  <div className="space-y-4 p-6">
-                    <div className="flex flex-wrap gap-2">
-                      {article.tags.slice(0, 3).map((item) => (
-                        <span
-                          key={item}
-                          className="rounded-full bg-emerald-50 px-2.5 py-1 text-xs font-medium text-emerald-700"
-                        >
-                          {item}
-                        </span>
-                      ))}
+                  <div className="space-y-4 p-5">
+                    <div className="flex items-center gap-3 text-xs text-slate-400">
+                      <span className="inline-flex items-center gap-1">
+                        <Clock className="h-3.5 w-3.5" />
+                        {new Date(article.published_at).toLocaleDateString('zh-CN')}
+                      </span>
+                      <span className="inline-flex items-center gap-1">
+                        <Eye className="h-3.5 w-3.5" />
+                        {article.view_count.toLocaleString()}
+                      </span>
                     </div>
 
                     <div>
@@ -211,21 +207,15 @@ export default async function ArticlesPage({
                       </p>
                     </div>
 
-                    <div className="flex items-center justify-between border-t border-slate-100 pt-4 text-sm text-slate-500">
-                      <div className="flex items-center gap-4">
-                        <span>{article.author_name}</span>
-                        <span>{new Date(article.published_at).toLocaleDateString('zh-CN')}</span>
-                      </div>
-                      <div className="flex items-center gap-3">
-                        <span className="inline-flex items-center gap-1">
-                          <Clock className="h-4 w-4" />
-                          {Math.max(3, Math.round(article.content.length / 500))} 分钟
+                    <div className="flex flex-wrap gap-2">
+                      {article.tags.slice(0, 3).map((item) => (
+                        <span
+                          key={item}
+                          className="rounded-full bg-emerald-50 px-2.5 py-1 text-xs font-medium text-emerald-700"
+                        >
+                          #{item}
                         </span>
-                        <span className="inline-flex items-center gap-1">
-                          <Eye className="h-4 w-4" />
-                          {article.view_count.toLocaleString()}
-                        </span>
-                      </div>
+                      ))}
                     </div>
                   </div>
                 </Link>

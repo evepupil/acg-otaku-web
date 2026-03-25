@@ -2,10 +2,7 @@ import Link from 'next/link'
 import { CalendarDays, ChevronLeft, ChevronRight, TrendingUp } from 'lucide-react'
 
 import ArtworkGrid from '@/components/ArtworkGrid'
-import {
-  getDailyPickByDate,
-  getPublishedDailyPickSummaries,
-} from '@/db/content'
+import { getDailyPickByDate, getPublishedDailyPickSummaries } from '@/db/content'
 
 export const dynamic = 'force-dynamic'
 
@@ -34,9 +31,7 @@ export default async function RankingsPage({
   const currentIndex = picks.findIndex((pick) => pick.pickDate === currentDate)
   const previousPick = currentIndex >= 0 ? picks[currentIndex + 1] : null
   const nextPick = currentIndex > 0 ? picks[currentIndex - 1] : null
-  const currentPick = currentDate
-    ? await getDailyPickByDate(currentDate, 'ranking_pick')
-    : null
+  const currentPick = currentDate ? await getDailyPickByDate(currentDate, 'ranking_pick') : null
 
   return (
     <div className="min-h-screen bg-[radial-gradient(circle_at_top,_rgba(16,185,129,0.1),_transparent_30%),linear-gradient(180deg,#f8fdf9_0%,#ffffff_42%,#f6fbf7_100%)]">
@@ -51,7 +46,7 @@ export default async function RankingsPage({
                 每日排行精选
               </h1>
               <p className="mt-4 text-sm leading-7 text-slate-600 md:text-base">
-                这页也改成了服务端首屏，日期列表只读取摘要，真正查看某一天时再取对应作品，不再每次进来都先跑整页动画和请求链。
+                把每天值得回看的排行作品留在这里，既能顺着日期浏览，也能直接跳到特定一天。
               </p>
             </div>
 
@@ -139,7 +134,7 @@ export default async function RankingsPage({
             <TrendingUp className="mx-auto h-16 w-16 text-slate-300" />
             <h2 className="mt-6 text-2xl font-semibold text-slate-900">暂无已发布的排行精选</h2>
             <p className="mt-3 text-sm text-slate-500 md:text-base">
-              这里会在发布后直接以服务端首屏内容展示出来。
+              排行精选发布后会显示在这里。
             </p>
           </div>
         )}

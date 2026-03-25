@@ -29,9 +29,7 @@ export default async function TopicsPage({
   const totalPages = Math.max(1, Math.ceil(initialData.total / PAGE_SIZE))
   const safePage = Math.min(requestedPage, totalPages)
   const { features } =
-    safePage === requestedPage
-      ? initialData
-      : await getTopicFeatures(safePage, PAGE_SIZE, true)
+    safePage === requestedPage ? initialData : await getTopicFeatures(safePage, PAGE_SIZE, true)
 
   return (
     <div className="min-h-screen bg-[radial-gradient(circle_at_top,_rgba(249,115,22,0.08),_transparent_28%),linear-gradient(180deg,#fffdf9_0%,#fff7ed_100%)]">
@@ -46,7 +44,7 @@ export default async function TopicsPage({
                 话题鉴赏
               </h1>
               <p className="mt-4 text-sm leading-7 text-slate-600 md:text-base">
-                话题页也改成了服务端分页，进入时直接看到卡片，不再等浏览器先把列表数据补回来。
+                围绕题材、氛围和标签整理专题，适合一口气看完一组方向相近的作品。
               </p>
             </div>
 

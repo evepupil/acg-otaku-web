@@ -29,9 +29,7 @@ export default async function ArtistsPage({
   const totalPages = Math.max(1, Math.ceil(initialData.total / PAGE_SIZE))
   const safePage = Math.min(requestedPage, totalPages)
   const { features } =
-    safePage === requestedPage
-      ? initialData
-      : await getArtistFeatures(safePage, PAGE_SIZE, true)
+    safePage === requestedPage ? initialData : await getArtistFeatures(safePage, PAGE_SIZE, true)
 
   return (
     <div className="min-h-screen bg-[radial-gradient(circle_at_top,_rgba(168,85,247,0.08),_transparent_28%),linear-gradient(180deg,#ffffff_0%,#faf7ff_100%)]">
@@ -46,7 +44,7 @@ export default async function ArtistsPage({
                 画师鉴赏
               </h1>
               <p className="mt-4 text-sm leading-7 text-slate-600 md:text-base">
-                列表首屏现在直接由服务端输出，不再进页面先转一圈 loading。分页也收敛到 URL，上下页切换更直接。
+                按画师线索浏览专题，适合集中看风格、代表作和长期稳定输出。
               </p>
             </div>
 

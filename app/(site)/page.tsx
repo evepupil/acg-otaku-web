@@ -12,7 +12,7 @@ export const metadata: Metadata = homeMetadata
 const sections = [
   {
     title: '每日排行精选',
-    description: '从 Pixiv 榜单里筛掉噪音，只保留值得停留的作品。',
+    description: '从 Pixiv 榜单里筛出真正值得停留的作品，适合快速进入当天的审美状态。',
     href: '/rankings',
     icon: TrendingUp,
     accent: 'from-emerald-500 to-teal-500',
@@ -20,7 +20,7 @@ const sections = [
   },
   {
     title: '每日美图',
-    description: '按日期回看每日策展，适合快速浏览当天最稳的一组图。',
+    description: '按日期回看每天的精选，适合随手翻看，也适合专门找某一天的氛围。',
     href: '/daily',
     icon: CalendarDays,
     accent: 'from-sky-500 to-cyan-500',
@@ -28,7 +28,7 @@ const sections = [
   },
   {
     title: '画师鉴赏',
-    description: '不只看图，也看创作风格、标签走向和画师的稳定输出。',
+    description: '不只看图，也看创作风格、代表作和画师长期稳定输出的方向。',
     href: '/artists',
     icon: Palette,
     accent: 'from-fuchsia-500 to-pink-500',
@@ -36,7 +36,7 @@ const sections = [
   },
   {
     title: '话题鉴赏',
-    description: '把同一主题下的作品拢在一起，浏览时更有策展感。',
+    description: '把同一主题下的作品放在一起，浏览时更有策展感，也更容易找到偏好。',
     href: '/topics',
     icon: Hash,
     accent: 'from-amber-500 to-orange-500',
@@ -78,7 +78,7 @@ export default async function HomePage() {
               不只是图站，更像一个更轻的二次元策展首页
             </h1>
             <p className="mt-4 max-w-lg text-sm leading-7 text-white/78 sm:text-base">
-              首页先给氛围，再给入口。首屏只保留最新精选，让进入站点这一步更顺、更快，也更像作品展示页。
+              首页先给氛围，再给入口。先看最新精选，再决定从排行、每日、画师还是话题继续深入。
             </p>
           </div>
         </div>
@@ -100,11 +100,11 @@ export default async function HomePage() {
                   Explore
                 </p>
                 <h2 className="mt-3 text-3xl font-semibold tracking-tight text-slate-900">
-                  四个入口，先把站点结构讲清楚
+                  四个入口，带你进入不同的浏览节奏
                 </h2>
               </div>
               <p className="max-w-2xl text-sm leading-7 text-slate-600 sm:text-base">
-                现在首页不再靠大段动画撑观感，而是把内容路线、色彩分区和点击目标做得更明确。
+                四个入口对应四种浏览方式：追当天、看排行、按画师找风格，或者顺着话题慢慢逛。
               </p>
             </div>
 
