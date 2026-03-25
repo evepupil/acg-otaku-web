@@ -1,6 +1,6 @@
 import 'server-only'
 
-import { and, desc, eq, like, or, sql } from 'drizzle-orm'
+import { and, desc, eq, isNotNull, isNull, like, or, sql } from 'drizzle-orm'
 
 import { db } from '@/db/client'
 import {
@@ -88,6 +88,80 @@ export interface ArtworkMutationInput {
   curationType?: string
   curatedDate?: string
   editorComment?: string
+}
+
+interface CandidateArtworkRow {
+  pid: string
+  title: string | null
+  authorId: string | null
+  authorName: string | null
+  tag: string
+  imageUrl: string
+  imagePath: string
+  good: number
+  star: number
+  view: number
+  popularity: number
+  uploadTime: string | null
+}
+
+export interface CandidateArtwork {
+  id: number
+  title: string
+  artist: {
+    id: number
+    name: string
+    avatar: string
+  }
+  imageUrl: string
+  imagePath: string
+  tags: string[]
+  createdAt: string
+  stats: {
+    views: number
+    likes: number
+    bookmarks: number
+  }
+}
+
+const DEFAULT_ARTIST_AVATAR_URL =
+  'https://trae-api-sg.mchost.guru/api/ide/v1/text_to_image?prompt=anime%20artist%20avatar%20profile%20picture&image_size=square'
+
+const ARTWORK_SCORE = sql<number>`(
+  coalesce(${pic.popularity}, 0) +
+  coalesce(${pic.star}, 0) * 10 +
+  coalesce(${pic.good}, 0) * 3 +
+  coalesce(${pic.view}, 0) / 100.0
+)`
+
+function mapCandidateArtwork(row: CandidateArtworkRow): CandidateArtwork {
+  return {
+    id: Number(row.pid),
+    title: row.title || `插画 ${row.pid}`,
+    artist: {
+      id: Number(row.authorId || '0'),
+      name: row.authorName || '未知作者',
+      avatar: DEFAULT_ARTIST_AVATAR_URL,
+    },
+    imageUrl: row.imageUrl || '',
+    imagePath: row.imagePath || '',
+    tags: row.tag ? row.tag.split(',').filter(Boolean) : [],
+    createdAt: row.uploadTime || new Date().toISOString(),
+    stats: {
+      views: row.view || 0,
+      likes: row.good || 0,
+      bookmarks: row.star || 0,
+    },
+  }
+}
+
+function shuffleArray<T>(items: T[]) {
+  const arr = [...items]
+  for (let i = arr.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1))
+    ;[arr[i], arr[j]] = [arr[j], arr[i]]
+  }
+  return arr
 }
 
 export async function createDailyPickRecord(data: DailyPickMutationInput) {
@@ -301,6 +375,228 @@ export async function getArtworkAdminList(page: number, limit: number, search?: 
     })),
     total: Number(count) || 0,
   }
+}
+
+async function getPublishedArtworkPidSet() {
+  const [
+    dailyArtworkRows,
+    artistArtworkRows,
+    topicArtworkRows,
+    dailyCoverRows,
+    artistCoverRows,
+    topicCoverRows,
+  ] = await Promise.all([
+    db
+      .select({ pid: dailyPickArtwork.pid })
+      .from(dailyPickArtwork)
+      .innerJoin(dailyPick, eq(dailyPickArtwork.dailyPickId, dailyPick.id))
+      .where(eq(dailyPick.isPublished, 1)),
+    db
+      .select({ pid: artistFeatureArtwork.pid })
+      .from(artistFeatureArtwork)
+      .innerJoin(artistFeature, eq(artistFeatureArtwork.artistFeatureId, artistFeature.id))
+      .where(eq(artistFeature.isPublished, 1)),
+    db
+      .select({ pid: topicFeatureArtwork.pid })
+      .from(topicFeatureArtwork)
+      .innerJoin(topicFeature, eq(topicFeatureArtwork.topicFeatureId, topicFeature.id))
+      .where(eq(topicFeature.isPublished, 1)),
+    db
+      .select({ pid: dailyPick.coverPid })
+      .from(dailyPick)
+      .where(and(eq(dailyPick.isPublished, 1), isNotNull(dailyPick.coverPid))),
+    db
+      .select({ pid: artistFeature.coverPid })
+      .from(artistFeature)
+      .where(and(eq(artistFeature.isPublished, 1), isNotNull(artistFeature.coverPid))),
+    db
+      .select({ pid: topicFeature.coverPid })
+      .from(topicFeature)
+      .where(and(eq(topicFeature.isPublished, 1), isNotNull(topicFeature.coverPid))),
+  ])
+
+  const result = new Set<string>()
+  for (const row of dailyArtworkRows) result.add(row.pid)
+  for (const row of artistArtworkRows) result.add(row.pid)
+  for (const row of topicArtworkRows) result.add(row.pid)
+  for (const row of dailyCoverRows) if (row.pid) result.add(row.pid)
+  for (const row of artistCoverRows) if (row.pid) result.add(row.pid)
+  for (const row of topicCoverRows) if (row.pid) result.add(row.pid)
+  return result
+}
+
+export async function isArtworkPublishedInCuration(pidValue: string) {
+  const [
+    dailyLink,
+    artistLink,
+    topicLink,
+    dailyCover,
+    artistCover,
+    topicCover,
+  ] = await Promise.all([
+    db
+      .select({ id: dailyPickArtwork.id })
+      .from(dailyPickArtwork)
+      .innerJoin(dailyPick, eq(dailyPickArtwork.dailyPickId, dailyPick.id))
+      .where(and(eq(dailyPickArtwork.pid, pidValue), eq(dailyPick.isPublished, 1)))
+      .limit(1),
+    db
+      .select({ id: artistFeatureArtwork.id })
+      .from(artistFeatureArtwork)
+      .innerJoin(artistFeature, eq(artistFeatureArtwork.artistFeatureId, artistFeature.id))
+      .where(and(eq(artistFeatureArtwork.pid, pidValue), eq(artistFeature.isPublished, 1)))
+      .limit(1),
+    db
+      .select({ id: topicFeatureArtwork.id })
+      .from(topicFeatureArtwork)
+      .innerJoin(topicFeature, eq(topicFeatureArtwork.topicFeatureId, topicFeature.id))
+      .where(and(eq(topicFeatureArtwork.pid, pidValue), eq(topicFeature.isPublished, 1)))
+      .limit(1),
+    db
+      .select({ id: dailyPick.id })
+      .from(dailyPick)
+      .where(and(eq(dailyPick.coverPid, pidValue), eq(dailyPick.isPublished, 1)))
+      .limit(1),
+    db
+      .select({ id: artistFeature.id })
+      .from(artistFeature)
+      .where(and(eq(artistFeature.coverPid, pidValue), eq(artistFeature.isPublished, 1)))
+      .limit(1),
+    db
+      .select({ id: topicFeature.id })
+      .from(topicFeature)
+      .where(and(eq(topicFeature.coverPid, pidValue), eq(topicFeature.isPublished, 1)))
+      .limit(1),
+  ])
+
+  return (
+    dailyLink.length > 0 ||
+    artistLink.length > 0 ||
+    topicLink.length > 0 ||
+    dailyCover.length > 0 ||
+    artistCover.length > 0 ||
+    topicCover.length > 0
+  )
+}
+
+function buildTopNRandomCandidates(rows: CandidateArtworkRow[], topN: number, limit: number) {
+  const topPool = rows.slice(0, Math.max(limit, topN))
+  return shuffleArray(topPool).slice(0, limit).map(mapCandidateArtwork)
+}
+
+export async function getDailyRandomTopNCandidates(
+  limit = 30,
+  topN = 200,
+  excludePublished = true
+) {
+  const fetchLimit = Math.max(topN * 4, limit * 6, 200)
+  const rows = await db
+    .select({
+      pid: pic.pid,
+      title: pic.title,
+      authorId: pic.authorId,
+      authorName: pic.authorName,
+      tag: pic.tag,
+      imageUrl: pic.imageUrl,
+      imagePath: pic.imagePath,
+      good: pic.good,
+      star: pic.star,
+      view: pic.view,
+      popularity: pic.popularity,
+      uploadTime: pic.uploadTime,
+    })
+    .from(pic)
+    .where(or(eq(pic.unfit, 0), isNull(pic.unfit)))
+    .orderBy(desc(ARTWORK_SCORE), desc(pic.uploadTime))
+    .limit(fetchLimit)
+
+  const excluded = excludePublished ? await getPublishedArtworkPidSet() : new Set<string>()
+  const filtered = rows.filter((row) => !excluded.has(row.pid))
+
+  return buildTopNRandomCandidates(filtered, topN, limit)
+}
+
+export async function getArtistRandomTopNCandidates(
+  artistId: string,
+  limit = 30,
+  topN = 200,
+  excludePublished = true
+) {
+  const fetchLimit = Math.max(topN * 4, limit * 6, 200)
+  const rows = await db
+    .select({
+      pid: pic.pid,
+      title: pic.title,
+      authorId: pic.authorId,
+      authorName: pic.authorName,
+      tag: pic.tag,
+      imageUrl: pic.imageUrl,
+      imagePath: pic.imagePath,
+      good: pic.good,
+      star: pic.star,
+      view: pic.view,
+      popularity: pic.popularity,
+      uploadTime: pic.uploadTime,
+    })
+    .from(pic)
+    .where(and(eq(pic.authorId, artistId), or(eq(pic.unfit, 0), isNull(pic.unfit))))
+    .orderBy(desc(ARTWORK_SCORE), desc(pic.uploadTime))
+    .limit(fetchLimit)
+
+  const excluded = excludePublished ? await getPublishedArtworkPidSet() : new Set<string>()
+  const filtered = rows.filter((row) => !excluded.has(row.pid))
+
+  return buildTopNRandomCandidates(filtered, topN, limit)
+}
+
+function normalizeTags(input: string[]) {
+  const merged = input
+    .join(',')
+    .split(/[,，\n]/)
+    .map((tag) => tag.trim())
+    .filter(Boolean)
+
+  return Array.from(new Set(merged))
+}
+
+export async function getTopicRandomTopNCandidates(
+  tagsInput: string[],
+  limit = 30,
+  topN = 200,
+  excludePublished = true
+) {
+  const normalizedTags = normalizeTags(tagsInput)
+  if (normalizedTags.length === 0) {
+    return []
+  }
+
+  const fetchLimit = Math.max(topN * 4, limit * 6, 200)
+  const likeClauses = normalizedTags.map((tag) => like(pic.tag, `%${tag}%`))
+  const tagsWhere = likeClauses.length === 1 ? likeClauses[0] : or(...likeClauses)
+  const rows = await db
+    .select({
+      pid: pic.pid,
+      title: pic.title,
+      authorId: pic.authorId,
+      authorName: pic.authorName,
+      tag: pic.tag,
+      imageUrl: pic.imageUrl,
+      imagePath: pic.imagePath,
+      good: pic.good,
+      star: pic.star,
+      view: pic.view,
+      popularity: pic.popularity,
+      uploadTime: pic.uploadTime,
+    })
+    .from(pic)
+    .where(and(tagsWhere, or(eq(pic.unfit, 0), isNull(pic.unfit))))
+    .orderBy(desc(ARTWORK_SCORE), desc(pic.uploadTime))
+    .limit(fetchLimit)
+
+  const excluded = excludePublished ? await getPublishedArtworkPidSet() : new Set<string>()
+  const filtered = rows.filter((row) => !excluded.has(row.pid))
+
+  return buildTopNRandomCandidates(filtered, topN, limit)
 }
 
 export async function getTopicFeatureSlugExists(topicSlugValue: string, excludeId?: number) {

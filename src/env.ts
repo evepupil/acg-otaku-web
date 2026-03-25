@@ -13,6 +13,7 @@ const envSchema = z.object({
   B2_ENDPOINT: z.string().url().optional(),
   NEXT_PUBLIC_B2_BUCKET_URL: z.string().url().optional(),
   NEXT_PUBLIC_PROXY_SERVER: z.string().url().optional(),
+  CRAWLER_SERVER_URL: z.string().url().optional(),
   SAUCENAO_API_KEY: z.string().optional(),
 })
 

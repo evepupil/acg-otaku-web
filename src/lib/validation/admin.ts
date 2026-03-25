@@ -2,6 +2,14 @@ import { z } from 'zod'
 
 const optionalText = z.string().trim().optional()
 const optionalNullableText = z.string().trim().optional().transform((value) => value && value.length > 0 ? value : undefined)
+const booleanQuery = z.preprocess((value) => {
+  if (typeof value === 'string') {
+    const normalized = value.trim().toLowerCase()
+    if (['1', 'true', 'yes', 'on'].includes(normalized)) return true
+    if (['0', 'false', 'no', 'off'].includes(normalized)) return false
+  }
+  return value
+}, z.boolean())
 
 export const adminPaginationQuerySchema = z.object({
   page: z.coerce.number().int().min(1).default(1),
@@ -111,6 +119,22 @@ export const createArtistFeatureSchema = z.object({
   coverPid: optionalNullableText,
   pixivUrl: optionalNullableText,
   twitterUrl: optionalNullableText,
+})
+
+export const adminCandidateQuerySchema = z.object({
+  limit: z.coerce.number().int().min(1).max(200).default(30),
+  topN: z.coerce.number().int().min(1).max(1000).default(200),
+  excludePublished: booleanQuery.default(true),
+})
+
+export const adminTopicCandidateQuerySchema = adminCandidateQuerySchema.extend({
+  topicName: optionalText,
+  tags: optionalText,
+})
+
+export const adminArtistCandidateSchema = adminCandidateQuerySchema.extend({
+  artistId: z.string().trim().min(1).max(120),
+  crawlBeforeQuery: z.boolean().optional().default(true),
 })
 
 export const updateArtistFeatureSchema = z.object({

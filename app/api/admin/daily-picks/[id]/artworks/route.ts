@@ -12,6 +12,7 @@ import { parseJsonBody, parseSearchParams } from '@/lib/validation/request'
 import {
   addDailyPickArtworkRecord,
   getDailyPickArtworkLinkExists,
+  isArtworkPublishedInCuration,
   removeDailyPickArtworkRecord,
 } from '@/db/curation'
 
@@ -31,7 +32,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
     const pick = await getDailyPickById(id)
 
     if (!pick) {
-      return NextResponse.json({ success: false, error: '未找到' }, { status: 404 })
+      return NextResponse.json({ success: false, error: '未找到该记录' }, { status: 404 })
     }
 
     return NextResponse.json({ success: true, data: pick })
@@ -54,7 +55,11 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     const payload = await parseJsonBody(request, createCurationArtworkLinkSchema)
 
     if (await getDailyPickArtworkLinkExists(id, payload.pid)) {
-      return NextResponse.json({ success: false, error: '作品已在该精选中' }, { status: 409 })
+      return NextResponse.json({ success: false, error: '作品已在当前精选中' }, { status: 409 })
+    }
+
+    if (await isArtworkPublishedInCuration(payload.pid)) {
+      return NextResponse.json({ success: false, error: '该作品已在已发布栏目中，不能重复发布' }, { status: 409 })
     }
 
     await addDailyPickArtworkRecord(id, payload.pid, payload.sortOrder, payload.editorComment)
@@ -64,7 +69,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
       return validationErrorResponse(error)
     }
 
-    console.error('添加作品到精选失败:', error)
+    console.error('添加作品到每日精选失败:', error)
     return NextResponse.json({ success: false, error: '添加失败' }, { status: 500 })
   }
 }
@@ -84,7 +89,7 @@ export async function DELETE(request: NextRequest, { params }: { params: Promise
       return validationErrorResponse(error)
     }
 
-    console.error('移除作品失败:', error)
+    console.error('移除每日精选作品失败:', error)
     return NextResponse.json({ success: false, error: '移除失败' }, { status: 500 })
   }
 }
