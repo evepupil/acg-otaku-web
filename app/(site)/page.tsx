@@ -116,7 +116,7 @@ export default async function HomePage() {
 
               <div className="mt-7 flex flex-wrap gap-3">
                 <Link
-                  href={featuredDailyPick ? `/daily?date=${featuredDailyPick.pickDate}` : '/daily'}
+                  href={featuredDailyPick ? `/daily/${featuredDailyPick.pickDate}` : '/daily'}
                   className="inline-flex items-center gap-2 rounded-full bg-slate-950 px-5 py-3 text-sm font-medium text-white transition hover:bg-slate-800"
                 >
                   查看今日精选
@@ -261,7 +261,7 @@ export default async function HomePage() {
                 </h2>
               </div>
               <Link
-                href={featuredDailyPick ? `/daily?date=${featuredDailyPick.pickDate}` : '/daily'}
+                href={featuredDailyPick ? `/daily/${featuredDailyPick.pickDate}` : '/daily'}
                 className="text-sm font-medium text-emerald-700 transition hover:text-emerald-800"
               >
                 查看全部
@@ -301,11 +301,7 @@ export default async function HomePage() {
                   latestUpdates.map((pick) => (
                     <Link
                       key={pick.id}
-                      href={
-                        pick.pickType === 'daily_art'
-                          ? `/daily?date=${pick.pickDate}`
-                          : `/rankings?date=${pick.pickDate}`
-                      }
+                      href={pick.pickType === 'daily_art' ? `/daily/${pick.pickDate}` : `/rankings/${pick.pickDate}`}
                       className="flex items-center justify-between gap-4 rounded-[1.25rem] border border-slate-200 bg-slate-50 px-4 py-4 transition hover:border-slate-300 hover:bg-white"
                     >
                       <div className="min-w-0">
@@ -355,7 +351,7 @@ export default async function HomePage() {
                   rankingHighlights.map((pick) => (
                     <Link
                       key={pick.id}
-                      href={`/rankings?date=${pick.pickDate}`}
+                      href={`/rankings/${pick.pickDate}`}
                       className="flex gap-4 rounded-[1.25rem] border border-slate-200 bg-slate-50 p-3 transition hover:border-slate-300 hover:bg-white"
                     >
                       <div className="relative h-20 w-20 flex-shrink-0 overflow-hidden rounded-[1rem] bg-slate-200">
