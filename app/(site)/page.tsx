@@ -12,7 +12,7 @@ export const metadata: Metadata = homeMetadata
 const sections = [
   {
     title: '每日排行精选',
-    description: '从 Pixiv 榜单里筛出真正值得停留的作品，适合快速进入当天的审美状态。',
+    description: '查看按日期整理的排行作品。',
     href: '/rankings',
     icon: TrendingUp,
     accent: 'from-emerald-500 to-teal-500',
@@ -20,7 +20,7 @@ const sections = [
   },
   {
     title: '每日美图',
-    description: '按日期回看每天的精选，适合随手翻看，也适合专门找某一天的氛围。',
+    description: '浏览每天更新的精选插画。',
     href: '/daily',
     icon: CalendarDays,
     accent: 'from-sky-500 to-cyan-500',
@@ -28,7 +28,7 @@ const sections = [
   },
   {
     title: '画师鉴赏',
-    description: '不只看图，也看创作风格、代表作和画师长期稳定输出的方向。',
+    description: '按画师整理专题和代表作。',
     href: '/artists',
     icon: Palette,
     accent: 'from-fuchsia-500 to-pink-500',
@@ -36,7 +36,7 @@ const sections = [
   },
   {
     title: '话题鉴赏',
-    description: '把同一主题下的作品放在一起，浏览时更有策展感，也更容易找到偏好。',
+    description: '按主题查看成组作品内容。',
     href: '/topics',
     icon: Hash,
     accent: 'from-amber-500 to-orange-500',
@@ -72,13 +72,13 @@ export default async function HomePage() {
         <div className="pointer-events-none absolute inset-x-0 bottom-0 z-20 mx-auto max-w-7xl px-4 pb-10 sm:px-6 lg:px-8">
           <div className="max-w-xl rounded-[2rem] border border-white/45 bg-white/15 p-6 text-white shadow-[0_24px_80px_rgba(15,23,42,0.28)] backdrop-blur-xl">
             <p className="mb-3 inline-flex rounded-full border border-white/35 bg-white/10 px-3 py-1 text-xs font-medium uppercase tracking-[0.24em] text-white/85">
-              Curated Daily Selection
+              今日精选
             </p>
             <h1 className="text-4xl font-semibold tracking-tight sm:text-5xl">
-              不只是图站，更像一个更轻的二次元策展首页
+              每天更新的二次元插画精选
             </h1>
             <p className="mt-4 max-w-lg text-sm leading-7 text-white/78 sm:text-base">
-              首页先给氛围，再给入口。先看最新精选，再决定从排行、每日、画师还是话题继续深入。
+              收录每日精选、排行整理、画师专题和话题归档。
             </p>
           </div>
         </div>
@@ -97,14 +97,14 @@ export default async function HomePage() {
             <div className="flex flex-col gap-3 border-b border-slate-200/70 pb-8 md:flex-row md:items-end md:justify-between">
               <div>
                 <p className="text-sm font-medium uppercase tracking-[0.24em] text-emerald-600">
-                  Explore
+                  Browse
                 </p>
                 <h2 className="mt-3 text-3xl font-semibold tracking-tight text-slate-900">
-                  四个入口，带你进入不同的浏览节奏
+                  开始浏览
                 </h2>
               </div>
               <p className="max-w-2xl text-sm leading-7 text-slate-600 sm:text-base">
-                四个入口对应四种浏览方式：追当天、看排行、按画师找风格，或者顺着话题慢慢逛。
+                从这里进入排行、每日、画师和话题内容。
               </p>
             </div>
 
@@ -123,7 +123,7 @@ export default async function HomePage() {
                         <Icon className="h-6 w-6" />
                       </div>
                       <span className="text-xs font-medium uppercase tracking-[0.24em] text-slate-400 transition duration-300 group-hover:text-slate-600">
-                        Open
+                        查看
                       </span>
                     </div>
 

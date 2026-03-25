@@ -44,7 +44,7 @@ export default async function ArtistsPage({
                 画师鉴赏
               </h1>
               <p className="mt-4 text-sm leading-7 text-slate-600 md:text-base">
-                按画师线索浏览专题，适合集中看风格、代表作和长期稳定输出。
+                查看画师专题、代表作和相关整理内容。
               </p>
             </div>
 

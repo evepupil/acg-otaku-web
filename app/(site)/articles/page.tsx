@@ -82,7 +82,7 @@ export default async function ArticlesPage({
                 文章
               </h1>
               <p className="mt-4 text-sm leading-7 text-slate-600 md:text-base">
-                这里收录一些关于插画、审美和创作方法的短文，适合搭配作品一起看。
+                这里收录与插画相关的文章内容。
               </p>
             </div>
 

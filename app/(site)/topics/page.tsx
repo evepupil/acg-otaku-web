@@ -44,7 +44,7 @@ export default async function TopicsPage({
                 话题鉴赏
               </h1>
               <p className="mt-4 text-sm leading-7 text-slate-600 md:text-base">
-                围绕题材、氛围和标签整理专题，适合一口气看完一组方向相近的作品。
+                按题材和标签浏览整理好的专题内容。
               </p>
             </div>
 

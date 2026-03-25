@@ -237,7 +237,7 @@ export default function SearchPage() {
                 <p className="mt-2 text-sm text-slate-500">
                   使用 `Ctrl+V` 或 `Cmd+V`，直接把剪贴板里的图片贴进来。
                 </p>
-                <p className="mt-2 text-xs text-slate-400">适合截图后直接搜索，不用再存本地。</p>
+                <p className="mt-2 text-xs text-slate-400">上传图片即可搜索相近结果。</p>
               </div>
             </div>
           )}
