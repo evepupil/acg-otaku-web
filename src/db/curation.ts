@@ -630,12 +630,21 @@ export async function getReviewCandidates(
   limit = 30,
   topN = 200,
   tag?: string,
-  excludePublished = true
+  excludePublished = true,
+  onlyDownloaded = false
 ) {
   const fetchLimit = Math.max(topN * 4, limit * 8, 300)
-  const where = tag
-    ? and(or(eq(pic.unfit, 0), isNull(pic.unfit)), like(pic.tag, `%${tag}%`))
-    : or(eq(pic.unfit, 0), isNull(pic.unfit))
+  const conditions = [or(eq(pic.unfit, 0), isNull(pic.unfit))]
+
+  if (tag) {
+    conditions.push(like(pic.tag, `%${tag}%`))
+  }
+
+  if (onlyDownloaded) {
+    conditions.push(sql`coalesce(trim(${pic.imagePath}), '') <> ''`)
+  }
+
+  const where = and(...conditions)
 
   const rows = await db
     .select({

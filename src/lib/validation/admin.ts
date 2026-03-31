@@ -167,6 +167,7 @@ export const adminReviewCandidateQuerySchema = z.object({
   topN: z.coerce.number().int().min(1).max(1000).default(200),
   tag: optionalText.transform((value) => value && value.length > 0 ? value : undefined),
   excludePublished: booleanQuery.default(true),
+  onlyDownloaded: booleanQuery.default(false),
 })
 
 export const adminReviewActionSchema = z.object({

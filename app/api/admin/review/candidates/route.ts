@@ -18,17 +18,17 @@ export async function GET(request: NextRequest) {
   if (!isAdmin) return NextResponse.json({ success: false, error: '未授权' }, { status: 401 })
 
   try {
-    const { limit, topN, tag, excludePublished } = parseSearchParams(
+    const { limit, topN, tag, excludePublished, onlyDownloaded } = parseSearchParams(
       new URL(request.url).searchParams,
       adminReviewCandidateQuerySchema
     )
 
-    const artworks = await getReviewCandidates(limit, topN, tag, excludePublished)
+    const artworks = await getReviewCandidates(limit, topN, tag, excludePublished, onlyDownloaded)
     return NextResponse.json({
       success: true,
       data: {
         artworks,
-        query: { limit, topN, tag, excludePublished },
+        query: { limit, topN, tag, excludePublished, onlyDownloaded },
       },
     })
   } catch (error) {

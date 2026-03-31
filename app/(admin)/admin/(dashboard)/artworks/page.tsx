@@ -29,6 +29,7 @@ export default function ArtworksPage() {
   const [candidateTag, setCandidateTag] = useState('')
   const [candidateTopN, setCandidateTopN] = useState(200)
   const [candidateLimit, setCandidateLimit] = useState(30)
+  const [candidateOnlyDownloaded, setCandidateOnlyDownloaded] = useState(true)
   const [candidateLoading, setCandidateLoading] = useState(false)
   const [candidateError, setCandidateError] = useState('')
   const [candidates, setCandidates] = useState<Artwork[]>([])
@@ -106,6 +107,7 @@ export default function ArtworksPage() {
         limit: String(candidateLimit),
         topN: String(candidateTopN),
         excludePublished: 'true',
+        onlyDownloaded: candidateOnlyDownloaded ? 'true' : 'false',
       })
       if (candidateTag.trim()) params.set('tag', candidateTag.trim())
 
@@ -123,7 +125,7 @@ export default function ArtworksPage() {
     } finally {
       setCandidateLoading(false)
     }
-  }, [candidateLimit, candidateTag, candidateTopN, saveTagHistory])
+  }, [candidateLimit, candidateOnlyDownloaded, candidateTag, candidateTopN, saveTagHistory])
 
   const fetchFavorites = useCallback(async (page = 1) => {
     setFavoritesLoading(true)
@@ -373,6 +375,15 @@ export default function ArtworksPage() {
                 onChange={(e) => setCandidateLimit(Math.max(1, Number(e.target.value) || 1))}
                 className="w-20 px-3 py-2 border border-gray-200 rounded-xl text-sm"
               />
+              <label className="inline-flex items-center gap-2 px-3 py-2 rounded-xl border border-gray-200 text-sm text-gray-700 bg-gray-50">
+                <input
+                  type="checkbox"
+                  checked={candidateOnlyDownloaded}
+                  onChange={(e) => setCandidateOnlyDownloaded(e.target.checked)}
+                  className="h-4 w-4 rounded border-gray-300 text-green-600 focus:ring-green-500"
+                />
+                <span>仅看已下载素材</span>
+              </label>
               <button
                 onClick={fetchCandidates}
                 disabled={candidateLoading}
