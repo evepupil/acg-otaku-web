@@ -89,3 +89,14 @@ export const topicFeatureArtwork = sqliteTable('topic_feature_artwork', {
   sortOrder: integer('sort_order').notNull().default(0),
   editorComment: text('editor_comment'),
 })
+
+export const artworkReview = sqliteTable('artwork_review', {
+  pid: text('pid').primaryKey(),
+  status: text('status').notNull().default('seen'), // seen | favorite | rejected
+  reviewNote: text('review_note'),
+  firstSeenAt: text('first_seen_at').default("datetime('now')"),
+  lastSeenAt: text('last_seen_at').default("datetime('now')"),
+  reviewedAt: text('reviewed_at'),
+  createdAt: text('created_at').default("datetime('now')"),
+  updatedAt: text('updated_at').default("datetime('now')"),
+})

@@ -4,6 +4,7 @@ import { and, desc, eq, isNotNull, isNull, like, or, sql } from 'drizzle-orm'
 
 import { db } from '@/db/client'
 import {
+  artworkReview,
   artistFeature,
   artistFeatureArtwork,
   dailyPick,
@@ -124,6 +125,14 @@ export interface CandidateArtwork {
   }
 }
 
+export type ArtworkReviewAction = 'favorite' | 'reject' | 'skip'
+export type ArtworkReviewStatus = 'favorite' | 'rejected' | 'seen'
+
+export interface FavoriteArtworkListResult {
+  artworks: CandidateArtwork[]
+  total: number
+}
+
 const DEFAULT_ARTIST_AVATAR_URL =
   'https://trae-api-sg.mchost.guru/api/ide/v1/text_to_image?prompt=anime%20artist%20avatar%20profile%20picture&image_size=square'
 
@@ -162,6 +171,12 @@ function shuffleArray<T>(items: T[]) {
     ;[arr[i], arr[j]] = [arr[j], arr[i]]
   }
   return arr
+}
+
+function mapReviewActionToStatus(action: ArtworkReviewAction): ArtworkReviewStatus {
+  if (action === 'favorite') return 'favorite'
+  if (action === 'reject') return 'rejected'
+  return 'seen'
 }
 
 export async function createDailyPickRecord(data: DailyPickMutationInput) {
@@ -317,6 +332,13 @@ export async function deleteArtworkRecord(pidValue: string) {
   await db.delete(pic).where(eq(pic.pid, pidValue))
 }
 
+export async function setArtworkUnfitStatus(pidValue: string, unfit: boolean) {
+  await db
+    .update(pic)
+    .set({ unfit: unfit ? 1 : 0 })
+    .where(eq(pic.pid, pidValue))
+}
+
 export async function getArtworkAdminList(page: number, limit: number, search?: string) {
   const offset = (page - 1) * limit
   const where = search
@@ -375,6 +397,11 @@ export async function getArtworkAdminList(page: number, limit: number, search?: 
     })),
     total: Number(count) || 0,
   }
+}
+
+async function getReviewedArtworkPidSet() {
+  const rows = await db.select({ pid: artworkReview.pid }).from(artworkReview)
+  return new Set(rows.map((row) => row.pid))
 }
 
 async function getPublishedArtworkPidSet() {
@@ -597,6 +624,156 @@ export async function getTopicRandomTopNCandidates(
   const filtered = rows.filter((row) => !excluded.has(row.pid))
 
   return buildTopNRandomCandidates(filtered, topN, limit)
+}
+
+export async function getReviewCandidates(
+  limit = 30,
+  topN = 200,
+  tag?: string,
+  excludePublished = true
+) {
+  const fetchLimit = Math.max(topN * 4, limit * 8, 300)
+  const where = tag
+    ? and(or(eq(pic.unfit, 0), isNull(pic.unfit)), like(pic.tag, `%${tag}%`))
+    : or(eq(pic.unfit, 0), isNull(pic.unfit))
+
+  const rows = await db
+    .select({
+      pid: pic.pid,
+      title: pic.title,
+      authorId: pic.authorId,
+      authorName: pic.authorName,
+      tag: pic.tag,
+      imageUrl: pic.imageUrl,
+      imagePath: pic.imagePath,
+      good: pic.good,
+      star: pic.star,
+      view: pic.view,
+      popularity: pic.popularity,
+      uploadTime: pic.uploadTime,
+    })
+    .from(pic)
+    .where(where)
+    .orderBy(desc(ARTWORK_SCORE), desc(pic.uploadTime))
+    .limit(fetchLimit)
+
+  const reviewedSet = await getReviewedArtworkPidSet()
+  const publishedSet = excludePublished ? await getPublishedArtworkPidSet() : new Set<string>()
+  const filtered = rows.filter((row) => !reviewedSet.has(row.pid) && !publishedSet.has(row.pid))
+
+  return buildTopNRandomCandidates(filtered, topN, limit)
+}
+
+export async function recordArtworkReviewAction(
+  pidValue: string,
+  action: ArtworkReviewAction,
+  note?: string
+) {
+  const status = mapReviewActionToStatus(action)
+  const now = sql`datetime('now')`
+  const reviewedAt = status === 'seen' ? null : now
+
+  await db
+    .insert(artworkReview)
+    .values({
+      pid: pidValue,
+      status,
+      reviewNote: note ?? null,
+      firstSeenAt: now,
+      lastSeenAt: now,
+      reviewedAt,
+      createdAt: now,
+      updatedAt: now,
+    })
+    .onConflictDoUpdate({
+      target: artworkReview.pid,
+      set: {
+        status,
+        reviewNote: note ?? null,
+        lastSeenAt: now,
+        reviewedAt,
+        updatedAt: now,
+      },
+    })
+}
+
+export async function getFavoriteArtworks(
+  page: number,
+  limit: number,
+  options?: {
+    search?: string
+    tag?: string
+    artistId?: string
+    excludePublished?: boolean
+  }
+): Promise<FavoriteArtworkListResult> {
+  const offset = (page - 1) * limit
+  const conditions = [eq(artworkReview.status, 'favorite' as const)]
+
+  if (options?.search) {
+    conditions.push(
+      or(
+        like(pic.pid, `%${options.search}%`),
+        like(pic.title, `%${options.search}%`),
+        like(pic.authorName, `%${options.search}%`),
+        like(pic.tag, `%${options.search}%`)
+      )!
+    )
+  }
+
+  if (options?.tag) {
+    conditions.push(like(pic.tag, `%${options.tag}%`))
+  }
+
+  if (options?.artistId) {
+    conditions.push(eq(pic.authorId, options.artistId))
+  }
+
+  const where = and(...conditions)
+  const rows = await db
+    .select({
+      pid: pic.pid,
+      title: pic.title,
+      authorId: pic.authorId,
+      authorName: pic.authorName,
+      tag: pic.tag,
+      imageUrl: pic.imageUrl,
+      imagePath: pic.imagePath,
+      good: pic.good,
+      star: pic.star,
+      view: pic.view,
+      popularity: pic.popularity,
+      uploadTime: pic.uploadTime,
+      reviewedAt: artworkReview.reviewedAt,
+    })
+    .from(artworkReview)
+    .innerJoin(pic, eq(artworkReview.pid, pic.pid))
+    .where(where)
+    .orderBy(desc(artworkReview.reviewedAt), desc(pic.uploadTime))
+
+  const publishedSet = options?.excludePublished ? await getPublishedArtworkPidSet() : new Set<string>()
+  const filteredRows = rows.filter((row) => !publishedSet.has(row.pid))
+  const pagedRows = filteredRows.slice(offset, offset + limit)
+
+  return {
+    artworks: pagedRows.map((row) =>
+      mapCandidateArtwork({
+        pid: row.pid,
+        title: row.title,
+        authorId: row.authorId,
+        authorName: row.authorName,
+        tag: row.tag,
+        imageUrl: row.imageUrl,
+        imagePath: row.imagePath,
+        good: row.good,
+        star: row.star,
+        view: row.view,
+        popularity: row.popularity,
+        uploadTime: row.uploadTime,
+      })
+    ),
+    total: filteredRows.length,
+  }
 }
 
 export async function getTopicFeatureSlugExists(topicSlugValue: string, excludeId?: number) {

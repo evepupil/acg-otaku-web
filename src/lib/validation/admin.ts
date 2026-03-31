@@ -161,3 +161,48 @@ export const updateArtistFeatureSchema = z.object({
     isPublished !== undefined,
   { message: 'At least one field must be updated' }
 )
+
+export const adminReviewCandidateQuerySchema = z.object({
+  limit: z.coerce.number().int().min(1).max(200).default(30),
+  topN: z.coerce.number().int().min(1).max(1000).default(200),
+  tag: optionalText.transform((value) => value && value.length > 0 ? value : undefined),
+  excludePublished: booleanQuery.default(true),
+})
+
+export const adminReviewActionSchema = z.object({
+  pid: z.string().trim().regex(/^\d+$/),
+  action: z.enum(['favorite', 'reject', 'skip']),
+  note: optionalNullableText,
+})
+
+export const adminFavoriteListQuerySchema = z.object({
+  page: z.coerce.number().int().min(1).default(1),
+  limit: z.coerce.number().int().min(1).max(100).default(24),
+  search: optionalText.transform((value) => value && value.length > 0 ? value : undefined),
+  tag: optionalText.transform((value) => value && value.length > 0 ? value : undefined),
+  artistId: optionalText.transform((value) => value && value.length > 0 ? value : undefined),
+  excludePublished: booleanQuery.default(true),
+})
+
+const createDailyFromFavoritesSchema = z.object({
+  type: z.literal('daily'),
+  pids: z.array(z.string().trim().regex(/^\d+$/)).min(1).max(200),
+  pickDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+  title: optionalNullableText,
+  description: optionalNullableText,
+})
+
+const createTopicFromFavoritesSchema = z.object({
+  type: z.literal('topic'),
+  pids: z.array(z.string().trim().regex(/^\d+$/)).min(1).max(200),
+  topicName: z.string().trim().min(1).max(120),
+  topicSlug: z.string().trim().min(1).max(120).regex(/^[a-z0-9-]+$/).optional(),
+  topicDescription: optionalNullableText,
+  featureContent: optionalNullableText,
+  tags: optionalNullableText,
+})
+
+export const adminCreateCurationFromFavoritesSchema = z.discriminatedUnion('type', [
+  createDailyFromFavoritesSchema,
+  createTopicFromFavoritesSchema,
+])
