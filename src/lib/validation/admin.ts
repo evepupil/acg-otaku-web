@@ -207,3 +207,18 @@ export const adminCreateCurationFromFavoritesSchema = z.discriminatedUnion('type
   createDailyFromFavoritesSchema,
   createTopicFromFavoritesSchema,
 ])
+
+export const adminRegenerateCurationContentSchema = z.discriminatedUnion('type', [
+  z.object({
+    type: z.literal('daily'),
+    id: z.coerce.number().int().positive(),
+  }),
+  z.object({
+    type: z.literal('topic'),
+    id: z.coerce.number().int().positive(),
+  }),
+  z.object({
+    type: z.literal('artist'),
+    id: z.coerce.number().int().positive(),
+  }),
+])

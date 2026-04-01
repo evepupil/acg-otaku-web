@@ -881,6 +881,20 @@ export async function addDailyPickArtworkRecord(
   })
 }
 
+export async function updateDailyPickArtworkComments(
+  dailyPickIdValue: number,
+  commentsByPid: Record<string, string>
+) {
+  await db.transaction(async (tx) => {
+    for (const [pidValue, editorComment] of Object.entries(commentsByPid)) {
+      await tx
+        .update(dailyPickArtwork)
+        .set({ editorComment: editorComment ?? null })
+        .where(and(eq(dailyPickArtwork.dailyPickId, dailyPickIdValue), eq(dailyPickArtwork.pid, pidValue)))
+    }
+  })
+}
+
 export async function removeDailyPickArtworkRecord(dailyPickIdValue: number, pidValue: string) {
   await db
     .delete(dailyPickArtwork)
@@ -911,6 +925,25 @@ export async function addArtistFeatureArtworkRecord(
   })
 }
 
+export async function updateArtistFeatureArtworkComments(
+  artistFeatureIdValue: number,
+  commentsByPid: Record<string, string>
+) {
+  await db.transaction(async (tx) => {
+    for (const [pidValue, editorComment] of Object.entries(commentsByPid)) {
+      await tx
+        .update(artistFeatureArtwork)
+        .set({ editorComment: editorComment ?? null })
+        .where(
+          and(
+            eq(artistFeatureArtwork.artistFeatureId, artistFeatureIdValue),
+            eq(artistFeatureArtwork.pid, pidValue)
+          )
+        )
+    }
+  })
+}
+
 export async function removeArtistFeatureArtworkRecord(artistFeatureIdValue: number, pidValue: string) {
   await db
     .delete(artistFeatureArtwork)
@@ -938,6 +971,25 @@ export async function addTopicFeatureArtworkRecord(
     pid: pidValue,
     sortOrder,
     editorComment: editorComment ?? null,
+  })
+}
+
+export async function updateTopicFeatureArtworkComments(
+  topicFeatureIdValue: number,
+  commentsByPid: Record<string, string>
+) {
+  await db.transaction(async (tx) => {
+    for (const [pidValue, editorComment] of Object.entries(commentsByPid)) {
+      await tx
+        .update(topicFeatureArtwork)
+        .set({ editorComment: editorComment ?? null })
+        .where(
+          and(
+            eq(topicFeatureArtwork.topicFeatureId, topicFeatureIdValue),
+            eq(topicFeatureArtwork.pid, pidValue)
+          )
+        )
+    }
   })
 }
 

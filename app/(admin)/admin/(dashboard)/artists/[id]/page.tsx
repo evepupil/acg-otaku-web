@@ -32,6 +32,9 @@ export default function EditArtistFeaturePage() {
   const [feature, setFeature] = useState<ArtistFeatureData | null>(null)
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
+  const [regenerating, setRegenerating] = useState(false)
+  const [actionMessage, setActionMessage] = useState('')
+  const [actionError, setActionError] = useState('')
   const [newPid, setNewPid] = useState('')
   const [newComment, setNewComment] = useState('')
   const [adding, setAdding] = useState(false)
@@ -148,6 +151,35 @@ export default function EditArtistFeaturePage() {
     setFeature({ ...feature, isPublished: !feature.isPublished })
   }
 
+  const handleRegenerateContent = async () => {
+    if (!feature || feature.artworks.length === 0) return
+
+    setRegenerating(true)
+    setActionMessage('')
+    setActionError('')
+
+    try {
+      const res = await fetch('/api/admin/curation/regenerate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ type: 'artist', id: feature.id }),
+      })
+      const data = await res.json()
+
+      if (data.success) {
+        setFeature(data.data)
+        setActionMessage('已重新生成当前画师专题的文案和短评')
+        return
+      }
+
+      setActionError(data.error || '重新生成失败')
+    } catch {
+      setActionError('重新生成失败')
+    } finally {
+      setRegenerating(false)
+    }
+  }
+
   const handleAddArtwork = async () => {
     if (!newPid.trim()) return
     setAdding(true)
@@ -215,6 +247,18 @@ export default function EditArtistFeaturePage() {
 
   return (
     <div className="space-y-6 max-w-5xl">
+      {actionMessage && (
+        <div className="rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700">
+          {actionMessage}
+        </div>
+      )}
+
+      {actionError && (
+        <div className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+          {actionError}
+        </div>
+      )}
+
       <div className="flex items-center gap-3">
         <Link href="/admin/artists" className="p-2 rounded-lg hover:bg-gray-100">
           <ArrowLeft className="w-5 h-5 text-gray-500" />
@@ -390,14 +434,25 @@ export default function EditArtistFeaturePage() {
           placeholder="撰写画师鉴赏文章，支持 Markdown..."
           className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-purple-500 outline-none text-sm font-mono"
         />
-        <button
-          onClick={handleSave}
-          disabled={saving}
-          className="flex items-center gap-2 px-4 py-2 bg-purple-600 text-white rounded-xl text-sm font-medium hover:bg-purple-700 disabled:opacity-50"
-        >
-          {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
-          保存
-        </button>
+        <div className="flex flex-wrap gap-2">
+          <button
+            onClick={handleRegenerateContent}
+            disabled={regenerating || feature.artworks.length === 0}
+            className="flex items-center gap-2 rounded-xl border border-purple-200 bg-purple-50 px-4 py-2 text-sm font-medium text-purple-700 hover:bg-purple-100 disabled:opacity-50"
+          >
+            {regenerating ? <Loader2 className="w-4 h-4 animate-spin" /> : <RefreshCw className="w-4 h-4" />}
+            重新生成文案
+          </button>
+
+          <button
+            onClick={handleSave}
+            disabled={saving}
+            className="flex items-center gap-2 px-4 py-2 bg-purple-600 text-white rounded-xl text-sm font-medium hover:bg-purple-700 disabled:opacity-50"
+          >
+            {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+            保存
+          </button>
+        </div>
       </div>
 
       <div className="bg-white rounded-2xl border border-gray-100 p-6 space-y-4">
