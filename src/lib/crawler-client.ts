@@ -2,17 +2,20 @@ import 'server-only'
 
 import { env } from '@/env'
 
-const DEFAULT_ARTIST_CRAWL_ACTIONS = [
-  'crawl-artist-by-id',
-  'crawl-artist',
-  'artist-crawl',
-]
+const DEFAULT_ARTIST_CRAWL_ACTIONS = ['crawl-artist-by-id', 'crawl-artist', 'artist-crawl']
 
 export interface TriggerArtistCrawlResult {
   attempted: boolean
   success: boolean
   message: string
   action?: string
+}
+
+export interface TriggerArtworkArchiveResult {
+  attempted: boolean
+  success: boolean
+  message: string
+  requestedSizes: string[]
 }
 
 async function postCrawlerAction(action: string, payload: Record<string, unknown>) {
@@ -41,7 +44,7 @@ export async function triggerArtistCrawlById(
     return {
       attempted: false,
       success: false,
-      message: '未配置 CRAWLER_SERVER_URL，跳过爬虫触发',
+      message: 'CRAWLER_SERVER_URL is not configured, skip crawler trigger',
     }
   }
 
@@ -53,17 +56,69 @@ export async function triggerArtistCrawlById(
           attempted: true,
           success: true,
           action,
-          message: `已触发爬虫任务 (${action})`,
+          message: `Crawler triggered (${action})`,
         }
       }
     } catch {
-      // 尝试下一个 action
+      // Try the next compatible action name.
     }
   }
 
   return {
     attempted: true,
     success: false,
-    message: '爬虫接口未命中已知 action，已返回本地候选结果',
+    message: 'Crawler endpoint did not accept any known artist crawl action',
+  }
+}
+
+export async function triggerArtworkArchiveByPid(
+  pid: string,
+  requestedSizes: string[]
+): Promise<TriggerArtworkArchiveResult> {
+  const sizes = Array.from(
+    new Set(
+      requestedSizes
+        .map((item) => item.trim())
+        .filter(Boolean)
+    )
+  )
+
+  if (!env.CRAWLER_SERVER_URL) {
+    return {
+      attempted: false,
+      success: false,
+      requestedSizes: sizes,
+      message: 'CRAWLER_SERVER_URL is not configured, skip archive trigger',
+    }
+  }
+
+  try {
+    const result = await postCrawlerAction('batch-download', {
+      pids: [pid],
+      sizes,
+    })
+
+    if (!result.ok) {
+      return {
+        attempted: true,
+        success: false,
+        requestedSizes: sizes,
+        message: `Archive trigger failed with HTTP ${result.status}`,
+      }
+    }
+
+    return {
+      attempted: true,
+      success: true,
+      requestedSizes: sizes,
+      message: `Archive triggered (${sizes.join(', ')})`,
+    }
+  } catch (error) {
+    return {
+      attempted: true,
+      success: false,
+      requestedSizes: sizes,
+      message: error instanceof Error ? error.message : 'Archive trigger failed',
+    }
   }
 }

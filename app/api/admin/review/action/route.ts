@@ -2,6 +2,7 @@ import { ZodError } from 'zod'
 import { NextRequest, NextResponse } from 'next/server'
 
 import { verifyAdminRequest } from '@/lib/admin-auth'
+import { triggerArtworkArchiveByPid } from '@/lib/crawler-client'
 import { parseJsonBody } from '@/lib/validation/request'
 import { adminReviewActionSchema } from '@/lib/validation/admin'
 import {
@@ -19,7 +20,9 @@ function validationErrorResponse(error: ZodError) {
 
 export async function POST(request: NextRequest) {
   const isAdmin = await verifyAdminRequest(request)
-  if (!isAdmin) return NextResponse.json({ success: false, error: '未授权' }, { status: 401 })
+  if (!isAdmin) {
+    return NextResponse.json({ success: false, error: '未授权' }, { status: 401 })
+  }
 
   try {
     const payload = await parseJsonBody(request, adminReviewActionSchema)
@@ -30,13 +33,27 @@ export async function POST(request: NextRequest) {
 
     await recordArtworkReviewAction(payload.pid, payload.action, payload.note)
 
+    let archiveMessage: string | null = null
+
     if (payload.action === 'reject') {
       await setArtworkUnfitStatus(payload.pid, true)
     } else if (payload.action === 'favorite') {
       await setArtworkUnfitStatus(payload.pid, false)
+
+      const archiveResult = await triggerArtworkArchiveByPid(payload.pid, ['regular', 'original'])
+      archiveMessage = archiveResult.message
+
+      if (archiveResult.attempted && !archiveResult.success) {
+        console.warn(
+          `favorite archive trigger failed for pid=${payload.pid}: ${archiveResult.message}`
+        )
+      }
     }
 
-    return NextResponse.json({ success: true })
+    return NextResponse.json({
+      success: true,
+      data: archiveMessage ? { archiveMessage } : undefined,
+    })
   } catch (error) {
     if (error instanceof ZodError) return validationErrorResponse(error)
 
