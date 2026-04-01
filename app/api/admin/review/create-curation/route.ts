@@ -9,10 +9,15 @@ import {
   addTopicFeatureArtworkRecord,
   createDailyPickRecord,
   createTopicFeatureRecord,
+  getCandidateArtworksByPids,
   getDailyPickExists,
   getTopicFeatureSlugExists,
   isArtworkPublishedInCuration,
 } from '@/db/curation'
+import {
+  generateDailyPickContent,
+  generateTopicFeatureContent,
+} from '@/lib/curation-content-generator'
 
 function validationErrorResponse(error: ZodError) {
   return NextResponse.json(
@@ -63,6 +68,21 @@ export async function POST(request: NextRequest) {
       )
     }
 
+    const artworks = await getCandidateArtworksByPids(pids)
+    if (artworks.length !== pids.length) {
+      const artworkPidSet = new Set(artworks.map((artwork) => String(artwork.id)))
+      const missingPids = pids.filter((pid) => !artworkPidSet.has(pid))
+
+      return NextResponse.json(
+        {
+          success: false,
+          error: `有 ${missingPids.length} 张作品尚未入库，无法创建栏目`,
+          data: { missingPids },
+        },
+        { status: 400 }
+      )
+    }
+
     if (payload.type === 'daily') {
       const exists = await getDailyPickExists(payload.pickDate, 'daily_art')
       if (exists) {
@@ -72,11 +92,16 @@ export async function POST(request: NextRequest) {
         )
       }
 
+      const generated = generateDailyPickContent({
+        pickDate: payload.pickDate,
+        artworks,
+      })
+
       const id = await createDailyPickRecord({
         pickDate: payload.pickDate,
         pickType: 'daily_art',
-        title: payload.title,
-        description: payload.description,
+        title: payload.title ?? generated.title,
+        description: payload.description ?? generated.description,
         coverPid: pids[0],
       })
 
@@ -85,7 +110,7 @@ export async function POST(request: NextRequest) {
       }
 
       for (let i = 0; i < pids.length; i += 1) {
-        await addDailyPickArtworkRecord(id, pids[i], i)
+        await addDailyPickArtworkRecord(id, pids[i], i, generated.artworkCommentsByPid[pids[i]])
       }
 
       return NextResponse.json({
@@ -99,13 +124,18 @@ export async function POST(request: NextRequest) {
       ? `${baseSlug}-${Date.now().toString().slice(-6)}`
       : baseSlug
 
+    const generated = generateTopicFeatureContent({
+      topicName: payload.topicName,
+      artworks,
+    })
+
     const id = await createTopicFeatureRecord({
       topicName: payload.topicName,
       topicSlug: finalSlug,
-      topicDescription: payload.topicDescription,
-      featureContent: payload.featureContent,
+      topicDescription: payload.topicDescription ?? generated.topicDescription,
+      featureContent: payload.featureContent ?? generated.featureContent,
       coverPid: pids[0],
-      tags: payload.tags,
+      tags: payload.tags ?? generated.tags,
     })
 
     if (!id) {
@@ -113,7 +143,7 @@ export async function POST(request: NextRequest) {
     }
 
     for (let i = 0; i < pids.length; i += 1) {
-      await addTopicFeatureArtworkRecord(id, pids[i], i)
+      await addTopicFeatureArtworkRecord(id, pids[i], i, generated.artworkCommentsByPid[pids[i]])
     }
 
     return NextResponse.json({

@@ -1,6 +1,6 @@
 import 'server-only'
 
-import { and, desc, eq, isNotNull, isNull, like, or, sql } from 'drizzle-orm'
+import { and, desc, eq, inArray, isNotNull, isNull, like, or, sql } from 'drizzle-orm'
 
 import { db } from '@/db/client'
 import {
@@ -397,6 +397,40 @@ export async function getArtworkAdminList(page: number, limit: number, search?: 
     })),
     total: Number(count) || 0,
   }
+}
+
+export async function getCandidateArtworksByPids(pids: string[]) {
+  const orderedPids = pids.map((pid) => pid.trim()).filter(Boolean)
+  const uniquePids = Array.from(new Set(orderedPids))
+
+  if (uniquePids.length === 0) {
+    return []
+  }
+
+  const rows = await db
+    .select({
+      pid: pic.pid,
+      title: pic.title,
+      authorId: pic.authorId,
+      authorName: pic.authorName,
+      tag: pic.tag,
+      imageUrl: pic.imageUrl,
+      imagePath: pic.imagePath,
+      good: pic.good,
+      star: pic.star,
+      view: pic.view,
+      popularity: pic.popularity,
+      uploadTime: pic.uploadTime,
+    })
+    .from(pic)
+    .where(inArray(pic.pid, uniquePids))
+
+  const rowMap = new Map(rows.map((row) => [row.pid, row]))
+
+  return orderedPids
+    .map((pid) => rowMap.get(pid))
+    .filter((row): row is CandidateArtworkRow => Boolean(row))
+    .map(mapCandidateArtwork)
 }
 
 async function getReviewedArtworkPidSet() {

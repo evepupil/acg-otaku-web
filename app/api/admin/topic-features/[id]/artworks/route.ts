@@ -2,19 +2,21 @@ import { ZodError } from 'zod'
 import { NextRequest, NextResponse } from 'next/server'
 
 import { getTopicFeatureById } from '@/db/content'
+import {
+  addTopicFeatureArtworkRecord,
+  getCandidateArtworksByPids,
+  getTopicFeatureArtworkLinkExists,
+  isArtworkPublishedInCuration,
+  removeTopicFeatureArtworkRecord,
+} from '@/db/curation'
 import { verifyAdminRequest } from '@/lib/admin-auth'
+import { generateArtworkComment } from '@/lib/curation-content-generator'
 import {
   adminPidQuerySchema,
   adminRouteIdSchema,
   createCurationArtworkLinkSchema,
 } from '@/lib/validation/admin'
 import { parseJsonBody, parseSearchParams } from '@/lib/validation/request'
-import {
-  addTopicFeatureArtworkRecord,
-  getTopicFeatureArtworkLinkExists,
-  isArtworkPublishedInCuration,
-  removeTopicFeatureArtworkRecord,
-} from '@/db/curation'
 
 function validationErrorResponse(error: ZodError) {
   return NextResponse.json(
@@ -25,7 +27,9 @@ function validationErrorResponse(error: ZodError) {
 
 export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const isAdmin = await verifyAdminRequest(request)
-  if (!isAdmin) return NextResponse.json({ success: false, error: '未授权' }, { status: 401 })
+  if (!isAdmin) {
+    return NextResponse.json({ success: false, error: '未授权' }, { status: 401 })
+  }
 
   try {
     const { id } = adminRouteIdSchema.parse(await params)
@@ -48,21 +52,43 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
 
 export async function POST(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const isAdmin = await verifyAdminRequest(request)
-  if (!isAdmin) return NextResponse.json({ success: false, error: '未授权' }, { status: 401 })
+  if (!isAdmin) {
+    return NextResponse.json({ success: false, error: '未授权' }, { status: 401 })
+  }
 
   try {
     const { id } = adminRouteIdSchema.parse(await params)
     const payload = await parseJsonBody(request, createCurationArtworkLinkSchema)
+    const feature = await getTopicFeatureById(id)
+
+    if (!feature) {
+      return NextResponse.json({ success: false, error: '未找到该记录' }, { status: 404 })
+    }
 
     if (await getTopicFeatureArtworkLinkExists(id, payload.pid)) {
       return NextResponse.json({ success: false, error: '作品已在当前专题中' }, { status: 409 })
     }
 
     if (await isArtworkPublishedInCuration(payload.pid)) {
-      return NextResponse.json({ success: false, error: '该作品已在已发布栏目中，不能重复发布' }, { status: 409 })
+      return NextResponse.json(
+        { success: false, error: '该作品已在已发布栏目中，不能重复发布' },
+        { status: 409 }
+      )
     }
 
-    await addTopicFeatureArtworkRecord(id, payload.pid, payload.sortOrder, payload.editorComment)
+    const artwork = (await getCandidateArtworksByPids([payload.pid]))[0]
+    const editorComment = payload.editorComment ?? (
+      artwork
+        ? generateArtworkComment({
+            artwork,
+            artworks: [...feature.artworks, artwork],
+            mode: 'topic',
+            topicName: feature.topicName,
+          })
+        : undefined
+    )
+
+    await addTopicFeatureArtworkRecord(id, payload.pid, payload.sortOrder, editorComment)
     return NextResponse.json({ success: true })
   } catch (error) {
     if (error instanceof ZodError) {
@@ -74,9 +100,14 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
   }
 }
 
-export async function DELETE(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+export async function DELETE(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
   const isAdmin = await verifyAdminRequest(request)
-  if (!isAdmin) return NextResponse.json({ success: false, error: '未授权' }, { status: 401 })
+  if (!isAdmin) {
+    return NextResponse.json({ success: false, error: '未授权' }, { status: 401 })
+  }
 
   try {
     const { id } = adminRouteIdSchema.parse(await params)
