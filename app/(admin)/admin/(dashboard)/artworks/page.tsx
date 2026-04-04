@@ -47,6 +47,7 @@ export default function ArtworksPage() {
   const [favoriteSearch, setFavoriteSearch] = useState('')
   const [favoriteTag, setFavoriteTag] = useState('')
   const [favoriteArtistId, setFavoriteArtistId] = useState('')
+  const [favoriteSortBy, setFavoriteSortBy] = useState<'reviewed_desc' | 'pid_desc'>('reviewed_desc')
   const [selectedFavoritePids, setSelectedFavoritePids] = useState<string[]>([])
   const [tagHistory, setTagHistory] = useState<string[]>([])
 
@@ -139,6 +140,7 @@ export default function ArtworksPage() {
       if (favoriteSearch.trim()) params.set('search', favoriteSearch.trim())
       if (favoriteTag.trim()) params.set('tag', favoriteTag.trim())
       if (favoriteArtistId.trim()) params.set('artistId', favoriteArtistId.trim())
+      params.set('sortBy', favoriteSortBy)
 
       const res = await fetch(`/api/admin/review/favorites?${params.toString()}`)
       const data = await res.json()
@@ -154,7 +156,7 @@ export default function ArtworksPage() {
     } finally {
       setFavoritesLoading(false)
     }
-  }, [favoriteArtistId, favoritePagination.limit, favoriteSearch, favoriteTag, saveTagHistory])
+  }, [favoriteArtistId, favoritePagination.limit, favoriteSearch, favoriteSortBy, favoriteTag, saveTagHistory])
 
   useEffect(() => {
     if (activeTab === 'review') {
@@ -513,6 +515,14 @@ export default function ArtworksPage() {
                 placeholder="画师 ID"
                 className="px-3 py-2 border border-gray-200 rounded-xl text-sm"
               />
+              <select
+                value={favoriteSortBy}
+                onChange={(e) => setFavoriteSortBy(e.target.value as 'reviewed_desc' | 'pid_desc')}
+                className="px-3 py-2 border border-gray-200 rounded-xl text-sm bg-white"
+              >
+                <option value="reviewed_desc">按收藏时间</option>
+                <option value="pid_desc">按 PID 新到旧</option>
+              </select>
               <button
                 onClick={() => fetchFavorites(1)}
                 disabled={favoritesLoading}

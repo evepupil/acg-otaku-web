@@ -133,6 +133,8 @@ export interface FavoriteArtworkListResult {
   total: number
 }
 
+export type FavoriteArtworkSort = 'reviewed_desc' | 'pid_desc'
+
 const DEFAULT_ARTIST_AVATAR_URL =
   'https://trae-api-sg.mchost.guru/api/ide/v1/text_to_image?prompt=anime%20artist%20avatar%20profile%20picture&image_size=square'
 
@@ -748,6 +750,7 @@ export async function getFavoriteArtworks(
     tag?: string
     artistId?: string
     excludePublished?: boolean
+    sortBy?: FavoriteArtworkSort
   }
 ): Promise<FavoriteArtworkListResult> {
   const offset = (page - 1) * limit
@@ -773,6 +776,11 @@ export async function getFavoriteArtworks(
   }
 
   const where = and(...conditions)
+  const orderBy =
+    options?.sortBy === 'pid_desc'
+      ? [sql`CAST(${pic.pid} AS INTEGER) DESC`, desc(artworkReview.reviewedAt)]
+      : [desc(artworkReview.reviewedAt), desc(pic.uploadTime)]
+
   const rows = await db
     .select({
       pid: pic.pid,
@@ -792,7 +800,7 @@ export async function getFavoriteArtworks(
     .from(artworkReview)
     .innerJoin(pic, eq(artworkReview.pid, pic.pid))
     .where(where)
-    .orderBy(desc(artworkReview.reviewedAt), desc(pic.uploadTime))
+    .orderBy(...orderBy)
 
   const publishedSet = options?.excludePublished ? await getPublishedArtworkPidSet() : new Set<string>()
   const filteredRows = rows.filter((row) => !publishedSet.has(row.pid))

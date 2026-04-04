@@ -183,6 +183,7 @@ export const adminFavoriteListQuerySchema = z.object({
   tag: optionalText.transform((value) => value && value.length > 0 ? value : undefined),
   artistId: optionalText.transform((value) => value && value.length > 0 ? value : undefined),
   excludePublished: booleanQuery.default(true),
+  sortBy: z.enum(['reviewed_desc', 'pid_desc']).default('reviewed_desc'),
 })
 
 const createDailyFromFavoritesSchema = z.object({
