@@ -23,10 +23,12 @@ interface TagInsight {
   key: string
   label: string
   count: number
+  priority: number
 }
 
 interface TagSummary {
   topTags: TagInsight[]
+  topSpecificTags: TagInsight[]
   characterTags: string[]
   sceneTags: string[]
   styleTags: string[]
@@ -60,6 +62,13 @@ interface ArtworkCommentInput {
   artistName?: string
 }
 
+interface NormalizedTag {
+  key: string
+  label: string
+  priority: number
+  isGeneric: boolean
+}
+
 export interface GeneratedDailyPickContent extends GeneratedCurationContent {
   title: string
   description: string
@@ -91,49 +100,86 @@ const STOP_TAG_EXACT = new Set([
   'r-18g',
   'イラスト',
   'オリジナル',
-  '创作',
+  '創作',
+  '原创',
+  '插画',
+  '二次元',
+  'anime',
+  'art',
+  'fanart',
+  'かわいい',
+  '可爱',
+  '好看',
+  '太美了',
+  '綺麗',
+])
+
+const GENERIC_TAG_LABELS = new Set([
+  '少女',
+  '女孩子',
+  '美少女',
+  '长发女孩',
+  '角色',
+  '原创',
+  '插画',
+  '头像',
+  '壁纸',
+])
+
+const WEAK_TAG_LABELS = new Set([
+  '少女',
+  '女孩子',
+  '美少女',
+  '角色',
   '原创',
   '插画',
 ])
 
 const STOP_TAG_PATTERNS = [
-  /^\d+users入り$/i,
-  /^\d+user入り$/i,
-  /^users入り$/i,
-  /^ブックマーク\d+$/i,
+  /^\d+(users入り|user入り)$/i,
+  /^\d+(收藏|收藏数|点赞|喜欢)$/i,
+  /users入り/i,
+  /收藏\d*/i,
+  /\d+收藏/i,
   /ブックマーク/i,
+  /bookmark/i,
   /ranking/i,
   /ランキング/i,
+  /dailyranking/i,
+  /weeklyranking/i,
+  /monthlyranking/i,
 ]
 
-const TAG_ALIAS_GROUPS: Array<{ label: string; aliases: string[] }> = [
-  { label: '少女', aliases: ['女の子', 'girl', 'girls', '女孩', '女生', '少女'] },
-  { label: '少年', aliases: ['男の子', 'boy', 'boys', '男孩', '男生', '少年'] },
-  { label: '长发', aliases: ['ロングヘア', 'longhair', 'long hair', '長髪', '长发'] },
-  { label: '短发', aliases: ['ショートヘア', 'shorthair', 'short hair', '短髪', '短发'] },
-  { label: '白发', aliases: ['白髪', 'whitehair', 'white hair', '白发'] },
-  { label: '黑发', aliases: ['黒髪', 'blackhair', 'black hair', '黑发'] },
-  { label: '金发', aliases: ['金髪', 'blonde', 'blondehair', 'blonde hair', '金发'] },
-  { label: '双马尾', aliases: ['ツインテール', 'twintails', 'twin tails', '双马尾'] },
-  { label: '兽耳', aliases: ['ケモ耳', '獣耳', 'animalears', 'animal ears', '兽耳'] },
-  { label: '制服', aliases: ['schooluniform', 'school uniform', '制服'] },
-  { label: '和服', aliases: ['着物', 'kimono', '和服'] },
-  { label: '泳装', aliases: ['水着', 'swimsuit', '泳装'] },
-  { label: '眼镜', aliases: ['megane', 'glasses', '眼鏡', '眼镜'] },
-  { label: '天空', aliases: ['sky', '青空', '空', '天空'] },
-  { label: '海边', aliases: ['sea', 'beach', 'ocean', '海', '海辺', '海边'] },
-  { label: '夜景', aliases: ['night', 'nightview', 'night view', '夜景', '夜空'] },
-  { label: '樱花', aliases: ['桜', 'sakura', 'cherryblossom', 'cherry blossom', '樱花'] },
-  { label: '雨景', aliases: ['rain', '雨', '雨景'] },
-  { label: '光影', aliases: ['lighting', 'light', '光', '光影'] },
-  { label: '氛围感', aliases: ['mood', 'atmosphere', '雰囲気', '氛围感'] },
-  { label: '壁纸', aliases: ['wallpaper', '壁紙', '壁纸'] },
-  { label: '头像', aliases: ['icon', 'profile', 'avatar', '头像'] },
+const TAG_ALIAS_GROUPS: Array<{ label: string; aliases: string[]; priority?: number }> = [
+  { label: '少女', aliases: ['女の子', 'girl', 'girls', '女孩', '女生', '少女', '女孩子'], priority: 0 },
+  { label: '美少女', aliases: ['bishoujo', 'beautiful girl', '美少女'], priority: 0 },
+  { label: '长发', aliases: ['ロングヘア', 'longhair', 'long hair', '長髪', '长发'], priority: 2 },
+  { label: '短发', aliases: ['ショートヘア', 'shorthair', 'short hair', '短髪', '短发'], priority: 2 },
+  { label: '白发', aliases: ['白髪', 'whitehair', 'white hair', '白发'], priority: 2 },
+  { label: '黑发', aliases: ['黒髪', 'blackhair', 'black hair', '黑发'], priority: 2 },
+  { label: '金发', aliases: ['金髪', 'blonde', 'blondehair', 'blonde hair', '金发'], priority: 2 },
+  { label: '双马尾', aliases: ['ツインテール', 'twintails', 'twin tails', '双马尾'], priority: 3 },
+  { label: '兽耳', aliases: ['ケモ耳', '獣耳', 'animalears', 'animal ears', '兽耳'], priority: 3 },
+  { label: '制服', aliases: ['schooluniform', 'school uniform', '制服'], priority: 4 },
+  { label: '和服', aliases: ['着物', 'kimono', '和服'], priority: 4 },
+  { label: '旗袍', aliases: ['チャイナドレス', 'qipao', 'cheongsam', '旗袍'], priority: 5 },
+  { label: '泳装', aliases: ['水着', 'swimsuit', '泳装'], priority: 4 },
+  { label: '眼镜', aliases: ['megane', 'glasses', '眼鏡', '眼镜'], priority: 3 },
+  { label: '天空', aliases: ['sky', '青空', '空', '天空'], priority: 3 },
+  { label: '海边', aliases: ['sea', 'beach', 'ocean', '海', '海辺', '海边'], priority: 4 },
+  { label: '夜景', aliases: ['night', 'nightview', 'night view', '夜景', '夜空'], priority: 4 },
+  { label: '樱花', aliases: ['桜', 'sakura', 'cherryblossom', 'cherry blossom', '樱花'], priority: 4 },
+  { label: '雨景', aliases: ['rain', '雨', '雨景'], priority: 4 },
+  { label: '雪景', aliases: ['雪', 'snow', 'snowing', '雪景'], priority: 5 },
+  { label: '光影', aliases: ['lighting', 'light', '光', '光影'], priority: 4 },
+  { label: '氛围感', aliases: ['mood', 'atmosphere', '雰囲気', '氛围感'], priority: 4 },
+  { label: '壁纸感', aliases: ['wallpaper', '壁紙', '壁纸'], priority: 1 },
+  { label: '头像感', aliases: ['icon', 'profile', 'avatar', '头像'], priority: 1 },
 ]
 
 const CHARACTER_KEYWORDS = [
   '少女',
-  '少年',
+  '美少女',
   '长发',
   '短发',
   '白发',
@@ -143,6 +189,7 @@ const CHARACTER_KEYWORDS = [
   '兽耳',
   '制服',
   '和服',
+  '旗袍',
   '泳装',
   '眼镜',
   '兔女郎',
@@ -157,7 +204,7 @@ const SCENE_KEYWORDS = [
   '夜景',
   '樱花',
   '雨景',
-  '雪',
+  '雪景',
   '城市',
   '街道',
   '教室',
@@ -172,8 +219,8 @@ const SCENE_KEYWORDS = [
 const STYLE_KEYWORDS = [
   '光影',
   '氛围感',
-  '壁纸',
-  '头像',
+  '壁纸感',
+  '头像感',
   '厚涂',
   '水彩',
   '赛璐璐',
@@ -183,9 +230,19 @@ const STYLE_KEYWORDS = [
   '色彩',
 ]
 
-const TAG_ALIAS_MAP = new Map<string, string>(
+const TAG_ALIAS_MAP = new Map<
+  string,
+  { label: string; priority: number; isGeneric: boolean }
+>(
   TAG_ALIAS_GROUPS.flatMap((group) =>
-    group.aliases.map((alias) => [normalizeTagKey(alias), group.label] as const)
+    group.aliases.map((alias) => [
+      normalizeTagKey(alias),
+      {
+        label: group.label,
+        priority: group.priority ?? 1,
+        isGeneric: GENERIC_TAG_LABELS.has(group.label),
+      },
+    ] as const)
   )
 )
 
@@ -204,55 +261,83 @@ function sanitizeText(value: string) {
   return value.replace(/\s+/g, ' ').trim()
 }
 
-function normalizeTagLabel(tag: string) {
+function hasTooManyDigits(value: string) {
+  const digitMatches = value.match(/\d/g) ?? []
+  return digitMatches.length >= 4
+}
+
+function shouldDiscardTag(display: string, key: string) {
+  if (STOP_TAG_EXACT.has(key)) {
+    return true
+  }
+
+  if (STOP_TAG_PATTERNS.some((pattern) => pattern.test(display) || pattern.test(key))) {
+    return true
+  }
+
+  if (hasTooManyDigits(display) && /(收藏|users入り|bookmark|ranking|排行|热度)/i.test(display)) {
+    return true
+  }
+
+  if (display.length > 24) {
+    return true
+  }
+
+  return false
+}
+
+function getTagPriority(label: string, fallback = 1) {
+  if (WEAK_TAG_LABELS.has(label)) {
+    return 0
+  }
+
+  if (STYLE_KEYWORDS.some((keyword) => label.includes(keyword))) {
+    return Math.max(fallback, 3)
+  }
+
+  if (SCENE_KEYWORDS.some((keyword) => label.includes(keyword))) {
+    return Math.max(fallback, 4)
+  }
+
+  if (CHARACTER_KEYWORDS.some((keyword) => label.includes(keyword))) {
+    return Math.max(fallback, 2)
+  }
+
+  return fallback
+}
+
+function normalizeTagLabel(tag: string): NormalizedTag | null {
   const display = sanitizeText(tag)
   if (!display) {
     return null
   }
 
   const key = normalizeTagKey(display)
-  if (!key) {
-    return null
-  }
-
-  if (STOP_TAG_EXACT.has(key) || STOP_TAG_PATTERNS.some((pattern) => pattern.test(key))) {
+  if (!key || shouldDiscardTag(display, key)) {
     return null
   }
 
   const alias = TAG_ALIAS_MAP.get(key)
   if (alias) {
-    return { key: normalizeTagKey(alias), label: alias }
+    return {
+      key: normalizeTagKey(alias.label),
+      label: alias.label,
+      priority: alias.priority,
+      isGeneric: alias.isGeneric,
+    }
   }
 
-  if (key.includes('longhair') || key.includes('ロング')) {
-    return { key: normalizeTagKey('长发'), label: '长发' }
-  }
-
-  if (key.includes('shorthair') || key.includes('ショート')) {
-    return { key: normalizeTagKey('短发'), label: '短发' }
-  }
-
-  if (key.includes('whitehair') || key.includes('白髪')) {
-    return { key: normalizeTagKey('白发'), label: '白发' }
-  }
-
-  if (key.includes('blackhair') || key.includes('黒髪')) {
-    return { key: normalizeTagKey('黑发'), label: '黑发' }
-  }
-
-  if (key.includes('twintail') || key.includes('ツインテール')) {
-    return { key: normalizeTagKey('双马尾'), label: '双马尾' }
-  }
-
-  if (key.includes('lighting') || key.includes('light')) {
-    return { key: normalizeTagKey('光影'), label: '光影' }
-  }
-
-  if (display.length > 20) {
+  if (display.length > 18) {
     return null
   }
 
-  return { key, label: display }
+  const isGeneric = GENERIC_TAG_LABELS.has(display)
+  return {
+    key,
+    label: display,
+    priority: getTagPriority(display),
+    isGeneric,
+  }
 }
 
 function collectTagSummary(artworks: CurationArtworkSource[]): TagSummary {
@@ -278,26 +363,33 @@ function collectTagSummary(artworks: CurationArtworkSource[]): TagSummary {
           key: normalized.key,
           label: normalized.label,
           count: 1,
+          priority: normalized.priority,
         })
       }
     }
   }
 
   const sorted = Array.from(counters.values()).sort((left, right) => {
-    if (right.count !== left.count) {
-      return right.count - left.count
+    const rightScore = right.count * 10 + right.priority
+    const leftScore = left.count * 10 + left.priority
+    if (rightScore !== leftScore) {
+      return rightScore - leftScore
     }
     return left.label.localeCompare(right.label, 'zh-Hans-CN')
   })
 
+  const topSpecificTags = sorted.filter((item) => item.priority > 0)
+
   const pickCategoryTags = (keywords: string[]) =>
     sorted
+      .filter((item) => item.priority > 0)
       .filter((item) => keywords.some((keyword) => item.label.includes(keyword)))
       .slice(0, 3)
       .map((item) => item.label)
 
   return {
     topTags: sorted.slice(0, 8),
+    topSpecificTags: topSpecificTags.slice(0, 8),
     characterTags: pickCategoryTags(CHARACTER_KEYWORDS),
     sceneTags: pickCategoryTags(SCENE_KEYWORDS),
     styleTags: pickCategoryTags(STYLE_KEYWORDS),
@@ -319,8 +411,8 @@ function formatDisplayDate(pickDate: string) {
 }
 
 function getFallbackFocus(artwork: CurationArtworkSource) {
-  if (artwork.title && artwork.title.trim()) {
-    return '主体表现'
+  if (artwork.title && artwork.title.trim() && artwork.title.trim().length <= 18) {
+    return artwork.title.trim()
   }
 
   return '画面氛围'
@@ -329,7 +421,7 @@ function getFallbackFocus(artwork: CurationArtworkSource) {
 function getArtworkFocusTags(artwork: CurationArtworkSource, summary: TagSummary) {
   const normalized = artwork.tags
     .map((tag) => normalizeTagLabel(tag))
-    .filter((item): item is NonNullable<typeof item> => Boolean(item))
+    .filter((item): item is NormalizedTag => Boolean(item))
 
   const seen = new Set<string>()
   const unique = normalized.filter((item) => {
@@ -340,14 +432,27 @@ function getArtworkFocusTags(artwork: CurationArtworkSource, summary: TagSummary
     return true
   })
 
-  const topKeySet = new Set(summary.topTags.map((item) => item.key))
-  const prioritized = [
-    ...unique.filter((item) => topKeySet.has(item.key)),
-    ...unique.filter((item) => !topKeySet.has(item.key)),
+  const topSpecificKeySet = new Set(summary.topSpecificTags.map((item) => item.key))
+  const preferred = unique.filter((item) => topSpecificKeySet.has(item.key) && item.priority > 0)
+  const specific = unique.filter((item) => item.priority > 0)
+  const generic = unique.filter((item) => item.priority === 0)
+
+  const labels = [
+    ...preferred.map((item) => item.label),
+    ...specific.map((item) => item.label),
+    ...generic.map((item) => item.label),
   ]
 
-  const labels = prioritized.slice(0, 2).map((item) => item.label)
-  return labels.length > 0 ? labels : [getFallbackFocus(artwork)]
+  return Array.from(new Set(labels)).slice(0, 2).length > 0
+    ? Array.from(new Set(labels)).slice(0, 2)
+    : [getFallbackFocus(artwork)]
+}
+
+function buildNaturalFocusText(focusTags: string[]) {
+  if (focusTags.length === 1) {
+    return focusTags[0]
+  }
+  return `${focusTags[0]}和${focusTags[1]}`
 }
 
 function buildArtworkComment(
@@ -356,16 +461,17 @@ function buildArtworkComment(
   input: Omit<ArtworkCommentInput, 'artwork' | 'artworks'>
 ) {
   const focusTags = getArtworkFocusTags(artwork, summary)
-  const focusText = focusTags.join('、')
-  const variantSeed = Number(String(artwork.id).slice(-2)) % 4
+  const focusText = buildNaturalFocusText(focusTags)
+  const variantSeed = Number(String(artwork.id).slice(-2)) % 5
 
   if (input.mode === 'topic') {
     const topicName = input.topicName || '当前专题'
     const templates = [
-      `这张作品把 ${focusText} 放在同一画面里，和「${topicName}」专题的方向贴合度很高，适合作为本组内容里的代表图。`,
-      `画面重点落在 ${focusText} 上，主题表达直接，放进「${topicName}」这一组里辨识度比较高。`,
-      `这张图在 ${focusText} 上的信息更集中，既能体现「${topicName}」的核心元素，也方便读者快速抓住专题重点。`,
-      `围绕 ${focusText} 展开的视觉信息比较完整，和「${topicName}」专题强调的内容形成了稳定呼应。`,
+      `这张最容易留下印象的地方，是 ${focusText} 这一块做得比较集中，放进「${topicName}」里会更容易把主题立住。`,
+      `相比同组作品，这张在 ${focusText} 上更有辨识度，拿来放在「${topicName}」里做支点会比较合适。`,
+      `这张的优势不在信息量，而在 ${focusText} 处理得很完整，放进专题里会显得更稳。`,
+      `如果想让「${topicName}」不只是简单堆图，这张能提供比较明确的视觉重点，核心还是 ${focusText}。`,
+      `这张比较适合留在专题里做定调图，${focusText} 一出来，整组内容的方向就会清楚很多。`,
     ]
     return templates[variantSeed]
   }
@@ -373,19 +479,21 @@ function buildArtworkComment(
   if (input.mode === 'artist') {
     const artistName = input.artistName || artwork.artist?.name || '这位画师'
     const templates = [
-      `这张作品把 ${focusText} 放在同一画面里，能比较直接地体现 ${artistName} 在角色与氛围处理上的稳定风格。`,
-      `画面重点落在 ${focusText} 上，构图和情绪都很集中，适合作为观察 ${artistName} 个人表达的一张代表作。`,
-      `这张图在 ${focusText} 上的处理更完整，能够帮助读者快速理解 ${artistName} 这一组作品的审美方向。`,
-      `围绕 ${focusText} 展开的视觉信息比较充分，和 ${artistName} 这组作品里反复出现的气质形成了连贯呼应。`,
+      `这张里 ${focusText} 的处理很能说明 ${artistName} 的个人习惯，放进专题里会比较有代表性。`,
+      `如果要看 ${artistName} 的风格线索，这张会是比较直观的一张，重点基本都落在 ${focusText} 上。`,
+      `这张不算靠复杂设定取胜，但 ${focusText} 这部分做得很稳，能把 ${artistName} 的气质带出来。`,
+      `和同组作品放在一起看，这张在 ${focusText} 上更成熟，适合留下来说明 ${artistName} 的常用表达。`,
+      `这张最值得保留的原因，是 ${focusText} 处理得干净利落，很适合作为画师专题里的代表作之一。`,
     ]
     return templates[variantSeed]
   }
 
   const templates = [
-    `这张作品把 ${focusText} 放在同一画面里，角色情绪和视觉重心都比较明确，适合作为本期精选里的代表图。`,
-    `画面重点落在 ${focusText} 上，构图节奏干净，浏览时很容易留下记忆点。`,
-    `这张图在 ${focusText} 上的表达更集中，既能体现本期审美方向，也适合作为整组内容里的亮点补充。`,
-    `围绕 ${focusText} 展开的视觉信息比较完整，色彩和主体关系清楚，放进本期内容里辨识度很高。`,
+    `这张更打动人的地方，是 ${focusText} 这一块处理得比较完整，放在这一期里会比较容易拉开层次。`,
+    `和同组作品相比，它在 ${focusText} 上更有辨识度，第一眼就能把注意力抓住。`,
+    `这张不靠复杂信息取胜，重点是 ${focusText} 呈现得很干净，放进这一期里会比较舒服。`,
+    `画面里最出彩的还是 ${focusText} 的组合，既有记忆点，也不会破坏整组浏览节奏。`,
+    `这张的完成度主要体现在 ${focusText} 上，情绪很稳，适合留在这一期里做氛围补充。`,
   ]
   return templates[variantSeed]
 }
@@ -404,38 +512,45 @@ function buildArtworkCommentsByPid(
   return artworkCommentsByPid
 }
 
+function getLeadingTags(summary: TagSummary, limit: number) {
+  const source = summary.topSpecificTags.length > 0 ? summary.topSpecificTags : summary.topTags
+  return source.map((item) => item.label).slice(0, limit)
+}
+
 function buildDailyTitle(pickDate: string, summary: TagSummary) {
   const prefix = formatDisplayDate(pickDate)
-  const focus = joinReadableLabels(summary.topTags.map((item) => item.label), 3)
+  const leadingTags = getLeadingTags(summary, 2)
 
-  if (!focus) {
+  if (leadingTags.length === 0) {
     return `${prefix} 每日美图精选`
   }
 
-  return `${prefix} 每日美图精选：${focus}`
+  return `${prefix} 每日美图精选：${leadingTags.join('、')}`
 }
 
 function buildDailyDescription(artworks: CurationArtworkSource[], summary: TagSummary) {
-  const pieces = [`本期从 ${artworks.length} 张已收藏作品中整理出一组适合连续浏览的插画精选`]
+  const parts = [`这一期挑出的 ${artworks.length} 张作品，整体看下来画面方向比较统一`]
+  const leadingTags = getLeadingTags(summary, 3)
 
-  const topTagsText = joinReadableLabels(summary.topTags.map((item) => item.label), 4)
-  if (topTagsText) {
-    pieces.push(`主要视觉线索集中在 ${topTagsText}`)
+  if (leadingTags.length > 0) {
+    parts.push(`更容易反复看到 ${joinReadableLabels(leadingTags)} 这些元素`)
   }
 
   if (summary.characterTags.length > 0) {
-    pieces.push(`角色元素更偏向 ${joinReadableLabels(summary.characterTags, 2)}`)
+    parts.push(`角色侧主要集中在 ${joinReadableLabels(summary.characterTags, 2)}`)
   }
 
   if (summary.sceneTags.length > 0) {
-    pieces.push(`场景氛围常见于 ${joinReadableLabels(summary.sceneTags, 2)}`)
+    parts.push(`场景上则穿插了 ${joinReadableLabels(summary.sceneTags, 2)} 这样的变化`)
   }
 
-  if (summary.artistCount > 0) {
-    pieces.push(`当前共覆盖 ${summary.artistCount} 位画师的作品`)
+  if (summary.styleTags.length > 0) {
+    parts.push(`整体气质会更偏向 ${joinReadableLabels(summary.styleTags, 2)}`)
   }
 
-  return `${pieces.join('，')}。`
+  parts.push(`当前共覆盖 ${summary.artistCount} 位画师`)
+
+  return `${parts.join('，')}。`
 }
 
 function extractTopicKeywords(topicName: string) {
@@ -454,12 +569,12 @@ function buildTopicDescription(
   artworks: CurationArtworkSource[],
   summary: TagSummary
 ) {
-  const topTagsText = joinReadableLabels(summary.topTags.map((item) => item.label), 4)
-  if (!topTagsText) {
-    return `围绕 ${topicName} 整理的专题，当前收录 ${artworks.length} 张作品，适合快速浏览这一方向下不同画师的处理方式。`
+  const leadingTags = getLeadingTags(summary, 4)
+  if (leadingTags.length === 0) {
+    return `围绕 ${topicName} 整理出的专题，当前收录 ${artworks.length} 张作品，适合快速浏览这一方向下不同画师的处理方式。`
   }
 
-  return `围绕 ${topicName} 整理的专题，当前收录 ${artworks.length} 张作品，标签主要集中在 ${topTagsText}，适合快速浏览这一方向下不同画师的画面处理与情绪表达。`
+  return `围绕 ${topicName} 整理出的专题，当前收录 ${artworks.length} 张作品，比较稳定出现的元素有 ${joinReadableLabels(leadingTags)}，整体浏览起来会更容易看出这一题材的共性。`
 }
 
 function buildTopicFeatureContent(
@@ -467,16 +582,16 @@ function buildTopicFeatureContent(
   artworks: CurationArtworkSource[],
   summary: TagSummary
 ) {
-  const topTags = summary.topTags.map((item) => item.label)
+  const topTags = getLeadingTags(summary, 5)
   const topTagText = topTags.length > 0
-    ? topTags.slice(0, 5).map((tag) => `\`${tag}\``).join('、')
+    ? topTags.map((tag) => `\`${tag}\``).join('、')
     : '`角色表现`、`画面完成度`'
   const characterText = summary.characterTags.length > 0
     ? joinReadableLabels(summary.characterTags, 3)
     : '角色主体与造型细节'
   const sceneText = summary.sceneTags.length > 0
     ? joinReadableLabels(summary.sceneTags, 3)
-    : '背景氛围和画面空间关系'
+    : '背景氛围和空间关系'
   const styleText = summary.styleTags.length > 0
     ? joinReadableLabels(summary.styleTags, 3)
     : '色彩层次与视觉节奏'
@@ -485,38 +600,37 @@ function buildTopicFeatureContent(
   return [
     '## 专题概览',
     '',
-    `本期围绕 **${topicName}** 整理了 ${artworks.length} 张已收藏作品，优先挑选出在主题辨识度、画面完成度和浏览连贯性上表现稳定的素材，方便直接进入人工微审核和发布环节。`,
+    `这次围绕 **${topicName}** 整理了 ${artworks.length} 张作品，优先保留了主题明确、完成度稳定、连着看也不会打架的图，方便后续直接做人工微审核。`,
     '',
-    '## 标签词云',
+    '## 这组图在看什么',
     '',
-    `当前高频标签主要集中在 ${topTagText}。如果继续拆分，角色元素更偏向 ${characterText}，场景信息更常见于 ${sceneText}，风格表达则集中在 ${styleText}。`,
+    `目前最稳定出现的标签主要是 ${topTagText}。拆开来看，角色信息更偏向 ${characterText}，场景变化更多出现在 ${sceneText}，而整体风格则会落在 ${styleText} 这一类表达上。`,
     '',
-    '## 选图方向',
+    '## 选图建议',
     '',
     `- 优先保留能直接体现「${topicName}」主题的画面`,
-    `- 同时观察不同画师在 ${characterText} 上的处理差异`,
-    `- 补充 ${sceneText} 方向的作品，可以让整组内容更完整`,
+    `- 尽量让 ${characterText} 和 ${sceneText} 两类图都被覆盖到`,
+    `- 排版时可以让强主题图和氛围图交替出现，整篇会更耐看`,
     '',
-    '## 发布建议',
+    '## 后续扩充方向',
     '',
-    `如果后续继续扩充专题，建议优先补充 ${expansionText} 这些方向的素材，并维持封面图与正文图在视觉节奏上的层次差异。`,
+    `如果还要继续补图，建议优先沿着 ${expansionText} 这些方向扩充，专题会更完整。`,
   ].join('\n')
 }
 
 function buildDefaultTopicTags(topicName: string, summary: TagSummary) {
   const keywords = extractTopicKeywords(topicName)
-  const values = [...keywords, ...summary.topTags.map((item) => item.label).slice(0, 6)]
-
+  const values = [...keywords, ...getLeadingTags(summary, 6)]
   return Array.from(new Set(values)).join(',')
 }
 
 function buildArtistFeatureTitle(artistName: string, summary: TagSummary) {
-  const focus = joinReadableLabels(summary.topTags.map((item) => item.label), 2)
-  if (!focus) {
+  const leadingTags = getLeadingTags(summary, 2)
+  if (leadingTags.length === 0) {
     return `${artistName} 插画精选`
   }
 
-  return `${artistName} 插画精选：${focus}`
+  return `${artistName} 插画精选：${leadingTags.join('、')}`
 }
 
 function buildArtistFeatureContent(
@@ -524,9 +638,9 @@ function buildArtistFeatureContent(
   artworks: CurationArtworkSource[],
   summary: TagSummary
 ) {
-  const topTags = summary.topTags.map((item) => item.label)
+  const topTags = getLeadingTags(summary, 5)
   const topTagText = topTags.length > 0
-    ? topTags.slice(0, 5).map((tag) => `\`${tag}\``).join('、')
+    ? topTags.map((tag) => `\`${tag}\``).join('、')
     : '`角色塑造`、`画面氛围`'
   const characterText = summary.characterTags.length > 0
     ? joinReadableLabels(summary.characterTags, 3)
@@ -537,28 +651,25 @@ function buildArtistFeatureContent(
   const styleText = summary.styleTags.length > 0
     ? joinReadableLabels(summary.styleTags, 3)
     : '色彩控制、光影层次与画面节奏'
-  const artistCountText = summary.artistCount > 1
-    ? `当前样本里也混入了 ${summary.artistCount} 位画师，但整体仍以 ${artistName} 的风格线索为主。`
-    : `当前样本全部来自 ${artistName} 的作品，更适合用来观察其个人风格。`
 
   return [
     '## 画师概览',
     '',
-    `本期围绕 **${artistName}** 整理了 ${artworks.length} 张作品，优先保留在完成度、辨识度和连贯浏览体验上更稳定的素材，方便后续直接进入审核与发布。`,
+    `这次围绕 **${artistName}** 整理了 ${artworks.length} 张作品，优先挑出完成度稳定、风格辨识度高、放在同一篇里也能保持节奏的图。`,
     '',
-    '## 高频视觉元素',
+    '## 这一组的共同点',
     '',
-    `从当前作品里看，高频标签主要集中在 ${topTagText}。角色侧的关键词更偏向 ${characterText}，场景信息更常见于 ${sceneText}，而风格表达则集中在 ${styleText}。`,
+    `从当前样本看，出现频率更高的元素主要是 ${topTagText}。角色侧更容易看到 ${characterText}，场景则集中在 ${sceneText}，风格上的共同点更多体现在 ${styleText}。`,
     '',
-    '## 选图观察',
+    '## 看图时可以留意的地方',
     '',
-    `- 适合优先保留能直接体现 ${artistName} 个人辨识度的作品`,
-    `- 如果想让专题更完整，可以同时覆盖 ${characterText} 与 ${sceneText} 两类画面`,
-    `- 正文排版上建议穿插不同景别，避免整组图片节奏过于单一`,
+    `- 哪些作品最能体现 ${artistName} 的个人辨识度`,
+    `- 同一位画师在 ${characterText} 上会不会反复使用固定处理方式`,
+    `- 当画面转到 ${sceneText} 时，整体气质有没有明显变化`,
     '',
-    '## 使用建议',
+    '## 组稿建议',
     '',
-    `${artistCountText} 如果后续继续扩充这个专题，建议优先补充 ${joinReadableLabels(topTags, 3) || '代表性角色与场景'} 这些方向的作品。`,
+    `如果后续继续扩充这个专题，优先补充 ${joinReadableLabels(topTags, 3) || '代表性角色与场景'} 这几个方向，会更容易把画师专题做得完整。`,
   ].join('\n')
 }
 
