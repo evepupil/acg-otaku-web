@@ -218,13 +218,13 @@ export default function WatchTargetsPage() {
       const data = await res.json()
 
       if (!data.success) {
-        setError(data.error || 'Failed to load watch targets')
+        setError(data.error || '获取监控源失败')
         return
       }
 
       setItems(data.data.items || [])
     } catch {
-      setError('Failed to load watch targets')
+      setError('获取监控源失败')
     } finally {
       if (showRefreshing) setRefreshing(false)
       else setLoading(false)
@@ -270,7 +270,7 @@ export default function WatchTargetsPage() {
     const bizType = form.bizType.trim()
 
     if (!targetValue || !bizType) {
-      setError('Target value and biz type are required')
+      setError('目标值和业务类型不能为空')
       return
     }
 
@@ -297,15 +297,15 @@ export default function WatchTargetsPage() {
       const data = await res.json()
 
       if (!data.success) {
-        setError(data.error || 'Failed to save watch target')
+        setError(data.error || '保存监控源失败')
         return
       }
 
-      setMessage(editing ? 'Watch target updated' : 'Watch target created')
+      setMessage(editing ? '监控源已更新' : '监控源已创建')
       resetForm()
       await fetchTargets(true)
     } catch {
-      setError('Failed to save watch target')
+      setError('保存监控源失败')
     } finally {
       setSubmitting(false)
     }
@@ -314,12 +314,12 @@ export default function WatchTargetsPage() {
   const handleBatchSubmit = useCallback(async () => {
     const bizType = batchForm.bizType.trim()
     if (!bizType) {
-      setError('Batch import requires biz type')
+      setError('批量导入时必须填写业务类型')
       return
     }
 
     if (batchValues.length === 0) {
-      setError('Batch import requires at least one tag or artist id')
+      setError('请至少填写一个标签或画师 ID')
       return
     }
 
@@ -349,19 +349,19 @@ export default function WatchTargetsPage() {
       const data = await res.json()
 
       if (!data.success) {
-        setError(data.error || 'Failed to batch import watch targets')
+        setError(data.error || '批量导入监控源失败')
         return
       }
 
       const collectMessage = data.data.collectResult?.message
       setMessage(
         collectMessage
-          ? `Imported ${data.data.count} watch targets. ${collectMessage}`
-          : `Imported ${data.data.count} watch targets.`
+          ? `已导入 ${data.data.count} 条监控源。${collectMessage}`
+          : `已导入 ${data.data.count} 条监控源。`
       )
       await fetchTargets(true)
     } catch {
-      setError('Failed to batch import watch targets')
+      setError('批量导入监控源失败')
     } finally {
       setBatchSubmitting(false)
     }
@@ -369,7 +369,7 @@ export default function WatchTargetsPage() {
 
   const handleDelete = useCallback(
     async (id: number) => {
-      const confirmed = window.confirm('Delete this watch target?')
+      const confirmed = window.confirm('确认删除这条监控源吗？')
       if (!confirmed) return
 
       setDeletingTargetId(id)
@@ -385,15 +385,15 @@ export default function WatchTargetsPage() {
         const data = await res.json()
 
         if (!data.success) {
-          setError(data.error || 'Failed to delete watch target')
+          setError(data.error || '删除监控源失败')
           return
         }
 
         if (form.id === id) resetForm()
-        setMessage(`Watch target #${id} deleted`)
+        setMessage(`已删除监控源 #${id}`)
         await fetchTargets(true)
       } catch {
-        setError('Failed to delete watch target')
+        setError('删除监控源失败')
       } finally {
         setDeletingTargetId(null)
       }
@@ -423,14 +423,14 @@ export default function WatchTargetsPage() {
         const data = await res.json()
 
         if (!data.success) {
-          setError(data.error || 'Failed to start collection')
+          setError(data.error || '触发抓取失败')
           return
         }
 
-        setMessage(data.data.message || 'Collection started')
+        setMessage(data.data.message || '已开始抓取')
         await fetchTargets(true)
       } catch {
-        setError('Failed to start collection')
+        setError('触发抓取失败')
       } finally {
         if (isSingle) setRunningTargetId(null)
         else setRunningAll(false)
@@ -443,9 +443,9 @@ export default function WatchTargetsPage() {
     <div className="space-y-6">
       <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Watch Targets</h1>
+          <h1 className="text-2xl font-bold text-gray-900">监控源</h1>
           <p className="mt-1 text-sm text-gray-500">
-            Manage tag and artist watch targets, then trigger `collect-watch-targets` manually.
+            管理标签与画师监控目标，并可手动触发 `collect-watch-targets` 抓取任务。
           </p>
         </div>
 
@@ -456,7 +456,7 @@ export default function WatchTargetsPage() {
             className="inline-flex items-center gap-2 rounded-xl border border-gray-200 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-60"
           >
             <RefreshCw className={`h-4 w-4 ${refreshing ? 'animate-spin' : ''}`} />
-            Refresh
+            刷新
           </button>
           <button
             onClick={() => handleCollect()}
@@ -464,7 +464,7 @@ export default function WatchTargetsPage() {
             className="inline-flex items-center gap-2 rounded-xl bg-green-600 px-4 py-2 text-sm font-medium text-white hover:bg-green-700 disabled:cursor-not-allowed disabled:opacity-60"
           >
             {runningAll ? <Loader2 className="h-4 w-4 animate-spin" /> : <Play className="h-4 w-4" />}
-            Run Enabled Targets
+            抓取已启用目标
           </button>
         </div>
       </div>
@@ -485,10 +485,10 @@ export default function WatchTargetsPage() {
         <div className="mb-4 flex items-center justify-between">
           <div>
             <h2 className="text-lg font-semibold text-gray-900">
-              {editing ? 'Edit Watch Target' : 'Create Watch Target'}
+              {editing ? '编辑监控源' : '新建监控源'}
             </h2>
             <p className="mt-1 text-sm text-gray-500">
-              Use this form for precise one-by-one changes. Use batch import below for bulk setup.
+              适合逐条精细维护。批量初始化请使用下方的批量导入区域。
             </p>
           </div>
           {editing && (
@@ -497,14 +497,14 @@ export default function WatchTargetsPage() {
               className="inline-flex items-center gap-2 rounded-xl border border-gray-200 px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
             >
               <X className="h-4 w-4" />
-              Cancel Edit
+              取消编辑
             </button>
           )}
         </div>
 
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
           <label className="space-y-2 text-sm">
-            <span className="font-medium text-gray-700">Target Type</span>
+            <span className="font-medium text-gray-700">目标类型</span>
             <select
               value={form.targetType}
               onChange={(event) =>
@@ -525,17 +525,17 @@ export default function WatchTargetsPage() {
           </label>
 
           <label className="space-y-2 text-sm">
-            <span className="font-medium text-gray-700">{form.targetType === 'artist' ? 'Artist ID' : 'Tag'}</span>
+            <span className="font-medium text-gray-700">{form.targetType === 'artist' ? '画师 ID' : '标签'}</span>
             <input
               value={form.targetValue}
               onChange={(event) => setForm((prev) => ({ ...prev, targetValue: event.target.value }))}
-              placeholder={form.targetType === 'artist' ? '122139903' : 'avatar'}
+              placeholder={form.targetType === 'artist' ? '122139903' : '例如：头像'}
               className="w-full rounded-xl border border-gray-200 px-3 py-2.5 outline-none transition focus:border-green-500 focus:ring-2 focus:ring-green-100"
             />
           </label>
 
           <label className="space-y-2 text-sm">
-            <span className="font-medium text-gray-700">Biz Type</span>
+            <span className="font-medium text-gray-700">业务类型</span>
             <input
               list="watch-target-biz-types"
               value={form.bizType}
@@ -551,11 +551,11 @@ export default function WatchTargetsPage() {
               onChange={(event) => setForm((prev) => ({ ...prev, enabled: event.target.checked }))}
               className="h-4 w-4 rounded border-gray-300 text-green-600 focus:ring-green-500"
             />
-            Enabled
+            启用
           </label>
 
           <label className="space-y-2 text-sm">
-            <span className="font-medium text-gray-700">Priority</span>
+            <span className="font-medium text-gray-700">优先级</span>
             <input
               type="number"
               min={0}
@@ -567,7 +567,7 @@ export default function WatchTargetsPage() {
           </label>
 
           <label className="space-y-2 text-sm">
-            <span className="font-medium text-gray-700">Window Days</span>
+            <span className="font-medium text-gray-700">时间窗口天数</span>
             <input
               type="number"
               min={1}
@@ -579,7 +579,7 @@ export default function WatchTargetsPage() {
           </label>
 
           <label className="space-y-2 text-sm">
-            <span className="font-medium text-gray-700">Preview Quota</span>
+            <span className="font-medium text-gray-700">预览配额</span>
             <input
               type="number"
               min={1}
@@ -605,7 +605,7 @@ export default function WatchTargetsPage() {
               ) : (
                 <Plus className="h-4 w-4" />
               )}
-              {editing ? 'Save Changes' : 'Create Target'}
+              {editing ? '保存修改' : '创建监控源'}
             </button>
           </div>
         </div>
@@ -619,9 +619,9 @@ export default function WatchTargetsPage() {
 
       <section className="rounded-2xl border border-gray-100 bg-white p-6">
         <div className="mb-4">
-          <h2 className="text-lg font-semibold text-gray-900">Batch Import</h2>
+          <h2 className="text-lg font-semibold text-gray-900">批量导入</h2>
           <p className="mt-1 text-sm text-gray-500">
-            Bulk-create topic tags or artist IDs. Existing items are upserted instead of duplicated.
+            一次性导入一批话题标签或画师 ID。已存在项会自动更新，不会重复插入。
           </p>
         </div>
 
@@ -632,7 +632,7 @@ export default function WatchTargetsPage() {
               type="button"
               onClick={() => {
                 setBatchForm(preset.form)
-                setMessage(`Preset applied: ${preset.label}`)
+                setMessage(`已套用预设：${preset.label}`)
                 setError('')
               }}
               className="rounded-2xl border border-gray-200 p-4 text-left transition hover:border-green-300 hover:bg-green-50"
@@ -640,7 +640,7 @@ export default function WatchTargetsPage() {
               <div className="font-medium text-gray-900">{preset.label}</div>
               <p className="mt-1 text-sm text-gray-500">{preset.description}</p>
               <p className="mt-3 text-xs text-gray-400">
-                {preset.form.targetType} / {preset.form.bizType} / {parseBatchValues(preset.form.valuesText, preset.form.targetType).length} items
+                {preset.form.targetType} / {preset.form.bizType} / {parseBatchValues(preset.form.valuesText, preset.form.targetType).length} 项
               </p>
             </button>
           ))}
@@ -648,7 +648,7 @@ export default function WatchTargetsPage() {
 
         <div className="mt-6 grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
           <label className="space-y-2 text-sm">
-            <span className="font-medium text-gray-700">Target Type</span>
+            <span className="font-medium text-gray-700">目标类型</span>
             <select
               value={batchForm.targetType}
               onChange={(event) =>
@@ -669,7 +669,7 @@ export default function WatchTargetsPage() {
           </label>
 
           <label className="space-y-2 text-sm">
-            <span className="font-medium text-gray-700">Biz Type</span>
+            <span className="font-medium text-gray-700">业务类型</span>
             <input
               list="watch-target-biz-types"
               value={batchForm.bizType}
@@ -679,7 +679,7 @@ export default function WatchTargetsPage() {
           </label>
 
           <label className="space-y-2 text-sm">
-            <span className="font-medium text-gray-700">Priority</span>
+            <span className="font-medium text-gray-700">优先级</span>
             <input
               type="number"
               min={0}
@@ -693,7 +693,7 @@ export default function WatchTargetsPage() {
           </label>
 
           <label className="space-y-2 text-sm">
-            <span className="font-medium text-gray-700">Window Days</span>
+            <span className="font-medium text-gray-700">时间窗口天数</span>
             <input
               type="number"
               min={1}
@@ -707,7 +707,7 @@ export default function WatchTargetsPage() {
           </label>
 
           <label className="space-y-2 text-sm">
-            <span className="font-medium text-gray-700">Preview Quota</span>
+            <span className="font-medium text-gray-700">预览配额</span>
             <input
               type="number"
               min={1}
@@ -721,7 +721,7 @@ export default function WatchTargetsPage() {
           </label>
 
           <label className="space-y-2 text-sm">
-            <span className="font-medium text-gray-700">Per Target Limit</span>
+            <span className="font-medium text-gray-700">单目标抓取上限</span>
             <input
               type="number"
               min={1}
@@ -741,7 +741,7 @@ export default function WatchTargetsPage() {
               onChange={(event) => setBatchForm((prev) => ({ ...prev, enabled: event.target.checked }))}
               className="h-4 w-4 rounded border-gray-300 text-green-600 focus:ring-green-500"
             />
-            Enabled
+            启用
           </label>
 
           <label className="flex items-center gap-3 rounded-2xl border border-gray-100 bg-gray-50 px-4 py-3 text-sm text-gray-700">
@@ -753,29 +753,29 @@ export default function WatchTargetsPage() {
               }
               className="h-4 w-4 rounded border-gray-300 text-green-600 focus:ring-green-500"
             />
-            Run After Import
+            导入后立即抓取
           </label>
         </div>
 
         <div className="mt-4 space-y-2">
           <div className="flex items-center justify-between">
-            <span className="text-sm font-medium text-gray-700">{batchForm.targetType === 'artist' ? 'Artist IDs' : 'Tags'}</span>
-            <span className="text-xs text-gray-400">Split by newline, comma, Chinese comma, or semicolon</span>
+            <span className="text-sm font-medium text-gray-700">{batchForm.targetType === 'artist' ? '画师 ID 列表' : '标签列表'}</span>
+            <span className="text-xs text-gray-400">支持换行、英文逗号、中文逗号、分号分隔</span>
           </div>
           <textarea
             value={batchForm.valuesText}
             onChange={(event) => setBatchForm((prev) => ({ ...prev, valuesText: event.target.value }))}
             rows={8}
-            placeholder={batchForm.targetType === 'artist' ? '122139903\n326152\n170291' : 'avatar\nwallpaper\ngirls'}
+            placeholder={batchForm.targetType === 'artist' ? '122139903\n326152\n170291' : '头像\n壁纸\n女孩子'}
             className="w-full rounded-2xl border border-gray-200 px-4 py-3 text-sm outline-none transition focus:border-green-500 focus:ring-2 focus:ring-green-100"
           />
         </div>
 
         <div className="mt-4 flex flex-col gap-3 rounded-2xl border border-dashed border-gray-200 bg-gray-50 p-4 lg:flex-row lg:items-center lg:justify-between">
           <div>
-            <p className="text-sm font-medium text-gray-900">This import will process {batchValues.length} targets</p>
+            <p className="text-sm font-medium text-gray-900">本次将处理 {batchValues.length} 条监控源</p>
             <p className="mt-1 text-xs text-gray-500">
-              Preview: {batchValues.slice(0, 8).join(' / ') || 'none'}
+              预览：{batchValues.slice(0, 8).join(' / ') || '暂无'}
               {batchValues.length > 8 ? ` ... +${batchValues.length - 8}` : ''}
             </p>
           </div>
@@ -786,7 +786,7 @@ export default function WatchTargetsPage() {
               className="inline-flex items-center gap-2 rounded-xl border border-gray-200 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-white"
             >
               <X className="h-4 w-4" />
-              Reset Draft
+              清空草稿
             </button>
             <button
               type="button"
@@ -795,7 +795,7 @@ export default function WatchTargetsPage() {
               className="inline-flex items-center gap-2 rounded-xl bg-gray-900 px-4 py-2 text-sm font-medium text-white hover:bg-gray-800 disabled:cursor-not-allowed disabled:opacity-60"
             >
               {batchSubmitting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />}
-              Batch Import
+              批量导入
             </button>
           </div>
         </div>
@@ -805,10 +805,10 @@ export default function WatchTargetsPage() {
         <div className="mb-4 flex items-center justify-between">
           <div>
             <h2 className="text-lg font-semibold text-gray-900">
-              Existing Targets <span className="text-gray-400">({items.length})</span>
+              已有监控源 <span className="text-gray-400">({items.length})</span>
             </h2>
             <p className="mt-1 text-sm text-gray-500">
-              Sorted by priority from the crawler. Use Run to trigger an individual target.
+              这里展示当前已配置的监控源，按爬虫侧优先级排序。你可以单独触发某一条抓取。
             </p>
           </div>
         </div>
@@ -816,11 +816,11 @@ export default function WatchTargetsPage() {
         {loading ? (
           <div className="flex items-center justify-center py-12 text-sm text-gray-500">
             <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-            Loading watch targets...
+            正在加载监控源...
           </div>
         ) : items.length === 0 ? (
           <div className="rounded-2xl border border-dashed border-gray-200 px-6 py-10 text-center text-sm text-gray-500">
-            No watch targets yet.
+                    暂无监控源。
           </div>
         ) : (
           <div className="overflow-x-auto">
@@ -828,14 +828,14 @@ export default function WatchTargetsPage() {
               <thead>
                 <tr className="text-left text-gray-500">
                   <th className="px-3 py-3 font-medium">ID</th>
-                  <th className="px-3 py-3 font-medium">Target</th>
-                  <th className="px-3 py-3 font-medium">Biz</th>
-                  <th className="px-3 py-3 font-medium">Priority</th>
-                  <th className="px-3 py-3 font-medium">Window</th>
-                  <th className="px-3 py-3 font-medium">Quota</th>
-                  <th className="px-3 py-3 font-medium">Last Run</th>
-                  <th className="px-3 py-3 font-medium">Status</th>
-                  <th className="px-3 py-3 font-medium text-right">Actions</th>
+                  <th className="px-3 py-3 font-medium">目标</th>
+                  <th className="px-3 py-3 font-medium">业务</th>
+                  <th className="px-3 py-3 font-medium">优先级</th>
+                  <th className="px-3 py-3 font-medium">窗口</th>
+                  <th className="px-3 py-3 font-medium">配额</th>
+                  <th className="px-3 py-3 font-medium">上次运行</th>
+                  <th className="px-3 py-3 font-medium">状态</th>
+                  <th className="px-3 py-3 font-medium text-right">操作</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100">
@@ -867,7 +867,7 @@ export default function WatchTargetsPage() {
                               : 'bg-gray-100 text-gray-500'
                           }`}
                         >
-                          {item.enabled ? 'enabled' : 'disabled'}
+                          {item.enabled ? '已启用' : '已停用'}
                         </span>
                       </td>
                       <td className="px-3 py-4">
@@ -882,7 +882,7 @@ export default function WatchTargetsPage() {
                             ) : (
                               <Play className="h-3.5 w-3.5" />
                             )}
-                            Run
+                            抓取
                           </button>
                           <button
                             onClick={() => {
@@ -893,7 +893,7 @@ export default function WatchTargetsPage() {
                             className="inline-flex items-center gap-1 rounded-lg border border-gray-200 px-3 py-2 text-xs font-medium text-gray-700 hover:bg-gray-50"
                           >
                             <PencilLine className="h-3.5 w-3.5" />
-                            Edit
+                            编辑
                           </button>
                           <button
                             onClick={() => handleDelete(item.id)}
@@ -905,7 +905,7 @@ export default function WatchTargetsPage() {
                             ) : (
                               <Trash2 className="h-3.5 w-3.5" />
                             )}
-                            Delete
+                            删除
                           </button>
                         </div>
                       </td>

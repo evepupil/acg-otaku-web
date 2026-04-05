@@ -16,7 +16,7 @@ import { parseJsonBody } from '@/lib/validation/request'
 
 function validationErrorResponse(error: ZodError) {
   return NextResponse.json(
-    { success: false, error: error.issues[0]?.message ?? 'Invalid request payload' },
+    { success: false, error: error.issues[0]?.message ?? '请求参数无效' },
     { status: 400 }
   )
 }
@@ -24,18 +24,18 @@ function validationErrorResponse(error: ZodError) {
 export async function GET(request: NextRequest) {
   const isAdmin = await verifyAdminRequest(request)
   if (!isAdmin) {
-    return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 })
+    return NextResponse.json({ success: false, error: '未授权' }, { status: 401 })
   }
 
   try {
     const items = await listCrawlerWatchTargets()
     return NextResponse.json({ success: true, data: { items } })
   } catch (error) {
-    console.error('Failed to list watch targets:', error)
+    console.error('获取监控源列表失败:', error)
     return NextResponse.json(
       {
         success: false,
-        error: error instanceof Error ? error.message : 'Failed to list watch targets',
+        error: error instanceof Error ? error.message : '获取监控源列表失败',
       },
       { status: 500 }
     )
@@ -45,7 +45,7 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   const isAdmin = await verifyAdminRequest(request)
   if (!isAdmin) {
-    return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 })
+    return NextResponse.json({ success: false, error: '未授权' }, { status: 401 })
   }
 
   try {
@@ -109,11 +109,11 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     if (error instanceof ZodError) return validationErrorResponse(error)
 
-    console.error('Failed to handle watch targets action:', error)
+    console.error('处理监控源操作失败:', error)
     return NextResponse.json(
       {
         success: false,
-        error: error instanceof Error ? error.message : 'Failed to handle watch target action',
+        error: error instanceof Error ? error.message : '处理监控源操作失败',
       },
       { status: 500 }
     )
@@ -123,7 +123,7 @@ export async function POST(request: NextRequest) {
 export async function DELETE(request: NextRequest) {
   const isAdmin = await verifyAdminRequest(request)
   if (!isAdmin) {
-    return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 })
+    return NextResponse.json({ success: false, error: '未授权' }, { status: 401 })
   }
 
   try {
@@ -133,11 +133,11 @@ export async function DELETE(request: NextRequest) {
   } catch (error) {
     if (error instanceof ZodError) return validationErrorResponse(error)
 
-    console.error('Failed to delete watch target:', error)
+    console.error('删除监控源失败:', error)
     return NextResponse.json(
       {
         success: false,
-        error: error instanceof Error ? error.message : 'Failed to delete watch target',
+        error: error instanceof Error ? error.message : '删除监控源失败',
       },
       { status: 500 }
     )
