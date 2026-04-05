@@ -3,10 +3,17 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { Check, Filter, Plus, RefreshCw, Search, Star, X } from 'lucide-react'
 import Link from 'next/link'
-import { getImageUrl } from '@/lib/pixiv-proxy'
+import { getAvailableImageSizes, getImageUrl, type ImageSize } from '@/lib/pixiv-proxy'
 import type { Artwork, Pagination } from '@/types'
 
 type TabType = 'review' | 'favorites'
+const DOWNLOAD_STATUS_SIZES: ImageSize[] = ['thumb_mini', 'small', 'regular', 'original']
+const DOWNLOAD_STATUS_LABELS: Record<ImageSize, string> = {
+  thumb_mini: 'mini',
+  small: 'small',
+  regular: 'regular',
+  original: 'original',
+}
 
 const TAG_HISTORY_KEY = 'admin_material_tag_history_v1'
 
@@ -21,6 +28,22 @@ function slugifyTopic(input: string) {
     .replace(/[^a-z0-9]+/g, '-')
     .replace(/^-+|-+$/g, '')
   return slug
+}
+
+function getDownloadBadgeClass(size: ImageSize, active: boolean) {
+  if (!active) {
+    return 'bg-gray-100 text-gray-400'
+  }
+
+  if (size === 'original') {
+    return 'bg-emerald-100 text-emerald-700'
+  }
+
+  if (size === 'regular') {
+    return 'bg-sky-100 text-sky-700'
+  }
+
+  return 'bg-amber-100 text-amber-700'
 }
 
 export default function ArtworksPage() {
@@ -436,6 +459,7 @@ export default function ArtworksPage() {
                 const pid = String(item.id)
                 const selected = selectedReviewPids.includes(pid)
                 const isActionLoading = actionLoadingPid === pid
+                const availableSizes = new Set(getAvailableImageSizes(item.imagePath))
                 return (
                   <div
                     key={item.id}
@@ -454,6 +478,19 @@ export default function ArtworksPage() {
                       <p className="text-xs font-medium text-gray-900 truncate">{item.title}</p>
                       <p className="text-xs text-gray-500 truncate">PID: {item.id}</p>
                       <p className="text-xs text-gray-500 truncate">{item.artist?.name}</p>
+                      <div className="flex flex-wrap gap-1 pt-1">
+                        {DOWNLOAD_STATUS_SIZES.map((size) => {
+                          const active = availableSizes.has(size)
+                          return (
+                            <span
+                              key={size}
+                              className={`rounded-full px-1.5 py-0.5 text-[10px] font-medium ${getDownloadBadgeClass(size, active)}`}
+                            >
+                              {DOWNLOAD_STATUS_LABELS[size]}
+                            </span>
+                          )
+                        })}
+                      </div>
                     </div>
                     <div className="grid grid-cols-3 border-t border-gray-100">
                       <button
@@ -571,6 +608,7 @@ export default function ArtworksPage() {
               favorites.map((item) => {
                 const pid = String(item.id)
                 const selected = selectedFavoritePids.includes(pid)
+                const availableSizes = new Set(getAvailableImageSizes(item.imagePath))
                 return (
                   <button
                     type="button"
@@ -589,6 +627,19 @@ export default function ArtworksPage() {
                       <p className="text-xs font-medium text-gray-900 truncate">{item.title}</p>
                       <p className="text-xs text-gray-500 truncate">PID: {item.id}</p>
                       <p className="text-xs text-gray-500 truncate">{item.artist?.name}</p>
+                      <div className="mt-1 flex flex-wrap gap-1">
+                        {DOWNLOAD_STATUS_SIZES.map((size) => {
+                          const active = availableSizes.has(size)
+                          return (
+                            <span
+                              key={size}
+                              className={`rounded-full px-1.5 py-0.5 text-[10px] font-medium ${getDownloadBadgeClass(size, active)}`}
+                            >
+                              {DOWNLOAD_STATUS_LABELS[size]}
+                            </span>
+                          )
+                        })}
+                      </div>
                       {selected && (
                         <span className="mt-1 inline-flex items-center gap-1 text-[11px] text-emerald-700">
                           <Check className="w-3 h-3" /> 已勾选

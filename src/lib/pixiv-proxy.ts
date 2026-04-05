@@ -58,6 +58,26 @@ function parsePathList(imagePath: string | undefined | null): string[] {
     .filter(Boolean)
 }
 
+export function getAvailableImageSizes(imagePath: string | undefined | null): ImageSize[] {
+  const sizes = new Set<ImageSize>()
+
+  for (const path of parsePathList(imagePath)) {
+    const size = extractSizeFromPath(path)
+    if (size) {
+      sizes.add(size)
+    }
+  }
+
+  return Array.from(sizes)
+}
+
+export function hasImageSize(
+  imagePath: string | undefined | null,
+  size: ImageSize
+): boolean {
+  return getAvailableImageSizes(imagePath).includes(size)
+}
+
 function findPathBySize(paths: string[], size: ImageSize): string | null {
   for (const path of paths) {
     const pathSize = extractSizeFromPath(path)
