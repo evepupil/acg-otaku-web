@@ -103,6 +103,7 @@ interface CandidateArtworkRow {
   star: number
   view: number
   popularity: number
+  candidateScore: number | null
   uploadTime: string | null
 }
 
@@ -123,6 +124,7 @@ export interface CandidateArtwork {
     likes: number
     bookmarks: number
   }
+  candidateScore?: number
 }
 
 export type ArtworkReviewAction = 'favorite' | 'reject' | 'skip'
@@ -144,6 +146,13 @@ const ARTWORK_SCORE = sql<number>`(
   coalesce(${pic.star}, 0) * 10 +
   coalesce(${pic.good}, 0) * 3 +
   coalesce(${pic.view}, 0) / 100.0
+)`
+
+const CANDIDATE_PICK_SCORE = sql<number>`(
+  case
+    when coalesce(${pic.candidateScore}, 0) > 0 then coalesce(${pic.candidateScore}, 0)
+    else ${ARTWORK_SCORE}
+  end
 )`
 
 const HAS_PREVIEW_SIZE = sql`(
@@ -200,6 +209,7 @@ function mapCandidateArtwork(row: CandidateArtworkRow): CandidateArtwork {
       likes: row.good || 0,
       bookmarks: row.star || 0,
     },
+    candidateScore: row.candidateScore ?? undefined,
   }
 }
 
@@ -459,6 +469,7 @@ export async function getCandidateArtworksByPids(pids: string[]) {
       star: pic.star,
       view: pic.view,
       popularity: pic.popularity,
+      candidateScore: pic.candidateScore,
       uploadTime: pic.uploadTime,
     })
     .from(pic)
@@ -603,11 +614,12 @@ export async function getDailyRandomTopNCandidates(
       star: pic.star,
       view: pic.view,
       popularity: pic.popularity,
+      candidateScore: pic.candidateScore,
       uploadTime: pic.uploadTime,
     })
     .from(pic)
     .where(or(eq(pic.unfit, 0), isNull(pic.unfit)))
-    .orderBy(desc(ARTWORK_SCORE), desc(pic.uploadTime))
+    .orderBy(desc(CANDIDATE_PICK_SCORE), desc(ARTWORK_SCORE), desc(pic.uploadTime))
     .limit(fetchLimit)
 
   const excluded = excludePublished ? await getPublishedArtworkPidSet() : new Set<string>()
@@ -636,11 +648,12 @@ export async function getArtistRandomTopNCandidates(
       star: pic.star,
       view: pic.view,
       popularity: pic.popularity,
+      candidateScore: pic.candidateScore,
       uploadTime: pic.uploadTime,
     })
     .from(pic)
     .where(and(eq(pic.authorId, artistId), or(eq(pic.unfit, 0), isNull(pic.unfit))))
-    .orderBy(desc(ARTWORK_SCORE), desc(pic.uploadTime))
+    .orderBy(desc(CANDIDATE_PICK_SCORE), desc(ARTWORK_SCORE), desc(pic.uploadTime))
     .limit(fetchLimit)
 
   const excluded = excludePublished ? await getPublishedArtworkPidSet() : new Set<string>()
@@ -686,11 +699,12 @@ export async function getTopicRandomTopNCandidates(
       star: pic.star,
       view: pic.view,
       popularity: pic.popularity,
+      candidateScore: pic.candidateScore,
       uploadTime: pic.uploadTime,
     })
     .from(pic)
     .where(and(tagsWhere, or(eq(pic.unfit, 0), isNull(pic.unfit))))
-    .orderBy(desc(ARTWORK_SCORE), desc(pic.uploadTime))
+    .orderBy(desc(CANDIDATE_PICK_SCORE), desc(ARTWORK_SCORE), desc(pic.uploadTime))
     .limit(fetchLimit)
 
   const excluded = excludePublished ? await getPublishedArtworkPidSet() : new Set<string>()
@@ -738,11 +752,12 @@ export async function getReviewCandidates(
       star: pic.star,
       view: pic.view,
       popularity: pic.popularity,
+      candidateScore: pic.candidateScore,
       uploadTime: pic.uploadTime,
     })
     .from(pic)
     .where(where)
-    .orderBy(desc(ARTWORK_SCORE), desc(pic.uploadTime))
+    .orderBy(desc(CANDIDATE_PICK_SCORE), desc(ARTWORK_SCORE), desc(pic.uploadTime))
     .limit(fetchLimit)
 
   const reviewedSet = await getReviewedArtworkPidSet()
@@ -843,6 +858,7 @@ export async function getFavoriteArtworks(
       star: pic.star,
       view: pic.view,
       popularity: pic.popularity,
+      candidateScore: pic.candidateScore,
       uploadTime: pic.uploadTime,
       reviewedAt: artworkReview.reviewedAt,
     })
@@ -869,6 +885,7 @@ export async function getFavoriteArtworks(
         star: row.star,
         view: row.view,
         popularity: row.popularity,
+        candidateScore: row.candidateScore,
         uploadTime: row.uploadTime,
       })
     ),

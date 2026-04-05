@@ -1,4 +1,4 @@
-import { integer, sqliteTable, text } from 'drizzle-orm/sqlite-core'
+import { integer, real, sqliteTable, text } from 'drizzle-orm/sqlite-core'
 
 export const pic = sqliteTable('pic', {
   pid: text('pid').primaryKey(),
@@ -28,6 +28,7 @@ export const pic = sqliteTable('pic', {
   previewDownloadedAt: text('preview_downloaded_at'),
   fullDownloadedAt: text('full_downloaded_at'),
   imageVariants: text('image_variants').notNull().default('{}'),
+  candidateScore: real('candidate_score').default(0),
 })
 
 export const dailyPick = sqliteTable('daily_pick', {

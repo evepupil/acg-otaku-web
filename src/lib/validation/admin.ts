@@ -268,3 +268,21 @@ export const adminWatchTargetActionSchema = z.discriminatedUnion('action', [
   adminWatchTargetBatchUpsertSchema,
   adminWatchTargetCollectSchema,
 ])
+
+const adminCrawlerRefreshCandidateScoreSchema = z.object({
+  action: z.literal('refresh-candidate-score'),
+  limit: z.coerce.number().int().min(1).max(2000).default(200),
+})
+
+const adminCrawlerRunBackfillPreviewSchema = z.object({
+  action: z.literal('run-backfill-preview'),
+  limit: z.coerce.number().int().min(1).max(500).default(30),
+  minPopularity: z.coerce.number().min(0).default(0),
+  minAgeDays: z.coerce.number().int().min(1).max(3650).default(30),
+  dryRun: z.boolean().default(false),
+})
+
+export const adminCrawlerManualActionSchema = z.discriminatedUnion('action', [
+  adminCrawlerRefreshCandidateScoreSchema,
+  adminCrawlerRunBackfillPreviewSchema,
+])

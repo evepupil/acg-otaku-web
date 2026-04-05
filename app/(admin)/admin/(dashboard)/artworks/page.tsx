@@ -8,6 +8,7 @@ import type { Artwork, Pagination } from '@/types'
 
 type TabType = 'review' | 'favorites'
 type DownloadStatusFilter = 'any' | 'preview' | 'regular' | 'original'
+type AdminArtwork = Artwork & { candidateScore?: number }
 const DOWNLOAD_STATUS_SIZES: ImageSize[] = ['thumb_mini', 'small', 'regular', 'original']
 const DOWNLOAD_STATUS_LABELS: Record<ImageSize, string> = {
   thumb_mini: 'mini',
@@ -57,10 +58,10 @@ export default function ArtworksPage() {
   const [candidateDownloadStatus, setCandidateDownloadStatus] = useState<DownloadStatusFilter>('any')
   const [candidateLoading, setCandidateLoading] = useState(false)
   const [candidateError, setCandidateError] = useState('')
-  const [candidates, setCandidates] = useState<Artwork[]>([])
+  const [candidates, setCandidates] = useState<AdminArtwork[]>([])
   const [selectedReviewPids, setSelectedReviewPids] = useState<string[]>([])
 
-  const [favorites, setFavorites] = useState<Artwork[]>([])
+  const [favorites, setFavorites] = useState<AdminArtwork[]>([])
   const [favoritesLoading, setFavoritesLoading] = useState(false)
   const [favoritesError, setFavoritesError] = useState('')
   const [favoritePagination, setFavoritePagination] = useState<Pagination>({
@@ -90,6 +91,10 @@ export default function ArtworksPage() {
 
   const [actionLoadingPid, setActionLoadingPid] = useState<string | null>(null)
   const [bulkActionLoading, setBulkActionLoading] = useState(false)
+  const [crawlerActionLoading, setCrawlerActionLoading] = useState<'refresh-candidate-score' | 'run-backfill-preview' | null>(null)
+  const [candidateScoreRefreshLimit, setCandidateScoreRefreshLimit] = useState(200)
+  const [backfillPreviewLimit, setBackfillPreviewLimit] = useState(30)
+  const [backfillPreviewMinAgeDays, setBackfillPreviewMinAgeDays] = useState(30)
   const [globalMessage, setGlobalMessage] = useState('')
 
   const selectedFavoriteCount = selectedFavoritePids.length
@@ -197,6 +202,68 @@ export default function ArtworksPage() {
       fetchFavorites(1)
     }
   }, [activeTab, fetchFavorites])
+
+  const handleRefreshCandidateScore = useCallback(async () => {
+    setCrawlerActionLoading('refresh-candidate-score')
+    setGlobalMessage('')
+    try {
+      const res = await fetch('/api/admin/review/crawler-actions', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'refresh-candidate-score',
+          limit: candidateScoreRefreshLimit,
+        }),
+      })
+      const data = await res.json()
+      if (!data.success) {
+        setGlobalMessage(data.error || '刷新系统评分失败')
+        return
+      }
+
+      setGlobalMessage(`系统评分刷新完成：更新 ${data.data.updatedCount} 条记录`)
+      await fetchCandidates()
+      if (activeTab === 'favorites') {
+        await fetchFavorites(favoritePagination.page || 1)
+      }
+    } catch {
+      setGlobalMessage('刷新系统评分失败')
+    } finally {
+      setCrawlerActionLoading(null)
+    }
+  }, [activeTab, candidateScoreRefreshLimit, favoritePagination.page, fetchCandidates, fetchFavorites])
+
+  const handleRunBackfillPreview = useCallback(async () => {
+    setCrawlerActionLoading('run-backfill-preview')
+    setGlobalMessage('')
+    try {
+      const res = await fetch('/api/admin/review/crawler-actions', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'run-backfill-preview',
+          limit: backfillPreviewLimit,
+          minAgeDays: backfillPreviewMinAgeDays,
+          dryRun: false,
+        }),
+      })
+      const data = await res.json()
+      if (!data.success) {
+        setGlobalMessage(data.error || '触发老图补预览失败')
+        return
+      }
+
+      const result = data.data
+      setGlobalMessage(
+        `老图补预览已启动：候选 ${result.candidateCount}，入队 ${result.enqueuedCount}，执行 ${result.claimedCount}`
+      )
+      await fetchCandidates()
+    } catch {
+      setGlobalMessage('触发老图补预览失败')
+    } finally {
+      setCrawlerActionLoading(null)
+    }
+  }, [backfillPreviewLimit, backfillPreviewMinAgeDays, fetchCandidates])
 
   const sendReviewAction = useCallback(async (pid: string, action: 'favorite' | 'reject' | 'skip') => {
     setActionLoadingPid(pid)
@@ -382,6 +449,59 @@ export default function ArtworksPage() {
         </div>
       )}
 
+      <div className="bg-white rounded-2xl border border-gray-100 p-4 space-y-3">
+        <div>
+          <h2 className="text-sm font-semibold text-gray-900">Crawler 手动任务</h2>
+          <p className="mt-1 text-xs text-gray-500">
+            评审池会优先参考 `candidate_score`。这里可以手动刷新评分，或在关闭自动补老图的前提下，临时补一批老图预览。
+          </p>
+        </div>
+        <div className="flex flex-wrap gap-3 items-center">
+          <input
+            type="number"
+            min={1}
+            max={2000}
+            value={candidateScoreRefreshLimit}
+            onChange={(e) => setCandidateScoreRefreshLimit(Math.max(1, Number(e.target.value) || 1))}
+            className="w-28 px-3 py-2 border border-gray-200 rounded-xl text-sm"
+            title="刷新评分数量"
+          />
+          <button
+            onClick={handleRefreshCandidateScore}
+            disabled={crawlerActionLoading !== null}
+            className="px-3 py-2 rounded-xl bg-slate-900 text-white text-sm font-medium hover:bg-slate-800 disabled:opacity-50"
+          >
+            {crawlerActionLoading === 'refresh-candidate-score' ? '刷新中...' : '刷新系统评分'}
+          </button>
+          <div className="h-6 w-px bg-gray-200" />
+          <input
+            type="number"
+            min={1}
+            max={500}
+            value={backfillPreviewLimit}
+            onChange={(e) => setBackfillPreviewLimit(Math.max(1, Number(e.target.value) || 1))}
+            className="w-24 px-3 py-2 border border-gray-200 rounded-xl text-sm"
+            title="老图补预览数量"
+          />
+          <input
+            type="number"
+            min={1}
+            max={3650}
+            value={backfillPreviewMinAgeDays}
+            onChange={(e) => setBackfillPreviewMinAgeDays(Math.max(1, Number(e.target.value) || 1))}
+            className="w-28 px-3 py-2 border border-gray-200 rounded-xl text-sm"
+            title="最小老图天数"
+          />
+          <button
+            onClick={handleRunBackfillPreview}
+            disabled={crawlerActionLoading !== null}
+            className="px-3 py-2 rounded-xl bg-amber-600 text-white text-sm font-medium hover:bg-amber-700 disabled:opacity-50"
+          >
+            {crawlerActionLoading === 'run-backfill-preview' ? '执行中...' : '手动补老图预览'}
+          </button>
+        </div>
+      </div>
+
       {activeTab === 'review' && (
         <div className="space-y-4">
           <div className="bg-white rounded-2xl border border-gray-100 p-4">
@@ -493,6 +613,9 @@ export default function ArtworksPage() {
                       <p className="text-xs font-medium text-gray-900 truncate">{item.title}</p>
                       <p className="text-xs text-gray-500 truncate">PID: {item.id}</p>
                       <p className="text-xs text-gray-500 truncate">{item.artist?.name}</p>
+                      <p className="text-[11px] text-emerald-700 truncate">
+                        系统评分: {typeof item.candidateScore === 'number' ? item.candidateScore.toFixed(1) : '--'}
+                      </p>
                       <div className="flex flex-wrap gap-1 pt-1">
                         {DOWNLOAD_STATUS_SIZES.map((size) => {
                           const active = availableSizes.has(size)
@@ -652,6 +775,9 @@ export default function ArtworksPage() {
                       <p className="text-xs font-medium text-gray-900 truncate">{item.title}</p>
                       <p className="text-xs text-gray-500 truncate">PID: {item.id}</p>
                       <p className="text-xs text-gray-500 truncate">{item.artist?.name}</p>
+                      <p className="text-[11px] text-emerald-700 truncate">
+                        系统评分: {typeof item.candidateScore === 'number' ? item.candidateScore.toFixed(1) : '--'}
+                      </p>
                       <div className="mt-1 flex flex-wrap gap-1">
                         {DOWNLOAD_STATUS_SIZES.map((size) => {
                           const active = availableSizes.has(size)

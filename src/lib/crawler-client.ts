@@ -85,6 +85,37 @@ export interface TriggerArtworkArchiveResult {
   skippedCount?: number
 }
 
+export interface RefreshCrawlerCandidateScoreResult {
+  success: boolean
+  limit: number
+  updatedCount: number
+  pidCount: number
+  timestamp?: string
+}
+
+export interface RunCrawlerBackfillPreviewResult {
+  success: boolean
+  taskId?: string
+  dryRun: boolean
+  limit: number
+  minPopularity: number
+  minAgeDays: number
+  sizes: string[]
+  candidateCount: number
+  enqueuedCount: number
+  claimedCount: number
+  candidatePreview: Array<{
+    pid: string
+    priority: number
+    candidateScore: number
+    sourceType: string
+    sourceRecentAt?: string
+    popularity: number
+    view: number
+  }>
+  timestamp?: string
+}
+
 function getCrawlerServerUrl() {
   if (!env.CRAWLER_SERVER_URL) {
     throw new Error('CRAWLER_SERVER_URL is not configured')
@@ -301,4 +332,30 @@ export async function collectCrawlerWatchTargets(options: {
   perTargetLimit?: number
 }) {
   return postCrawlerJson<CollectCrawlerWatchTargetsResult>('collect-watch-targets', options)
+}
+
+export async function refreshCrawlerCandidateScores(options?: {
+  limit?: number
+  pids?: string[]
+}) {
+  return postCrawlerJson<RefreshCrawlerCandidateScoreResult>('refresh-candidate-score', {
+    limit: options?.limit,
+    pids: options?.pids,
+  })
+}
+
+export async function runCrawlerBackfillPreview(options?: {
+  limit?: number
+  minPopularity?: number
+  minAgeDays?: number
+  sizes?: string[]
+  dryRun?: boolean
+}) {
+  return postCrawlerJson<RunCrawlerBackfillPreviewResult>('run-backfill-preview', {
+    limit: options?.limit,
+    minPopularity: options?.minPopularity,
+    minAgeDays: options?.minAgeDays,
+    sizes: options?.sizes,
+    dryRun: options?.dryRun,
+  })
 }
