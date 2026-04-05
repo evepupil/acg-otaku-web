@@ -81,6 +81,8 @@ export interface TriggerArtworkArchiveResult {
   success: boolean
   message: string
   requestedSizes: string[]
+  enqueuedCount?: number
+  skippedCount?: number
 }
 
 function getCrawlerServerUrl() {
@@ -199,7 +201,7 @@ export async function triggerArtistCrawlById(
   }
 }
 
-export async function triggerArtworkArchiveByPid(
+export async function enqueueArtworkArchiveByPid(
   pid: string,
   requestedSizes: string[]
 ): Promise<TriggerArtworkArchiveResult> {
@@ -216,14 +218,17 @@ export async function triggerArtworkArchiveByPid(
       attempted: false,
       success: false,
       requestedSizes: sizes,
-      message: 'CRAWLER_SERVER_URL is not configured, skip archive trigger',
+      message: 'CRAWLER_SERVER_URL is not configured, skip archive queue',
     }
   }
 
   try {
-    const result = await postCrawlerAction('batch-download', {
+    const result = await postCrawlerAction('enqueue-full-download', {
       pids: [pid],
       sizes,
+      sourceType: 'manual',
+      sourceKey: 'admin:favorite',
+      priority: 980,
     })
 
     if (!result.ok) {
@@ -231,24 +236,48 @@ export async function triggerArtworkArchiveByPid(
         attempted: true,
         success: false,
         requestedSizes: sizes,
-        message: `Archive trigger failed with HTTP ${result.status}`,
+        message: `Archive queue failed with HTTP ${result.status}`,
       }
     }
+
+    const body = result.body as
+      | {
+          message?: string
+          enqueuedCount?: number
+          skippedCount?: number
+        }
+      | null
+      | undefined
+
+    const enqueuedCount = typeof body?.enqueuedCount === 'number' ? body.enqueuedCount : undefined
+    const skippedCount = typeof body?.skippedCount === 'number' ? body.skippedCount : undefined
 
     return {
       attempted: true,
       success: true,
       requestedSizes: sizes,
-      message: `Archive triggered (${sizes.join(', ')})`,
+      enqueuedCount,
+      skippedCount,
+      message:
+        typeof body?.message === 'string' && body.message.trim()
+          ? body.message
+          : `Archive queued (${sizes.join(', ')})`,
     }
   } catch (error) {
     return {
       attempted: true,
       success: false,
       requestedSizes: sizes,
-      message: error instanceof Error ? error.message : 'Archive trigger failed',
+      message: error instanceof Error ? error.message : 'Archive queue failed',
     }
   }
+}
+
+export async function triggerArtworkArchiveByPid(
+  pid: string,
+  requestedSizes: string[]
+): Promise<TriggerArtworkArchiveResult> {
+  return enqueueArtworkArchiveByPid(pid, requestedSizes)
 }
 
 export async function listCrawlerWatchTargets() {

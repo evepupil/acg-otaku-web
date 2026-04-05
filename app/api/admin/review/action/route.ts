@@ -2,7 +2,7 @@ import { ZodError } from 'zod'
 import { NextRequest, NextResponse } from 'next/server'
 
 import { verifyAdminRequest } from '@/lib/admin-auth'
-import { triggerArtworkArchiveByPid } from '@/lib/crawler-client'
+import { enqueueArtworkArchiveByPid } from '@/lib/crawler-client'
 import { parseJsonBody } from '@/lib/validation/request'
 import { adminReviewActionSchema } from '@/lib/validation/admin'
 import {
@@ -40,12 +40,12 @@ export async function POST(request: NextRequest) {
     } else if (payload.action === 'favorite') {
       await setArtworkUnfitStatus(payload.pid, false)
 
-      const archiveResult = await triggerArtworkArchiveByPid(payload.pid, ['regular', 'original'])
+      const archiveResult = await enqueueArtworkArchiveByPid(payload.pid, ['regular', 'original'])
       archiveMessage = archiveResult.message
 
       if (archiveResult.attempted && !archiveResult.success) {
         console.warn(
-          `favorite archive trigger failed for pid=${payload.pid}: ${archiveResult.message}`
+          `favorite archive queue failed for pid=${payload.pid}: ${archiveResult.message}`
         )
       }
     }

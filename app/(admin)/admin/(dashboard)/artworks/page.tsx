@@ -187,7 +187,9 @@ export default function ArtworksPage() {
       setCandidates((prev) => prev.filter((item) => String(item.id) !== pid))
       setSelectedReviewPids((prev) => prev.filter((item) => item !== pid))
       if (action === 'favorite') {
-        setGlobalMessage(`已收藏 PID ${pid}`)
+        const archiveMessage =
+          typeof data?.data?.archiveMessage === 'string' ? data.data.archiveMessage : ''
+        setGlobalMessage(archiveMessage || `已收藏 PID ${pid}`)
       }
       return true
     } catch {
