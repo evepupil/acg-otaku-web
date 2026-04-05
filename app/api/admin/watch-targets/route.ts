@@ -65,6 +65,40 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ success: true, data: { item } })
     }
 
+    if (payload.action === 'batch-upsert') {
+      const items = []
+
+      for (const input of payload.items) {
+        const item = await upsertCrawlerWatchTarget({
+          targetType: input.targetType,
+          targetValue: input.targetValue,
+          bizType: input.bizType,
+          priority: input.priority,
+          windowDays: input.windowDays,
+          dailyPreviewQuota: input.dailyPreviewQuota,
+          enabled: input.enabled,
+        })
+        items.push(item)
+      }
+
+      const collectResult = payload.runAfterImport
+        ? await collectCrawlerWatchTargets({
+            targetIds: items.map((item) => item.id),
+            limitTargets: items.length,
+            perTargetLimit: payload.perTargetLimit,
+          })
+        : null
+
+      return NextResponse.json({
+        success: true,
+        data: {
+          count: items.length,
+          items,
+          collectResult,
+        },
+      })
+    }
+
     const result = await collectCrawlerWatchTargets({
       targetIds: payload.targetIds,
       limitTargets: payload.limitTargets,

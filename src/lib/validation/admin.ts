@@ -254,7 +254,15 @@ const adminWatchTargetUpsertActionSchema = z
   })
   .merge(adminWatchTargetUpsertSchema)
 
+const adminWatchTargetBatchUpsertSchema = z.object({
+  action: z.literal('batch-upsert'),
+  items: z.array(adminWatchTargetUpsertSchema.omit({ id: true })).min(1).max(100),
+  runAfterImport: z.boolean().default(false),
+  perTargetLimit: z.coerce.number().int().min(1).max(200).optional(),
+})
+
 export const adminWatchTargetActionSchema = z.discriminatedUnion('action', [
   adminWatchTargetUpsertActionSchema,
+  adminWatchTargetBatchUpsertSchema,
   adminWatchTargetCollectSchema,
 ])
