@@ -134,6 +134,7 @@ export interface FavoriteArtworkListResult {
 }
 
 export type FavoriteArtworkSort = 'reviewed_desc' | 'pid_desc'
+export type DownloadStatusFilter = 'any' | 'preview' | 'regular' | 'original'
 
 const DEFAULT_ARTIST_AVATAR_URL =
   'https://trae-api-sg.mchost.guru/api/ide/v1/text_to_image?prompt=anime%20artist%20avatar%20profile%20picture&image_size=square'
@@ -144,6 +145,42 @@ const ARTWORK_SCORE = sql<number>`(
   coalesce(${pic.good}, 0) * 3 +
   coalesce(${pic.view}, 0) / 100.0
 )`
+
+const HAS_PREVIEW_SIZE = sql`(
+  coalesce(${pic.imageVariants}, '') like '%"thumb_mini":"%'
+  or coalesce(${pic.imageVariants}, '') like '%"small":"%'
+  or coalesce(${pic.imagePath}, '') like '%/thumb_mini.%'
+  or coalesce(${pic.imagePath}, '') like '%/small.%'
+)`
+
+const HAS_REGULAR_SIZE = sql`(
+  coalesce(${pic.imageVariants}, '') like '%"regular":"%'
+  or coalesce(${pic.imagePath}, '') like '%/regular.%'
+)`
+
+const HAS_ORIGINAL_SIZE = sql`(
+  coalesce(${pic.imageVariants}, '') like '%"original":"%'
+  or coalesce(${pic.imagePath}, '') like '%/original.%'
+)`
+
+const HAS_ANY_ARCHIVE = sql`(
+  coalesce(trim(${pic.imagePath}), '') not in ('', '[]')
+  or coalesce(trim(${pic.imageVariants}), '') not in ('', '{}')
+  or coalesce(${pic.downloadStage}, 'none') <> 'none'
+)`
+
+function buildDownloadStatusCondition(filter?: DownloadStatusFilter) {
+  switch (filter) {
+    case 'preview':
+      return sql`((${HAS_PREVIEW_SIZE}) or coalesce(${pic.downloadStage}, 'none') = 'preview') and not (${HAS_REGULAR_SIZE}) and not (${HAS_ORIGINAL_SIZE})`
+    case 'regular':
+      return HAS_REGULAR_SIZE
+    case 'original':
+      return HAS_ORIGINAL_SIZE
+    default:
+      return null
+  }
+}
 
 function mapCandidateArtwork(row: CandidateArtworkRow): CandidateArtwork {
   return {
@@ -667,7 +704,8 @@ export async function getReviewCandidates(
   topN = 200,
   tag?: string,
   excludePublished = true,
-  onlyDownloaded = false
+  onlyDownloaded = false,
+  downloadStatus: DownloadStatusFilter = 'any'
 ) {
   const fetchLimit = Math.max(topN * 4, limit * 8, 300)
   const conditions = [or(eq(pic.unfit, 0), isNull(pic.unfit))]
@@ -677,7 +715,12 @@ export async function getReviewCandidates(
   }
 
   if (onlyDownloaded) {
-    conditions.push(sql`coalesce(trim(${pic.imagePath}), '') <> ''`)
+    conditions.push(HAS_ANY_ARCHIVE)
+  }
+
+  const downloadStatusCondition = buildDownloadStatusCondition(downloadStatus)
+  if (downloadStatusCondition) {
+    conditions.push(downloadStatusCondition)
   }
 
   const where = and(...conditions)
@@ -750,6 +793,7 @@ export async function getFavoriteArtworks(
     tag?: string
     artistId?: string
     excludePublished?: boolean
+    downloadStatus?: DownloadStatusFilter
     sortBy?: FavoriteArtworkSort
   }
 ): Promise<FavoriteArtworkListResult> {
@@ -773,6 +817,11 @@ export async function getFavoriteArtworks(
 
   if (options?.artistId) {
     conditions.push(eq(pic.authorId, options.artistId))
+  }
+
+  const downloadStatusCondition = buildDownloadStatusCondition(options?.downloadStatus)
+  if (downloadStatusCondition) {
+    conditions.push(downloadStatusCondition)
   }
 
   const where = and(...conditions)

@@ -18,7 +18,7 @@ export async function GET(request: NextRequest) {
   if (!isAdmin) return NextResponse.json({ success: false, error: '未授权' }, { status: 401 })
 
   try {
-    const { page, limit, search, tag, artistId, excludePublished, sortBy } = parseSearchParams(
+    const { page, limit, search, tag, artistId, excludePublished, downloadStatus, sortBy } = parseSearchParams(
       new URL(request.url).searchParams,
       adminFavoriteListQuerySchema
     )
@@ -28,6 +28,7 @@ export async function GET(request: NextRequest) {
       tag,
       artistId,
       excludePublished,
+      downloadStatus,
       sortBy,
     })
 

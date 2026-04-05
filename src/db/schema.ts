@@ -21,6 +21,13 @@ export const pic = sqliteTable('pic', {
   editorComment: text('editor_comment'),
   unfit: integer('unfit'),
   size: integer('size'),
+  firstSeenAt: text('first_seen_at'),
+  lastSeenAt: text('last_seen_at'),
+  lastSourceType: text('last_source_type'),
+  downloadStage: text('download_stage').default('none'),
+  previewDownloadedAt: text('preview_downloaded_at'),
+  fullDownloadedAt: text('full_downloaded_at'),
+  imageVariants: text('image_variants').notNull().default('{}'),
 })
 
 export const dailyPick = sqliteTable('daily_pick', {

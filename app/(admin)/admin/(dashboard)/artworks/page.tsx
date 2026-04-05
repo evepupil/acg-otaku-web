@@ -7,6 +7,7 @@ import { getAvailableImageSizes, getImageUrl, type ImageSize } from '@/lib/pixiv
 import type { Artwork, Pagination } from '@/types'
 
 type TabType = 'review' | 'favorites'
+type DownloadStatusFilter = 'any' | 'preview' | 'regular' | 'original'
 const DOWNLOAD_STATUS_SIZES: ImageSize[] = ['thumb_mini', 'small', 'regular', 'original']
 const DOWNLOAD_STATUS_LABELS: Record<ImageSize, string> = {
   thumb_mini: 'mini',
@@ -53,6 +54,7 @@ export default function ArtworksPage() {
   const [candidateTopN, setCandidateTopN] = useState(200)
   const [candidateLimit, setCandidateLimit] = useState(30)
   const [candidateOnlyDownloaded, setCandidateOnlyDownloaded] = useState(true)
+  const [candidateDownloadStatus, setCandidateDownloadStatus] = useState<DownloadStatusFilter>('any')
   const [candidateLoading, setCandidateLoading] = useState(false)
   const [candidateError, setCandidateError] = useState('')
   const [candidates, setCandidates] = useState<Artwork[]>([])
@@ -70,6 +72,7 @@ export default function ArtworksPage() {
   const [favoriteSearch, setFavoriteSearch] = useState('')
   const [favoriteTag, setFavoriteTag] = useState('')
   const [favoriteArtistId, setFavoriteArtistId] = useState('')
+  const [favoriteDownloadStatus, setFavoriteDownloadStatus] = useState<DownloadStatusFilter>('any')
   const [favoriteSortBy, setFavoriteSortBy] = useState<'reviewed_desc' | 'pid_desc'>('reviewed_desc')
   const [selectedFavoritePids, setSelectedFavoritePids] = useState<string[]>([])
   const [tagHistory, setTagHistory] = useState<string[]>([])
@@ -132,6 +135,7 @@ export default function ArtworksPage() {
         topN: String(candidateTopN),
         excludePublished: 'true',
         onlyDownloaded: candidateOnlyDownloaded ? 'true' : 'false',
+        downloadStatus: candidateDownloadStatus,
       })
       if (candidateTag.trim()) params.set('tag', candidateTag.trim())
 
@@ -149,7 +153,7 @@ export default function ArtworksPage() {
     } finally {
       setCandidateLoading(false)
     }
-  }, [candidateLimit, candidateOnlyDownloaded, candidateTag, candidateTopN, saveTagHistory])
+  }, [candidateDownloadStatus, candidateLimit, candidateOnlyDownloaded, candidateTag, candidateTopN, saveTagHistory])
 
   const fetchFavorites = useCallback(async (page = 1) => {
     setFavoritesLoading(true)
@@ -159,6 +163,7 @@ export default function ArtworksPage() {
         page: String(page),
         limit: String(favoritePagination.limit || 24),
         excludePublished: 'true',
+        downloadStatus: favoriteDownloadStatus,
       })
       if (favoriteSearch.trim()) params.set('search', favoriteSearch.trim())
       if (favoriteTag.trim()) params.set('tag', favoriteTag.trim())
@@ -179,7 +184,7 @@ export default function ArtworksPage() {
     } finally {
       setFavoritesLoading(false)
     }
-  }, [favoriteArtistId, favoritePagination.limit, favoriteSearch, favoriteSortBy, favoriteTag, saveTagHistory])
+  }, [favoriteArtistId, favoriteDownloadStatus, favoritePagination.limit, favoriteSearch, favoriteSortBy, favoriteTag, saveTagHistory])
 
   useEffect(() => {
     if (activeTab === 'review') {
@@ -402,6 +407,16 @@ export default function ArtworksPage() {
                 onChange={(e) => setCandidateLimit(Math.max(1, Number(e.target.value) || 1))}
                 className="w-20 px-3 py-2 border border-gray-200 rounded-xl text-sm"
               />
+              <select
+                value={candidateDownloadStatus}
+                onChange={(e) => setCandidateDownloadStatus(e.target.value as DownloadStatusFilter)}
+                className="px-3 py-2 border border-gray-200 rounded-xl text-sm bg-white"
+              >
+                <option value="any">全部下载状态</option>
+                <option value="preview">仅 preview</option>
+                <option value="regular">已有 regular</option>
+                <option value="original">已有 original</option>
+              </select>
               <label className="inline-flex items-center gap-2 px-3 py-2 rounded-xl border border-gray-200 text-sm text-gray-700 bg-gray-50">
                 <input
                   type="checkbox"
@@ -554,6 +569,16 @@ export default function ArtworksPage() {
                 placeholder="画师 ID"
                 className="px-3 py-2 border border-gray-200 rounded-xl text-sm"
               />
+              <select
+                value={favoriteDownloadStatus}
+                onChange={(e) => setFavoriteDownloadStatus(e.target.value as DownloadStatusFilter)}
+                className="px-3 py-2 border border-gray-200 rounded-xl text-sm bg-white"
+              >
+                <option value="any">全部下载状态</option>
+                <option value="preview">仅 preview</option>
+                <option value="regular">已有 regular</option>
+                <option value="original">已有 original</option>
+              </select>
               <select
                 value={favoriteSortBy}
                 onChange={(e) => setFavoriteSortBy(e.target.value as 'reviewed_desc' | 'pid_desc')}

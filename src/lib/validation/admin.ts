@@ -168,6 +168,7 @@ export const adminReviewCandidateQuerySchema = z.object({
   tag: optionalText.transform((value) => value && value.length > 0 ? value : undefined),
   excludePublished: booleanQuery.default(true),
   onlyDownloaded: booleanQuery.default(false),
+  downloadStatus: z.enum(['any', 'preview', 'regular', 'original']).default('any'),
 })
 
 export const adminReviewActionSchema = z.object({
@@ -183,6 +184,7 @@ export const adminFavoriteListQuerySchema = z.object({
   tag: optionalText.transform((value) => value && value.length > 0 ? value : undefined),
   artistId: optionalText.transform((value) => value && value.length > 0 ? value : undefined),
   excludePublished: booleanQuery.default(true),
+  downloadStatus: z.enum(['any', 'preview', 'regular', 'original']).default('any'),
   sortBy: z.enum(['reviewed_desc', 'pid_desc']).default('reviewed_desc'),
 })
 
