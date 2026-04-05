@@ -4,6 +4,71 @@ import { env } from '@/env'
 
 const DEFAULT_ARTIST_CRAWL_ACTIONS = ['crawl-artist-by-id', 'crawl-artist', 'artist-crawl']
 
+export type CrawlerWatchTargetType = 'tag' | 'artist'
+
+export interface CrawlerWatchTarget {
+  id: number
+  target_type: CrawlerWatchTargetType
+  target_value: string
+  biz_type: string
+  priority: number
+  window_days: number
+  daily_preview_quota: number
+  enabled: boolean
+  last_run_at: string | null
+  meta: string | null
+  created_at: string | null
+  updated_at: string | null
+}
+
+export interface UpsertCrawlerWatchTargetInput {
+  id?: number
+  targetType: CrawlerWatchTargetType
+  targetValue: string
+  bizType: string
+  priority: number
+  windowDays: number
+  dailyPreviewQuota: number
+  enabled: boolean
+}
+
+interface CrawlerWatchTargetListResponse {
+  success: boolean
+  count: number
+  items: CrawlerWatchTarget[]
+  timestamp?: string
+}
+
+interface CrawlerWatchTargetUpsertResponse {
+  success: boolean
+  item: CrawlerWatchTarget
+  timestamp?: string
+}
+
+interface CrawlerWatchTargetDeleteResponse {
+  success: boolean
+  id: number
+  timestamp?: string
+}
+
+export interface CollectCrawlerWatchTargetsResult {
+  success: boolean
+  message: string
+  taskId?: string
+  targetCount: number
+  limitTargets?: number
+  perTargetLimit?: number
+  targets: Array<{
+    id: number
+    targetType: CrawlerWatchTargetType
+    targetValue: string
+    bizType: string
+    priority: number
+    dailyPreviewQuota: number
+  }>
+  timestamp?: string
+}
+
 export interface TriggerArtistCrawlResult {
   attempted: boolean
   success: boolean
@@ -18,8 +83,48 @@ export interface TriggerArtworkArchiveResult {
   requestedSizes: string[]
 }
 
+function getCrawlerServerUrl() {
+  if (!env.CRAWLER_SERVER_URL) {
+    throw new Error('CRAWLER_SERVER_URL is not configured')
+  }
+
+  return env.CRAWLER_SERVER_URL
+}
+
+async function parseCrawlerResponse<T>(response: Response): Promise<T> {
+  let body: unknown = null
+
+  try {
+    body = await response.json()
+  } catch {
+    body = null
+  }
+
+  if (!response.ok) {
+    const message =
+      body && typeof body === 'object' && 'error' in body && typeof body.error === 'string'
+        ? body.error
+        : `Crawler request failed with HTTP ${response.status}`
+    throw new Error(message)
+  }
+
+  return body as T
+}
+
+function buildCrawlerUrl(action: string, query: Record<string, string | number | boolean | undefined> = {}) {
+  const url = new URL(getCrawlerServerUrl())
+  url.searchParams.set('action', action)
+
+  for (const [key, value] of Object.entries(query)) {
+    if (value === undefined || value === null || value === '') continue
+    url.searchParams.set(key, String(value))
+  }
+
+  return url
+}
+
 async function postCrawlerAction(action: string, payload: Record<string, unknown>) {
-  const response = await fetch(env.CRAWLER_SERVER_URL!, {
+  const response = await fetch(getCrawlerServerUrl(), {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ action, ...payload }),
@@ -34,6 +139,29 @@ async function postCrawlerAction(action: string, payload: Record<string, unknown
   }
 
   return { ok: response.ok, status: response.status, body }
+}
+
+async function getCrawlerAction<T>(
+  action: string,
+  query: Record<string, string | number | boolean | undefined> = {}
+): Promise<T> {
+  const response = await fetch(buildCrawlerUrl(action, query), {
+    method: 'GET',
+    cache: 'no-store',
+  })
+
+  return parseCrawlerResponse<T>(response)
+}
+
+async function postCrawlerJson<T>(action: string, payload: object) {
+  const response = await fetch(getCrawlerServerUrl(), {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ action, ...payload }),
+    cache: 'no-store',
+  })
+
+  return parseCrawlerResponse<T>(response)
 }
 
 export async function triggerArtistCrawlById(
@@ -121,4 +249,27 @@ export async function triggerArtworkArchiveByPid(
       message: error instanceof Error ? error.message : 'Archive trigger failed',
     }
   }
+}
+
+export async function listCrawlerWatchTargets() {
+  const result = await getCrawlerAction<CrawlerWatchTargetListResponse>('watch-targets')
+  return result.items
+}
+
+export async function upsertCrawlerWatchTarget(input: UpsertCrawlerWatchTargetInput) {
+  const result = await postCrawlerJson<CrawlerWatchTargetUpsertResponse>('upsert-watch-target', input)
+  return result.item
+}
+
+export async function deleteCrawlerWatchTarget(id: number) {
+  const result = await postCrawlerJson<CrawlerWatchTargetDeleteResponse>('delete-watch-target', { id })
+  return result.id
+}
+
+export async function collectCrawlerWatchTargets(options: {
+  targetIds?: number[]
+  limitTargets?: number
+  perTargetLimit?: number
+}) {
+  return postCrawlerJson<CollectCrawlerWatchTargetsResult>('collect-watch-targets', options)
 }

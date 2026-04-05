@@ -223,3 +223,38 @@ export const adminRegenerateCurationContentSchema = z.discriminatedUnion('type',
     id: z.coerce.number().int().positive(),
   }),
 ])
+
+const watchTargetTypeSchema = z.enum(['tag', 'artist'])
+
+export const adminWatchTargetUpsertSchema = z.object({
+  id: z.coerce.number().int().positive().optional(),
+  targetType: watchTargetTypeSchema,
+  targetValue: z.string().trim().min(1).max(120),
+  bizType: z.string().trim().min(1).max(60).default('general'),
+  priority: z.coerce.number().int().min(0).max(1000).default(500),
+  windowDays: z.coerce.number().int().min(1).max(90).default(7),
+  dailyPreviewQuota: z.coerce.number().int().min(1).max(500).default(50),
+  enabled: z.boolean().default(true),
+})
+
+export const adminWatchTargetDeleteSchema = z.object({
+  id: z.coerce.number().int().positive(),
+})
+
+const adminWatchTargetCollectSchema = z.object({
+  action: z.literal('collect'),
+  targetIds: z.array(z.coerce.number().int().positive()).max(100).optional(),
+  limitTargets: z.coerce.number().int().min(1).max(100).optional(),
+  perTargetLimit: z.coerce.number().int().min(1).max(200).optional(),
+})
+
+const adminWatchTargetUpsertActionSchema = z
+  .object({
+    action: z.literal('upsert'),
+  })
+  .merge(adminWatchTargetUpsertSchema)
+
+export const adminWatchTargetActionSchema = z.discriminatedUnion('action', [
+  adminWatchTargetUpsertActionSchema,
+  adminWatchTargetCollectSchema,
+])
