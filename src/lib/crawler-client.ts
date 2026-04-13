@@ -5,6 +5,8 @@ import { env } from '@/env'
 const DEFAULT_ARTIST_CRAWL_ACTIONS = ['crawl-artist-by-id', 'crawl-artist', 'artist-crawl']
 
 export type CrawlerWatchTargetType = 'tag' | 'artist'
+export type CrawlerBusinessCandidatePool = 'ranking' | 'daily' | 'artist' | 'topic' | 'avatar' | 'wallpaper'
+export type CrawlerBusinessDownloadStatus = 'any' | 'preview' | 'regular' | 'original'
 
 export interface CrawlerWatchTarget {
   id: number
@@ -113,6 +115,35 @@ export interface RunCrawlerBackfillPreviewResult {
     popularity: number
     view: number
   }>
+  timestamp?: string
+}
+
+export interface CrawlerBusinessCandidateItem {
+  pid: string
+  priority: number
+  candidateScore: number
+  sourceType: string
+  sourceKey?: string
+  sourceRecentAt?: string
+  popularity: number
+  view: number
+  downloadStage: 'none' | 'preview' | 'full'
+  lastSourceType?: string
+  bizType?: string
+}
+
+export interface GetCrawlerBusinessCandidatesResult {
+  success: boolean
+  pool: CrawlerBusinessCandidatePool
+  limit: number
+  topN: number
+  excludePublished: boolean
+  onlyDownloaded: boolean
+  downloadStatus: CrawlerBusinessDownloadStatus
+  artistId?: string
+  tags: string[]
+  count: number
+  items: CrawlerBusinessCandidateItem[]
   timestamp?: string
 }
 
@@ -357,5 +388,27 @@ export async function runCrawlerBackfillPreview(options?: {
     minAgeDays: options?.minAgeDays,
     sizes: options?.sizes,
     dryRun: options?.dryRun,
+  })
+}
+
+export async function getCrawlerBusinessCandidates(options: {
+  pool: CrawlerBusinessCandidatePool
+  limit?: number
+  topN?: number
+  excludePublished?: boolean
+  onlyDownloaded?: boolean
+  downloadStatus?: CrawlerBusinessDownloadStatus
+  artistId?: string
+  tags?: string[]
+}) {
+  return postCrawlerJson<GetCrawlerBusinessCandidatesResult>('business-candidates', {
+    pool: options.pool,
+    limit: options.limit,
+    topN: options.topN,
+    excludePublished: options.excludePublished,
+    onlyDownloaded: options.onlyDownloaded,
+    downloadStatus: options.downloadStatus,
+    artistId: options.artistId,
+    tags: options.tags,
   })
 }

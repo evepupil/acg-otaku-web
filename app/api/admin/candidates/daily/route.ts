@@ -3,8 +3,8 @@ import { NextRequest, NextResponse } from 'next/server'
 
 import { verifyAdminRequest } from '@/lib/admin-auth'
 import { parseSearchParams } from '@/lib/validation/request'
-import { adminCandidateQuerySchema } from '@/lib/validation/admin'
-import { getDailyRandomTopNCandidates } from '@/db/curation'
+import { adminDailyCandidateQuerySchema } from '@/lib/validation/admin'
+import { getAdminBusinessCandidateArtworks } from '@/lib/admin-business-candidates'
 
 function validationErrorResponse(error: ZodError) {
   return NextResponse.json(
@@ -18,17 +18,23 @@ export async function GET(request: NextRequest) {
   if (!isAdmin) return NextResponse.json({ success: false, error: '未授权' }, { status: 401 })
 
   try {
-    const { limit, topN, excludePublished } = parseSearchParams(
+    const { limit, topN, excludePublished, pickType } = parseSearchParams(
       new URL(request.url).searchParams,
-      adminCandidateQuerySchema
+      adminDailyCandidateQuerySchema
     )
 
-    const artworks = await getDailyRandomTopNCandidates(limit, topN, excludePublished)
+    const artworks = await getAdminBusinessCandidateArtworks({
+      pool: pickType === 'ranking_pick' ? 'ranking' : 'daily',
+      limit,
+      topN,
+      excludePublished,
+      onlyDownloaded: true,
+    })
     return NextResponse.json({
       success: true,
       data: {
         artworks,
-        query: { limit, topN, excludePublished },
+        query: { limit, topN, excludePublished, pickType },
       },
     })
   } catch (error) {

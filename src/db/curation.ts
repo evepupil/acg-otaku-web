@@ -488,7 +488,7 @@ async function getReviewedArtworkPidSet() {
   return new Set(rows.map((row) => row.pid))
 }
 
-async function getPublishedArtworkPidSet() {
+export async function getPublishedArtworkPidSet() {
   const [
     dailyArtworkRows,
     artistArtworkRows,

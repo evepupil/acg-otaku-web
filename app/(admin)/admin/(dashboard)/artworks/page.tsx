@@ -1,4 +1,4 @@
-'use client'
+﻿'use client'
 
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { Check, Filter, Plus, RefreshCw, Search, Star, X } from 'lucide-react'
@@ -8,7 +8,14 @@ import type { Artwork, Pagination } from '@/types'
 
 type TabType = 'review' | 'favorites'
 type DownloadStatusFilter = 'any' | 'preview' | 'regular' | 'original'
-type AdminArtwork = Artwork & { candidateScore?: number }
+type CandidatePool = 'general' | 'ranking' | 'daily' | 'artist' | 'topic' | 'avatar' | 'wallpaper'
+type AdminArtwork = Artwork & {
+  candidateScore?: number
+  candidateSourceType?: string
+  candidateSourceKey?: string
+  candidateBizType?: string
+  candidateDownloadStage?: 'none' | 'preview' | 'full'
+}
 const DOWNLOAD_STATUS_SIZES: ImageSize[] = ['thumb_mini', 'small', 'regular', 'original']
 const DOWNLOAD_STATUS_LABELS: Record<ImageSize, string> = {
   thumb_mini: 'mini',
@@ -52,6 +59,8 @@ export default function ArtworksPage() {
   const [activeTab, setActiveTab] = useState<TabType>('review')
 
   const [candidateTag, setCandidateTag] = useState('')
+  const [candidatePool, setCandidatePool] = useState<CandidatePool>('general')
+  const [candidateArtistId, setCandidateArtistId] = useState('')
   const [candidateTopN, setCandidateTopN] = useState(200)
   const [candidateLimit, setCandidateLimit] = useState(30)
   const [candidateOnlyDownloaded, setCandidateOnlyDownloaded] = useState(true)
@@ -136,6 +145,7 @@ export default function ArtworksPage() {
     setCandidateError('')
     try {
       const params = new URLSearchParams({
+        pool: candidatePool,
         limit: String(candidateLimit),
         topN: String(candidateTopN),
         excludePublished: 'true',
@@ -143,13 +153,16 @@ export default function ArtworksPage() {
         downloadStatus: candidateDownloadStatus,
       })
       if (candidateTag.trim()) params.set('tag', candidateTag.trim())
+      if (candidatePool === 'artist' && candidateArtistId.trim()) params.set('artistId', candidateArtistId.trim())
 
       const res = await fetch(`/api/admin/review/candidates?${params.toString()}`)
       const data = await res.json()
       if (data.success) {
         setCandidates(data.data.artworks || [])
         setSelectedReviewPids([])
-        if (candidateTag.trim()) saveTagHistory(candidateTag.trim())
+        if (candidateTag.trim() && candidatePool !== 'artist' && candidatePool !== 'ranking' && candidatePool !== 'daily') {
+          saveTagHistory(candidateTag.trim())
+        }
       } else {
         setCandidateError(data.error || '获取评审候选失败')
       }
@@ -158,7 +171,16 @@ export default function ArtworksPage() {
     } finally {
       setCandidateLoading(false)
     }
-  }, [candidateDownloadStatus, candidateLimit, candidateOnlyDownloaded, candidateTag, candidateTopN, saveTagHistory])
+  }, [
+    candidateArtistId,
+    candidateDownloadStatus,
+    candidateLimit,
+    candidateOnlyDownloaded,
+    candidatePool,
+    candidateTag,
+    candidateTopN,
+    saveTagHistory,
+  ])
 
   const fetchFavorites = useCallback(async (page = 1) => {
     setFavoritesLoading(true)
@@ -182,10 +204,10 @@ export default function ArtworksPage() {
         setFavoritePagination(data.data.pagination)
         if (favoriteTag.trim()) saveTagHistory(favoriteTag.trim())
       } else {
-        setFavoritesError(data.error || '获取收藏素材失败')
+        setFavoritesError(data.error || '鑾峰彇鏀惰棌绱犳潗澶辫触')
       }
     } catch {
-      setFavoritesError('获取收藏素材失败')
+      setFavoritesError('鑾峰彇鏀惰棌绱犳潗澶辫触')
     } finally {
       setFavoritesLoading(false)
     }
@@ -217,7 +239,7 @@ export default function ArtworksPage() {
       })
       const data = await res.json()
       if (!data.success) {
-        setGlobalMessage(data.error || '刷新系统评分失败')
+        setGlobalMessage(data.error || '鍒锋柊绯荤粺璇勫垎澶辫触')
         return
       }
 
@@ -227,7 +249,7 @@ export default function ArtworksPage() {
         await fetchFavorites(favoritePagination.page || 1)
       }
     } catch {
-      setGlobalMessage('刷新系统评分失败')
+      setGlobalMessage('鍒锋柊绯荤粺璇勫垎澶辫触')
     } finally {
       setCrawlerActionLoading(null)
     }
@@ -249,17 +271,17 @@ export default function ArtworksPage() {
       })
       const data = await res.json()
       if (!data.success) {
-        setGlobalMessage(data.error || '触发老图补预览失败')
+        setGlobalMessage(data.error || '触发补预览失败')
         return
       }
 
       const result = data.data
       setGlobalMessage(
-        `老图补预览已启动：候选 ${result.candidateCount}，入队 ${result.enqueuedCount}，执行 ${result.claimedCount}`
+        `补预览已启动：候选 ${result.candidateCount}，入队 ${result.enqueuedCount}，执行 ${result.claimedCount}`
       )
       await fetchCandidates()
     } catch {
-      setGlobalMessage('触发老图补预览失败')
+      setGlobalMessage('触发补预览失败')
     } finally {
       setCrawlerActionLoading(null)
     }
@@ -275,7 +297,7 @@ export default function ArtworksPage() {
       })
       const data = await res.json()
       if (!data.success) {
-        setGlobalMessage(data.error || '写入评审动作失败')
+        setGlobalMessage(data.error || '鍐欏叆璇勫鍔ㄤ綔澶辫触')
         return false
       }
 
@@ -284,11 +306,11 @@ export default function ArtworksPage() {
       if (action === 'favorite') {
         const archiveMessage =
           typeof data?.data?.archiveMessage === 'string' ? data.data.archiveMessage : ''
-        setGlobalMessage(archiveMessage || `已收藏 PID ${pid}`)
+        setGlobalMessage(archiveMessage || `宸叉敹钘?PID ${pid}`)
       }
       return true
     } catch {
-      setGlobalMessage('写入评审动作失败')
+      setGlobalMessage('鍐欏叆璇勫鍔ㄤ綔澶辫触')
       return false
     } finally {
       setActionLoadingPid(null)
@@ -304,7 +326,7 @@ export default function ArtworksPage() {
       if (ok) success += 1
     }
     setBulkActionLoading(false)
-    setGlobalMessage(`批量收藏完成: ${success}/${selectedReviewPids.length}`)
+    setGlobalMessage(`鎵归噺鏀惰棌瀹屾垚: ${success}/${selectedReviewPids.length}`)
   }, [selectedReviewPids, sendReviewAction])
 
   const handleCreateDaily = async () => {
@@ -330,7 +352,7 @@ export default function ArtworksPage() {
         window.location.href = data.data.editUrl
         return
       }
-      setGlobalMessage(data.error || '创建每日美图失败')
+      setGlobalMessage(data.error || '鍒涘缓姣忔棩缇庡浘澶辫触')
     } finally {
       setCreatingDaily(false)
     }
@@ -364,7 +386,7 @@ export default function ArtworksPage() {
         window.location.href = data.data.editUrl
         return
       }
-      setGlobalMessage(data.error || '创建话题专题失败')
+      setGlobalMessage(data.error || '鍒涘缓璇濋涓撻澶辫触')
     } finally {
       setCreatingTopic(false)
     }
@@ -412,15 +434,15 @@ export default function ArtworksPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">作品评审与素材库</h1>
-          <p className="text-gray-500 mt-1">先在评审池收藏，再从素材库勾选后一键创建栏目</p>
+          <h1 className="text-2xl font-bold text-gray-900">浣滃搧璇勫涓庣礌鏉愬簱</h1>
+          <p className="text-gray-500 mt-1">先在评审池收藏，再从素材库里勾选，直接创建栏目。</p>
         </div>
         <Link
           href="/admin/artworks/add"
           className="flex items-center gap-2 px-4 py-2.5 bg-gradient-to-r from-green-500 to-emerald-600 text-white rounded-xl text-sm font-medium hover:from-green-600 hover:to-emerald-700 transition-all"
         >
           <Plus className="w-4 h-4" />
-          手动导入作品
+          鎵嬪姩瀵煎叆浣滃搧
         </Link>
       </div>
 
@@ -431,7 +453,7 @@ export default function ArtworksPage() {
             activeTab === 'review' ? 'bg-green-600 text-white' : 'text-gray-600 hover:bg-gray-100'
           }`}
         >
-          评审池
+          璇勫姹?
         </button>
         <button
           onClick={() => setActiveTab('favorites')}
@@ -439,7 +461,7 @@ export default function ArtworksPage() {
             activeTab === 'favorites' ? 'bg-green-600 text-white' : 'text-gray-600 hover:bg-gray-100'
           }`}
         >
-          素材库（已收藏）
+          绱犳潗搴擄紙宸叉敹钘忥級
         </button>
       </div>
 
@@ -451,10 +473,9 @@ export default function ArtworksPage() {
 
       <div className="bg-white rounded-2xl border border-gray-100 p-4 space-y-3">
         <div>
-          <h2 className="text-sm font-semibold text-gray-900">Crawler 手动任务</h2>
+          <h2 className="text-sm font-semibold text-gray-900">Crawler 鎵嬪姩浠诲姟</h2>
           <p className="mt-1 text-xs text-gray-500">
-            评审池会优先参考 `candidate_score`。这里可以手动刷新评分，或在关闭自动补老图的前提下，临时补一批老图预览。
-          </p>
+            璇勫姹犱細浼樺厛鍙傝€?`candidate_score`銆傝繖閲屽彲浠ユ墜鍔ㄥ埛鏂拌瘎鍒嗭紝鎴栧湪鍏抽棴鑷姩琛ヨ€佸浘鐨勫墠鎻愪笅锛屼复鏃惰ˉ涓€鎵硅€佸浘棰勮銆?          </p>
         </div>
         <div className="flex flex-wrap gap-3 items-center">
           <input
@@ -464,14 +485,14 @@ export default function ArtworksPage() {
             value={candidateScoreRefreshLimit}
             onChange={(e) => setCandidateScoreRefreshLimit(Math.max(1, Number(e.target.value) || 1))}
             className="w-28 px-3 py-2 border border-gray-200 rounded-xl text-sm"
-            title="刷新评分数量"
+            title="鍒锋柊璇勫垎鏁伴噺"
           />
           <button
             onClick={handleRefreshCandidateScore}
             disabled={crawlerActionLoading !== null}
             className="px-3 py-2 rounded-xl bg-slate-900 text-white text-sm font-medium hover:bg-slate-800 disabled:opacity-50"
           >
-            {crawlerActionLoading === 'refresh-candidate-score' ? '刷新中...' : '刷新系统评分'}
+            {crawlerActionLoading === 'refresh-candidate-score' ? '鍒锋柊涓?..' : '鍒锋柊绯荤粺璇勫垎'}
           </button>
           <div className="h-6 w-px bg-gray-200" />
           <input
@@ -481,7 +502,7 @@ export default function ArtworksPage() {
             value={backfillPreviewLimit}
             onChange={(e) => setBackfillPreviewLimit(Math.max(1, Number(e.target.value) || 1))}
             className="w-24 px-3 py-2 border border-gray-200 rounded-xl text-sm"
-            title="老图补预览数量"
+            title="补预览数量"
           />
           <input
             type="number"
@@ -490,14 +511,14 @@ export default function ArtworksPage() {
             value={backfillPreviewMinAgeDays}
             onChange={(e) => setBackfillPreviewMinAgeDays(Math.max(1, Number(e.target.value) || 1))}
             className="w-28 px-3 py-2 border border-gray-200 rounded-xl text-sm"
-            title="最小老图天数"
+            title="鏈€灏忚€佸浘澶╂暟"
           />
           <button
             onClick={handleRunBackfillPreview}
             disabled={crawlerActionLoading !== null}
             className="px-3 py-2 rounded-xl bg-amber-600 text-white text-sm font-medium hover:bg-amber-700 disabled:opacity-50"
           >
-            {crawlerActionLoading === 'run-backfill-preview' ? '执行中...' : '手动补老图预览'}
+            {crawlerActionLoading === 'run-backfill-preview' ? '鎵ц涓?..' : '鎵嬪姩琛ヨ€佸浘棰勮'}
           </button>
         </div>
       </div>
@@ -506,13 +527,45 @@ export default function ArtworksPage() {
         <div className="space-y-4">
           <div className="bg-white rounded-2xl border border-gray-100 p-4">
             <div className="flex flex-wrap gap-3 items-center">
+              <select
+                value={candidatePool}
+                onChange={(e) => setCandidatePool(e.target.value as CandidatePool)}
+                className="px-3 py-2 border border-gray-200 rounded-xl text-sm bg-white"
+              >
+                <option value="general">通用评审池</option>
+                <option value="ranking">榜单池</option>
+                <option value="daily">每日美图池</option>
+                <option value="topic">话题池</option>
+                <option value="avatar">头像池</option>
+                <option value="wallpaper">壁纸池</option>
+                <option value="artist">画师池</option>
+              </select>
               <input
                 type="text"
-                placeholder="按标签筛选（可选）"
+                placeholder={
+                  candidatePool === 'artist'
+                    ? '可选标签补充过滤'
+                    : candidatePool === 'topic'
+                      ? '话题标签，可填多个'
+                      : candidatePool === 'avatar'
+                        ? '头像标签补充过滤'
+                        : candidatePool === 'wallpaper'
+                          ? '壁纸标签补充过滤'
+                          : '按标签筛选（可选）'
+                }
                 value={candidateTag}
                 onChange={(e) => setCandidateTag(e.target.value)}
                 className="px-3 py-2 border border-gray-200 rounded-xl text-sm"
               />
+              {candidatePool === 'artist' && (
+                <input
+                  type="text"
+                  placeholder="画师 ID（可选）"
+                  value={candidateArtistId}
+                  onChange={(e) => setCandidateArtistId(e.target.value)}
+                  className="px-3 py-2 border border-gray-200 rounded-xl text-sm"
+                />
+              )}
               <input
                 type="number"
                 min={1}
@@ -533,9 +586,9 @@ export default function ArtworksPage() {
                 className="px-3 py-2 border border-gray-200 rounded-xl text-sm bg-white"
               >
                 <option value="any">全部下载状态</option>
-                <option value="preview">仅 preview</option>
-                <option value="regular">已有 regular</option>
-                <option value="original">已有 original</option>
+                <option value="preview">浠?preview</option>
+                <option value="regular">宸叉湁 regular</option>
+                <option value="original">宸叉湁 original</option>
               </select>
               <label className="inline-flex items-center gap-2 px-3 py-2 rounded-xl border border-gray-200 text-sm text-gray-700 bg-gray-50">
                 <input
@@ -552,7 +605,7 @@ export default function ArtworksPage() {
                 className="flex items-center gap-2 px-3 py-2 rounded-xl bg-green-600 text-white text-sm font-medium hover:bg-green-700 disabled:opacity-50"
               >
                 <RefreshCw className="w-4 h-4" />
-                刷新候选
+                鍒锋柊鍊欓€?
               </button>
               <button
                 onClick={toggleSelectAllReview}
@@ -586,9 +639,9 @@ export default function ArtworksPage() {
 
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
             {candidateLoading ? (
-              <p className="col-span-full text-center text-gray-500 py-12">加载评审候选中...</p>
+              <p className="col-span-full text-center text-gray-500 py-12">鍔犺浇璇勫鍊欓€変腑...</p>
             ) : candidates.length === 0 ? (
-              <p className="col-span-full text-center text-gray-500 py-12">暂无可评审候选，点击“刷新候选”再试</p>
+              <p className="col-span-full text-center text-gray-500 py-12">暂无可审核候选，点击“刷新候选”再试</p>
             ) : (
               candidates.map((item) => {
                 const pid = String(item.id)
@@ -614,7 +667,10 @@ export default function ArtworksPage() {
                       <p className="text-xs text-gray-500 truncate">PID: {item.id}</p>
                       <p className="text-xs text-gray-500 truncate">{item.artist?.name}</p>
                       <p className="text-[11px] text-emerald-700 truncate">
-                        系统评分: {typeof item.candidateScore === 'number' ? item.candidateScore.toFixed(1) : '--'}
+                        绯荤粺璇勫垎: {typeof item.candidateScore === 'number' ? item.candidateScore.toFixed(1) : '--'}
+                      </p>
+                      <p className="text-[11px] text-slate-500 truncate">
+                        来源: {item.candidateSourceType || item.candidateBizType || '--'}
                       </p>
                       <div className="flex flex-wrap gap-1 pt-1">
                         {DOWNLOAD_STATUS_SIZES.map((size) => {
@@ -635,7 +691,7 @@ export default function ArtworksPage() {
                         disabled={isActionLoading}
                         onClick={() => sendReviewAction(pid, 'favorite')}
                         className="py-2 text-xs text-emerald-700 hover:bg-emerald-50 disabled:opacity-50"
-                        title="收藏"
+                        title="鏀惰棌"
                       >
                         <Star className="w-3.5 h-3.5 mx-auto" />
                       </button>
@@ -643,7 +699,7 @@ export default function ArtworksPage() {
                         disabled={isActionLoading}
                         onClick={() => sendReviewAction(pid, 'skip')}
                         className="py-2 text-xs text-sky-700 hover:bg-sky-50 disabled:opacity-50"
-                        title="跳过"
+                        title="璺宠繃"
                       >
                         <Filter className="w-3.5 h-3.5 mx-auto" />
                       </button>
@@ -674,7 +730,7 @@ export default function ArtworksPage() {
                   type="text"
                   value={favoriteSearch}
                   onChange={(e) => setFavoriteSearch(e.target.value)}
-                  placeholder="搜索 PID/标题/作者/标签"
+                  placeholder="鎼滅储 PID/鏍囬/浣滆€?鏍囩"
                   className="pl-9 pr-3 py-2 border border-gray-200 rounded-xl text-sm"
                 />
               </div>
@@ -682,14 +738,14 @@ export default function ArtworksPage() {
                 type="text"
                 value={favoriteTag}
                 onChange={(e) => setFavoriteTag(e.target.value)}
-                placeholder="标签过滤"
+                placeholder="鏍囩杩囨护"
                 className="px-3 py-2 border border-gray-200 rounded-xl text-sm"
               />
               <input
                 type="text"
                 value={favoriteArtistId}
                 onChange={(e) => setFavoriteArtistId(e.target.value)}
-                placeholder="画师 ID"
+                placeholder="鐢诲笀 ID"
                 className="px-3 py-2 border border-gray-200 rounded-xl text-sm"
               />
               <select
@@ -698,9 +754,9 @@ export default function ArtworksPage() {
                 className="px-3 py-2 border border-gray-200 rounded-xl text-sm bg-white"
               >
                 <option value="any">全部下载状态</option>
-                <option value="preview">仅 preview</option>
-                <option value="regular">已有 regular</option>
-                <option value="original">已有 original</option>
+                <option value="preview">浠?preview</option>
+                <option value="regular">宸叉湁 regular</option>
+                <option value="original">宸叉湁 original</option>
               </select>
               <select
                 value={favoriteSortBy}
@@ -708,14 +764,14 @@ export default function ArtworksPage() {
                 className="px-3 py-2 border border-gray-200 rounded-xl text-sm bg-white"
               >
                 <option value="reviewed_desc">按收藏时间</option>
-                <option value="pid_desc">按 PID 新到旧</option>
+                <option value="pid_desc">按 PID 从新到旧</option>
               </select>
               <button
                 onClick={() => fetchFavorites(1)}
                 disabled={favoritesLoading}
                 className="px-3 py-2 rounded-xl bg-gray-100 text-gray-700 text-sm hover:bg-gray-200"
               >
-                筛选
+                绛涢€?
               </button>
               <button
                 onClick={toggleSelectAllFavorites}
@@ -743,15 +799,15 @@ export default function ArtworksPage() {
 
           <div className="bg-white rounded-2xl border border-gray-100 p-4">
             <p className="text-sm text-gray-600">
-              已选 <span className="font-semibold text-gray-900">{selectedFavoriteCount}</span> 张素材，可直接创建栏目。
+              宸查€?<span className="font-semibold text-gray-900">{selectedFavoriteCount}</span> 寮犵礌鏉愶紝鍙洿鎺ュ垱寤烘爮鐩€?
             </p>
           </div>
 
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
             {favoritesLoading ? (
-              <p className="col-span-full text-center text-gray-500 py-12">加载收藏素材中...</p>
+              <p className="col-span-full text-center text-gray-500 py-12">鍔犺浇鏀惰棌绱犳潗涓?..</p>
             ) : favorites.length === 0 ? (
-              <p className="col-span-full text-center text-gray-500 py-12">暂无收藏素材</p>
+              <p className="col-span-full text-center text-gray-500 py-12">鏆傛棤鏀惰棌绱犳潗</p>
             ) : (
               favorites.map((item) => {
                 const pid = String(item.id)
@@ -776,7 +832,7 @@ export default function ArtworksPage() {
                       <p className="text-xs text-gray-500 truncate">PID: {item.id}</p>
                       <p className="text-xs text-gray-500 truncate">{item.artist?.name}</p>
                       <p className="text-[11px] text-emerald-700 truncate">
-                        系统评分: {typeof item.candidateScore === 'number' ? item.candidateScore.toFixed(1) : '--'}
+                        绯荤粺璇勫垎: {typeof item.candidateScore === 'number' ? item.candidateScore.toFixed(1) : '--'}
                       </p>
                       <div className="mt-1 flex flex-wrap gap-1">
                         {DOWNLOAD_STATUS_SIZES.map((size) => {
@@ -806,7 +862,7 @@ export default function ArtworksPage() {
           {favoritePagination.totalPages > 1 && (
             <div className="flex items-center justify-between bg-white rounded-2xl border border-gray-100 px-4 py-3">
               <span className="text-sm text-gray-500">
-                共 {favoritePagination.total} 条，{favoritePagination.page}/{favoritePagination.totalPages} 页
+                鍏?{favoritePagination.total} 鏉★紝{favoritePagination.page}/{favoritePagination.totalPages} 椤?
               </span>
               <div className="flex items-center gap-2">
                 <button
@@ -814,14 +870,14 @@ export default function ArtworksPage() {
                   disabled={favoritePagination.page <= 1}
                   className="px-3 py-1.5 rounded-lg bg-gray-100 text-sm disabled:opacity-40"
                 >
-                  上一页
+                  涓婁竴椤?
                 </button>
                 <button
                   onClick={() => fetchFavorites(Math.min(favoritePagination.totalPages, favoritePagination.page + 1))}
                   disabled={favoritePagination.page >= favoritePagination.totalPages}
                   className="px-3 py-1.5 rounded-lg bg-gray-100 text-sm disabled:opacity-40"
                 >
-                  下一页
+                  涓嬩竴椤?
                 </button>
               </div>
             </div>
@@ -840,13 +896,13 @@ export default function ArtworksPage() {
                 type="text"
                 value={dailyTitle}
                 onChange={(e) => setDailyTitle(e.target.value)}
-                placeholder="标题（可选）"
+                placeholder="鏍囬锛堝彲閫夛級"
                 className="w-full px-3 py-2 border border-gray-200 rounded-xl text-sm"
               />
               <textarea
                 value={dailyDescription}
                 onChange={(e) => setDailyDescription(e.target.value)}
-                placeholder="描述（可选）"
+                placeholder="鎻忚堪锛堝彲閫夛級"
                 rows={3}
                 className="w-full px-3 py-2 border border-gray-200 rounded-xl text-sm"
               />
@@ -868,7 +924,7 @@ export default function ArtworksPage() {
                   setTopicName(e.target.value)
                   if (!topicSlug) setTopicSlug(slugifyTopic(e.target.value))
                 }}
-                placeholder="话题名称（必填）"
+                placeholder="璇濋鍚嶇О锛堝繀濉級"
                 className="w-full px-3 py-2 border border-gray-200 rounded-xl text-sm"
               />
               <input
@@ -888,7 +944,7 @@ export default function ArtworksPage() {
               <textarea
                 value={topicDescription}
                 onChange={(e) => setTopicDescription(e.target.value)}
-                placeholder="话题描述（可选）"
+                placeholder="璇濋鎻忚堪锛堝彲閫夛級"
                 rows={3}
                 className="w-full px-3 py-2 border border-gray-200 rounded-xl text-sm"
               />
@@ -906,3 +962,6 @@ export default function ArtworksPage() {
     </div>
   )
 }
+
+
+

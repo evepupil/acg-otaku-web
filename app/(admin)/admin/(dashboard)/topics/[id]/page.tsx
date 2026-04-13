@@ -7,6 +7,13 @@ import Link from 'next/link'
 import { getImageUrl } from '@/lib/pixiv-proxy'
 import type { Artwork } from '@/types'
 
+interface CandidateArtwork extends Artwork {
+  candidateScore?: number
+  candidateSourceType?: string
+  candidateSourceKey?: string
+  candidateBizType?: string
+}
+
 interface FeatureArtwork extends Artwork {
   editorComment?: string
   sortOrder?: number
@@ -42,7 +49,7 @@ export default function EditTopicFeaturePage() {
   const [topicHistory, setTopicHistory] = useState<string[]>([])
   const [candidateTopN, setCandidateTopN] = useState(200)
   const [candidateLimit, setCandidateLimit] = useState(30)
-  const [candidates, setCandidates] = useState<Artwork[]>([])
+  const [candidates, setCandidates] = useState<CandidateArtwork[]>([])
   const [selectedCandidatePids, setSelectedCandidatePids] = useState<string[]>([])
   const [candidateLoading, setCandidateLoading] = useState(false)
   const [candidateAdding, setCandidateAdding] = useState(false)
@@ -418,6 +425,12 @@ export default function EditTopicFeaturePage() {
                     <p className="text-xs font-medium text-gray-900 truncate">{item.title}</p>
                     <p className="text-xs text-gray-500 truncate">PID: {item.id}</p>
                     <p className="text-xs text-gray-500 truncate">{item.artist?.name}</p>
+                    <p className="truncate text-[11px] text-orange-700">
+                      系统评分: {typeof item.candidateScore === 'number' ? item.candidateScore.toFixed(1) : '--'}
+                    </p>
+                    <p className="truncate text-[11px] text-slate-500">
+                      来源: {item.candidateSourceType || item.candidateBizType || '--'}
+                    </p>
                   </div>
                 </button>
               )

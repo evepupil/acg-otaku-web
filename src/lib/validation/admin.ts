@@ -127,6 +127,13 @@ export const adminCandidateQuerySchema = z.object({
   excludePublished: booleanQuery.default(true),
 })
 
+const candidatePoolSchema = z.enum(['ranking', 'daily', 'artist', 'topic', 'avatar', 'wallpaper'])
+const downloadStatusSchema = z.enum(['any', 'preview', 'regular', 'original'])
+
+export const adminDailyCandidateQuerySchema = adminCandidateQuerySchema.extend({
+  pickType: z.enum(['ranking_pick', 'daily_art']).default('daily_art'),
+})
+
 export const adminTopicCandidateQuerySchema = adminCandidateQuerySchema.extend({
   topicName: optionalText,
   tags: optionalText,
@@ -135,6 +142,15 @@ export const adminTopicCandidateQuerySchema = adminCandidateQuerySchema.extend({
 export const adminArtistCandidateSchema = adminCandidateQuerySchema.extend({
   artistId: z.string().trim().min(1).max(120),
   crawlBeforeQuery: z.boolean().optional().default(true),
+})
+
+export const adminBusinessCandidateQuerySchema = adminCandidateQuerySchema.extend({
+  pool: candidatePoolSchema,
+  onlyDownloaded: booleanQuery.default(true),
+  downloadStatus: downloadStatusSchema.default('any'),
+  tag: optionalText.transform((value) => value && value.length > 0 ? value : undefined),
+  tags: optionalText.transform((value) => value && value.length > 0 ? value : undefined),
+  artistId: optionalText.transform((value) => value && value.length > 0 ? value : undefined),
 })
 
 export const updateArtistFeatureSchema = z.object({
@@ -168,7 +184,9 @@ export const adminReviewCandidateQuerySchema = z.object({
   tag: optionalText.transform((value) => value && value.length > 0 ? value : undefined),
   excludePublished: booleanQuery.default(true),
   onlyDownloaded: booleanQuery.default(false),
-  downloadStatus: z.enum(['any', 'preview', 'regular', 'original']).default('any'),
+  downloadStatus: downloadStatusSchema.default('any'),
+  pool: z.enum(['general', 'ranking', 'daily', 'artist', 'topic', 'avatar', 'wallpaper']).default('general'),
+  artistId: optionalText.transform((value) => value && value.length > 0 ? value : undefined),
 })
 
 export const adminReviewActionSchema = z.object({
@@ -184,7 +202,7 @@ export const adminFavoriteListQuerySchema = z.object({
   tag: optionalText.transform((value) => value && value.length > 0 ? value : undefined),
   artistId: optionalText.transform((value) => value && value.length > 0 ? value : undefined),
   excludePublished: booleanQuery.default(true),
-  downloadStatus: z.enum(['any', 'preview', 'regular', 'original']).default('any'),
+  downloadStatus: downloadStatusSchema.default('any'),
   sortBy: z.enum(['reviewed_desc', 'pid_desc']).default('reviewed_desc'),
 })
 

@@ -5,6 +5,7 @@ import { verifyAdminRequest } from '@/lib/admin-auth'
 import { parseSearchParams } from '@/lib/validation/request'
 import { adminReviewCandidateQuerySchema } from '@/lib/validation/admin'
 import { getReviewCandidates } from '@/db/curation'
+import { getAdminBusinessCandidateArtworks } from '@/lib/admin-business-candidates'
 
 function validationErrorResponse(error: ZodError) {
   return NextResponse.json(
@@ -18,17 +19,34 @@ export async function GET(request: NextRequest) {
   if (!isAdmin) return NextResponse.json({ success: false, error: '未授权' }, { status: 401 })
 
   try {
-    const { limit, topN, tag, excludePublished, onlyDownloaded, downloadStatus } = parseSearchParams(
+    const { limit, topN, tag, excludePublished, onlyDownloaded, downloadStatus, pool, artistId } = parseSearchParams(
       new URL(request.url).searchParams,
       adminReviewCandidateQuerySchema
     )
 
-    const artworks = await getReviewCandidates(limit, topN, tag, excludePublished, onlyDownloaded, downloadStatus)
+    const artworks =
+      pool === 'general'
+        ? await getReviewCandidates(limit, topN, tag, excludePublished, onlyDownloaded, downloadStatus)
+        : await getAdminBusinessCandidateArtworks({
+            pool,
+            limit,
+            topN,
+            excludePublished,
+            onlyDownloaded,
+            downloadStatus,
+            artistId,
+            tags: tag
+              ? tag
+                  .split(/[\n,]/)
+                  .map((item) => item.trim())
+                  .filter(Boolean)
+              : undefined,
+          })
     return NextResponse.json({
       success: true,
       data: {
         artworks,
-        query: { limit, topN, tag, excludePublished, onlyDownloaded, downloadStatus },
+        query: { limit, topN, tag, excludePublished, onlyDownloaded, downloadStatus, pool, artistId },
       },
     })
   } catch (error) {

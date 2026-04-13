@@ -4,7 +4,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { verifyAdminRequest } from '@/lib/admin-auth'
 import { parseJsonBody } from '@/lib/validation/request'
 import { adminArtistCandidateSchema } from '@/lib/validation/admin'
-import { getArtistRandomTopNCandidates } from '@/db/curation'
+import { getAdminBusinessCandidateArtworks } from '@/lib/admin-business-candidates'
 import { triggerArtistCrawlById } from '@/lib/crawler-client'
 
 function validationErrorResponse(error: ZodError) {
@@ -29,12 +29,14 @@ export async function POST(request: NextRequest) {
           message: '已跳过爬虫触发，仅查询本地数据库',
         }
 
-    const artworks = await getArtistRandomTopNCandidates(
-      payload.artistId,
-      payload.limit,
-      payload.topN,
-      payload.excludePublished
-    )
+    const artworks = await getAdminBusinessCandidateArtworks({
+      pool: 'artist',
+      artistId: payload.artistId,
+      limit: payload.limit,
+      topN: payload.topN,
+      excludePublished: payload.excludePublished,
+      onlyDownloaded: true,
+    })
 
     return NextResponse.json({
       success: true,

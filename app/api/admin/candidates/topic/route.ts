@@ -4,7 +4,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { verifyAdminRequest } from '@/lib/admin-auth'
 import { parseSearchParams } from '@/lib/validation/request'
 import { adminTopicCandidateQuerySchema } from '@/lib/validation/admin'
-import { getTopicRandomTopNCandidates } from '@/db/curation'
+import { getAdminBusinessCandidateArtworks } from '@/lib/admin-business-candidates'
 
 function validationErrorResponse(error: ZodError) {
   return NextResponse.json(
@@ -38,7 +38,14 @@ export async function GET(request: NextRequest) {
       adminTopicCandidateQuerySchema
     )
     const tagList = parseTagList(tags, topicName)
-    const artworks = await getTopicRandomTopNCandidates(tagList, limit, topN, excludePublished)
+    const artworks = await getAdminBusinessCandidateArtworks({
+      pool: 'topic',
+      limit,
+      topN,
+      excludePublished,
+      onlyDownloaded: true,
+      tags: tagList,
+    })
 
     return NextResponse.json({
       success: true,
